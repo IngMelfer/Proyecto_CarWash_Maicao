@@ -1,0 +1,1 @@
+web: gunicorn autolavados_plataforma.wsgi --log-file -

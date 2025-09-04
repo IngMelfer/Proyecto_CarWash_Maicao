@@ -1,0 +1,497 @@
+{% extends 'base.html' %}
+
+{% block title %}Reservar Cita - Premium Car Detailing{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <!-- Menú lateral -->
+        <div class="col-md-3 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Mi Cuenta</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'autenticacion:perfil' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-user-circle me-2"></i> Mi Perfil
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action active">
+                        <i class="fas fa-calendar-alt me-2"></i> Mis Citas
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <i class="fas fa-history me-2"></i> Historial de Servicios
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <i class="fas fa-star me-2"></i> Puntos y Recompensas
+                    </a>
+                    <a href="{% url 'autenticacion:logout' %}" class="list-group-item list-group-item-action text-danger">
+                        <i class="fas fa-sign-out-alt me-2"></i> Cerrar Sesión
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contenido principal -->
+        <div class="col-md-9">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Reservar Cita</h4>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <form method="post" id="reservaForm">
+                        {% csrf_token %}
+                        
+                        <!-- Paso 1: Selección de Servicio -->
+                        <div class="reservation-step" id="step1">
+                            <h5 class="border-bottom pb-2 mb-4">Paso 1: Selecciona el Servicio</h5>
+                            
+                            <div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+                                {% for servicio in servicios %}
+                                <div class="col">
+                                    <div class="card h-100 service-card" data-service-id="{{ servicio.id }}">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ servicio.nombre }}</h5>
+                                            <p class="card-text">{{ servicio.descripcion_corta }}</p>
+                                            <p class="card-text"><strong>Duración:</strong> {{ servicio.duracion_minutos }} minutos</p>
+                                            <p class="card-text"><strong>Precio:</strong> ${{ servicio.precio }}</p>
+                                        </div>
+                                        <div class="card-footer bg-transparent">
+                                            <div class="form-check">
+                                                <input class="form-check-input service-radio" type="radio" name="servicio_id" id="servicio{{ servicio.id }}" value="{{ servicio.id }}">
+                                                <label class="form-check-label" for="servicio{{ servicio.id }}">
+                                                    Seleccionar
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="d-flex justify-content-end mt-4">
+                                <button type="button" class="btn btn-primary" id="nextToStep2">
+                                    Siguiente <i class="fas fa-arrow-right ms-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Paso 2: Selección de Fecha y Hora -->
+                        <div class="reservation-step" id="step2" style="display: none;">
+                            <h5 class="border-bottom pb-2 mb-4">Paso 2: Selecciona Fecha y Hora</h5>
+                            
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label for="fecha" class="form-label">Fecha</label>
+                                    <input type="date" class="form-control" id="fecha" name="fecha" required>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-4">
+                                <div class="col-md-12">
+                                    <label class="form-label">Horarios Disponibles</label>
+                                    <div id="horariosDisponibles" class="d-flex flex-wrap gap-2">
+                                        <div class="alert alert-info w-100">
+                                            Selecciona una fecha para ver los horarios disponibles.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-outline-secondary" id="backToStep1">
+                                    <i class="fas fa-arrow-left me-2"></i> Anterior
+                                </button>
+                                <button type="button" class="btn btn-primary" id="nextToStep3">
+                                    Siguiente <i class="fas fa-arrow-right ms-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Paso 3: Información del Vehículo -->
+                        <div class="reservation-step" id="step3" style="display: none;">
+                            <h5 class="border-bottom pb-2 mb-4">Paso 3: Información del Vehículo</h5>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6 mb-3">
+                                    <label for="marca" class="form-label">Marca</label>
+                                    <input type="text" class="form-control" id="marca" name="marca" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="modelo" class="form-label">Modelo</label>
+                                    <input type="text" class="form-control" id="modelo" name="modelo" required>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6 mb-3">
+                                    <label for="anio" class="form-label">Año</label>
+                                    <input type="number" class="form-control" id="anio" name="anio" min="1900" max="2099" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="placa" class="form-label">Placa</label>
+                                    <input type="text" class="form-control" id="placa" name="placa" required>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6 mb-3">
+                                    <label for="tipo_vehiculo" class="form-label">Tipo de Vehículo</label>
+                                    <select class="form-select" id="tipo_vehiculo" name="tipo_vehiculo" required>
+                                        <option value="" disabled selected>Seleccione...</option>
+                                        <option value="sedan">Sedán</option>
+                                        <option value="suv">SUV</option>
+                                        <option value="pickup">Pickup</option>
+                                        <option value="hatchback">Hatchback</option>
+                                        <option value="deportivo">Deportivo</option>
+                                        <option value="otro">Otro</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="color" class="form-label">Color</label>
+                                    <input type="text" class="form-control" id="color" name="color" required>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label for="observaciones" class="form-label">Observaciones (opcional)</label>
+                                    <textarea class="form-control" id="observaciones" name="observaciones" rows="3" placeholder="Indique cualquier detalle importante sobre su vehículo o el servicio que necesita"></textarea>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-outline-secondary" id="backToStep2">
+                                    <i class="fas fa-arrow-left me-2"></i> Anterior
+                                </button>
+                                <button type="button" class="btn btn-primary" id="nextToStep4">
+                                    Siguiente <i class="fas fa-arrow-right ms-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Paso 4: Confirmación -->
+                        <div class="reservation-step" id="step4" style="display: none;">
+                            <h5 class="border-bottom pb-2 mb-4">Paso 4: Confirmar Reserva</h5>
+                            
+                            <div class="card mb-4">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Resumen de la Reserva</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <p><strong>Servicio:</strong> <span id="resumen-servicio"></span></p>
+                                            <p><strong>Fecha:</strong> <span id="resumen-fecha"></span></p>
+                                            <p><strong>Hora:</strong> <span id="resumen-hora"></span></p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p><strong>Vehículo:</strong> <span id="resumen-vehiculo"></span></p>
+                                            <p><strong>Placa:</strong> <span id="resumen-placa"></span></p>
+                                            <p><strong>Precio:</strong> <span id="resumen-precio"></span></p>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <p><strong>Observaciones:</strong> <span id="resumen-observaciones">-</span></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-check mb-4">
+                                <input class="form-check-input" type="checkbox" id="terminos" name="terminos" required>
+                                <label class="form-check-label" for="terminos">
+                                    Acepto los <a href="#" data-bs-toggle="modal" data-bs-target="#terminosModal">Términos y Condiciones</a> del servicio
+                                </label>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-outline-secondary" id="backToStep3">
+                                    <i class="fas fa-arrow-left me-2"></i> Anterior
+                                </button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-check me-2"></i> Confirmar Reserva
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Términos y Condiciones -->
+<div class="modal fade" id="terminosModal" tabindex="-1" aria-labelledby="terminosModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="terminosModalLabel">Términos y Condiciones de Reserva</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h5>1. Política de Reservas</h5>
+                <p>Al realizar una reserva, usted se compromete a asistir en la fecha y hora programada. Si necesita cancelar o reprogramar su cita, debe hacerlo con al menos 24 horas de anticipación.</p>
+                
+                <h5>2. Política de Cancelación</h5>
+                <p>Las cancelaciones realizadas con menos de 24 horas de anticipación pueden estar sujetas a un cargo por cancelación equivalente al 30% del valor del servicio.</p>
+                
+                <h5>3. Llegada Tardía</h5>
+                <p>Si llega más de 15 minutos tarde a su cita, es posible que debamos reprogramarla para garantizar un servicio de calidad a todos nuestros clientes.</p>
+                
+                <h5>4. Condiciones del Vehículo</h5>
+                <p>Por favor, retire todos los objetos personales de valor de su vehículo antes del servicio. No nos hacemos responsables por objetos perdidos o dañados que hayan sido dejados en el vehículo.</p>
+                
+                <h5>5. Pago</h5>
+                <p>El pago se realizará al finalizar el servicio. Aceptamos efectivo, tarjetas de crédito/débito y transferencias bancarias.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Variables para almacenar la selección
+        let selectedService = null;
+        let selectedDate = null;
+        let selectedTime = null;
+        let servicePrices = {};
+        
+        // Obtener precios de servicios
+        {% for servicio in servicios %}
+            servicePrices[{{ servicio.id }}] = {{ servicio.precio }};
+        {% endfor %}
+        
+        // Selección de servicio
+        const serviceCards = document.querySelectorAll('.service-card');
+        const serviceRadios = document.querySelectorAll('.service-radio');
+        
+        serviceCards.forEach(card => {
+            card.addEventListener('click', function() {
+                const serviceId = this.dataset.serviceId;
+                const radio = document.querySelector(`#servicio${serviceId}`);
+                radio.checked = true;
+                
+                // Actualizar estilos
+                serviceCards.forEach(c => c.classList.remove('border-primary'));
+                this.classList.add('border-primary');
+                
+                // Guardar selección
+                selectedService = serviceId;
+            });
+        });
+        
+        // Navegación entre pasos
+        const nextToStep2 = document.querySelector('#nextToStep2');
+        const backToStep1 = document.querySelector('#backToStep1');
+        const nextToStep3 = document.querySelector('#nextToStep3');
+        const backToStep2 = document.querySelector('#backToStep2');
+        const nextToStep4 = document.querySelector('#nextToStep4');
+        const backToStep3 = document.querySelector('#backToStep3');
+        
+        nextToStep2.addEventListener('click', function() {
+            if (!selectedService) {
+                showAlert('Por favor selecciona un servicio', 'warning');
+                return;
+            }
+            
+            document.querySelector('#step1').style.display = 'none';
+            document.querySelector('#step2').style.display = 'block';
+        });
+        
+        backToStep1.addEventListener('click', function() {
+            document.querySelector('#step2').style.display = 'none';
+            document.querySelector('#step1').style.display = 'block';
+        });
+        
+        nextToStep3.addEventListener('click', function() {
+            if (!selectedDate) {
+                showAlert('Por favor selecciona una fecha', 'warning');
+                return;
+            }
+            
+            if (!selectedTime) {
+                showAlert('Por favor selecciona una hora', 'warning');
+                return;
+            }
+            
+            document.querySelector('#step2').style.display = 'none';
+            document.querySelector('#step3').style.display = 'block';
+        });
+        
+        backToStep2.addEventListener('click', function() {
+            document.querySelector('#step3').style.display = 'none';
+            document.querySelector('#step2').style.display = 'block';
+        });
+        
+        nextToStep4.addEventListener('click', function() {
+            // Validar campos del vehículo
+            const marca = document.querySelector('#marca').value;
+            const modelo = document.querySelector('#modelo').value;
+            const anio = document.querySelector('#anio').value;
+            const placa = document.querySelector('#placa').value;
+            const tipoVehiculo = document.querySelector('#tipo_vehiculo').value;
+            const color = document.querySelector('#color').value;
+            
+            if (!marca || !modelo || !anio || !placa || !tipoVehiculo || !color) {
+                showAlert('Por favor completa todos los campos obligatorios', 'warning');
+                return;
+            }
+            
+            // Actualizar resumen
+            const servicioNombre = document.querySelector(`#servicio${selectedService}`).closest('.service-card').querySelector('.card-title').textContent;
+            document.querySelector('#resumen-servicio').textContent = servicioNombre;
+            document.querySelector('#resumen-fecha').textContent = formatDate(selectedDate);
+            document.querySelector('#resumen-hora').textContent = selectedTime;
+            document.querySelector('#resumen-vehiculo').textContent = `${marca} ${modelo} ${anio}`;
+            document.querySelector('#resumen-placa').textContent = placa;
+            document.querySelector('#resumen-precio').textContent = `$${servicePrices[selectedService]}`;
+            
+            const observaciones = document.querySelector('#observaciones').value;
+            document.querySelector('#resumen-observaciones').textContent = observaciones || '-';
+            
+            document.querySelector('#step3').style.display = 'none';
+            document.querySelector('#step4').style.display = 'block';
+        });
+        
+        backToStep3.addEventListener('click', function() {
+            document.querySelector('#step4').style.display = 'none';
+            document.querySelector('#step3').style.display = 'block';
+        });
+        
+        // Manejo de fecha y horarios
+        const fechaInput = document.querySelector('#fecha');
+        const horariosContainer = document.querySelector('#horariosDisponibles');
+        
+        // Establecer fecha mínima (hoy)
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        fechaInput.min = formatDateValue(tomorrow);
+        
+        // Establecer fecha máxima (30 días después)
+        const maxDate = new Date(today);
+        maxDate.setDate(maxDate.getDate() + 30);
+        fechaInput.max = formatDateValue(maxDate);
+        
+        fechaInput.addEventListener('change', function() {
+            selectedDate = this.value;
+            cargarHorariosDisponibles(selectedDate, selectedService);
+        });
+        
+        // Función para cargar horarios disponibles
+        function cargarHorariosDisponibles(fecha, servicioId) {
+            // En un caso real, aquí harías una petición AJAX al servidor
+            // para obtener los horarios disponibles según la fecha y el servicio
+            
+            // Simulación de horarios disponibles
+            const horariosDisponibles = [
+                '08:00', '09:00', '10:00', '11:00', '12:00', 
+                '14:00', '15:00', '16:00', '17:00'
+            ];
+            
+            // Limpiar contenedor
+            horariosContainer.innerHTML = '';
+            
+            // Mostrar horarios
+            if (horariosDisponibles.length > 0) {
+                horariosDisponibles.forEach(horario => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'btn btn-outline-primary time-slot';
+                    btn.textContent = horario;
+                    btn.dataset.time = horario;
+                    
+                    btn.addEventListener('click', function() {
+                        // Desmarcar todos los botones
+                        document.querySelectorAll('.time-slot').forEach(b => {
+                            b.classList.remove('active');
+                            b.classList.replace('btn-primary', 'btn-outline-primary');
+                        });
+                        
+                        // Marcar el botón seleccionado
+                        this.classList.add('active');
+                        this.classList.replace('btn-outline-primary', 'btn-primary');
+                        
+                        // Guardar selección
+                        selectedTime = this.dataset.time;
+                    });
+                    
+                    horariosContainer.appendChild(btn);
+                });
+            } else {
+                horariosContainer.innerHTML = '<div class="alert alert-warning w-100">No hay horarios disponibles para la fecha seleccionada.</div>';
+            }
+        }
+        
+        // Validación del formulario
+        const reservaForm = document.querySelector('#reservaForm');
+        reservaForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const terminos = document.querySelector('#terminos').checked;
+            if (!terminos) {
+                showAlert('Debes aceptar los términos y condiciones', 'warning');
+                return;
+            }
+            
+            // Aquí se enviaría el formulario
+            // En un caso real, podrías usar fetch o axios para enviar los datos
+            
+            // Simulación de envío exitoso
+            showAlert('Reserva realizada con éxito. Redirigiendo...', 'success');
+            
+            // Redirigir después de 2 segundos
+            setTimeout(() => {
+                window.location.href = '/reservas/mis-citas/';
+            }, 2000);
+        });
+        
+        // Funciones auxiliares
+        function formatDate(dateString) {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('es-ES', options);
+        }
+        
+        function formatDateValue(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.role = 'alert';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            
+            const cardBody = document.querySelector('.card-body');
+            cardBody.insertBefore(alertDiv, cardBody.firstChild);
+            
+            // Auto dismiss after 5 seconds
+            setTimeout(() => {
+                alertDiv.classList.remove('show');
+                setTimeout(() => alertDiv.remove(), 150);
+            }, 5000);
+        }
+    });
+</script>
+{% endblock %}

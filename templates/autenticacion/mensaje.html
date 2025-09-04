@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }} - Premium Car Detailing{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white text-center">
+                    <h4 class="mb-0">{{ titulo }}</h4>
+                </div>
+                <div class="card-body p-4 text-center">
+                    {% if tipo == 'exito' %}
+                        <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                    {% elif tipo == 'error' %}
+                        <i class="fas fa-exclamation-circle fa-4x text-danger mb-3"></i>
+                    {% elif tipo == 'info' %}
+                        <i class="fas fa-info-circle fa-4x text-info mb-3"></i>
+                    {% elif tipo == 'advertencia' %}
+                        <i class="fas fa-exclamation-triangle fa-4x text-warning mb-3"></i>
+                    {% endif %}
+                    
+                    <h5 class="mb-3">{{ mensaje }}</h5>
+                    
+                    {% if mensaje_secundario %}
+                        <p class="text-muted mb-4">{{ mensaje_secundario }}</p>
+                    {% endif %}
+                    
+                    <div class="d-grid gap-2">
+                        {% if boton_principal_url %}
+                            <a href="{{ boton_principal_url }}" class="btn btn-primary">
+                                {% if boton_principal_icono %}<i class="{{ boton_principal_icono }} me-2"></i>{% endif %}
+                                {{ boton_principal_texto|default:'Continuar' }}
+                            </a>
+                        {% endif %}
+                        
+                        {% if boton_secundario_url %}
+                            <a href="{{ boton_secundario_url }}" class="btn btn-outline-secondary">
+                                {% if boton_secundario_icono %}<i class="{{ boton_secundario_icono }} me-2"></i>{% endif %}
+                                {{ boton_secundario_texto|default:'Volver' }}
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

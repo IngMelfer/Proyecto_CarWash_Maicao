@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}Inicio - Premium Car Detailing{% endblock %}
+
+{% block extra_css %}
+<style>
+    .header-home {
+        background-color: #007bff;
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+    }
+    .endpoint-card {
+        margin-bottom: 1.5rem;
+        transition: transform 0.3s;
+    }
+    .endpoint-card:hover {
+        transform: translateY(-5px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<header class="header-home">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <h1>Bienvenido a Premium Car Detailing</h1>
+                <p class="lead">La mejor plataforma para gestionar tu negocio de lavado automotriz</p>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="container">
+
+    <section class="mb-5" id="api-documentation">
+        <h2 class="mb-4">API</h2>
+        <div class="row">
+            {% for endpoint in api_endpoints %}
+            <div class="col-md-4">
+                <div class="card endpoint-card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ endpoint.name }}</h5>
+                        <p class="card-text">{{ endpoint.description }}</p>
+                        <p class="text-muted">{{ endpoint.method }} {{ endpoint.path }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="mb-5">
+        <h2 class="mb-4">Características Principales</h2>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-user-plus me-2"></i>Registro de Usuarios</h5>
+                        <p class="card-text">Sistema completo de registro con verificación de email y gestión de perfiles.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-calendar-check me-2"></i>Reserva de Citas</h5>
+                        <p class="card-text">Sistema de agendamiento con validaciones de disponibilidad y gestión de estados.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-bell me-2"></i>Notificaciones</h5>
+                        <p class="card-text">Sistema de notificaciones en tiempo real para mantener informados a los clientes.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-history me-2"></i>Historial de Servicios</h5>
+                        <p class="card-text">Registro detallado de todos los servicios realizados para cada cliente.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-award me-2"></i>Sistema de Puntos</h5>
+                        <p class="card-text">Programa de fidelización mediante acumulación y redención de puntos por servicios.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+{% endblock %}

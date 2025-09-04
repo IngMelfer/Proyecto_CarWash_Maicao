@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+
+{% block title %}Mi Perfil - Premium Car Detailing{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <!-- Menú lateral -->
+        <div class="col-md-3 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Mi Cuenta</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'autenticacion:perfil' %}" class="list-group-item list-group-item-action active">
+                        <i class="fas fa-user-circle me-2"></i> Mi Perfil
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <i class="fas fa-calendar-alt me-2"></i> Mis Citas
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <i class="fas fa-history me-2"></i> Historial de Servicios
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <i class="fas fa-star me-2"></i> Puntos y Recompensas
+                    </a>
+                    <a href="{% url 'autenticacion:logout' %}" class="list-group-item list-group-item-action text-danger">
+                        <i class="fas fa-sign-out-alt me-2"></i> Cerrar Sesión
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contenido principal -->
+        <div class="col-md-9">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white">
+                    <h4 class="mb-0">Mi Perfil</h4>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <form method="post" id="perfilForm">
+                        {% csrf_token %}
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h5 class="border-bottom pb-2">Información Personal</h5>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6 mb-3">
+                                <label for="nombre" class="form-label">Nombre</label>
+                                <input type="text" class="form-control" id="nombre" name="nombre" value="{{ form_data.nombre|default:usuario.nombre }}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="apellido" class="form-label">Apellido</label>
+                                <input type="text" class="form-control" id="apellido" name="apellido" value="{{ form_data.apellido|default:usuario.apellido }}" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">Correo Electrónico</label>
+                                <input type="email" class="form-control" id="email" value="{{ usuario.email }}" disabled>
+                                <div class="form-text">El correo electrónico no se puede cambiar.</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="telefono" class="form-label">Teléfono</label>
+                                <input type="tel" class="form-control" id="telefono" name="telefono" value="{{ form_data.telefono|default:usuario.telefono }}">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6 mb-3">
+                                <label for="tipo_documento" class="form-label">Tipo de Documento</label>
+                                <select class="form-select" id="tipo_documento" disabled>
+                                    <option value="CC" {% if usuario.tipo_documento == 'CC' %}selected{% endif %}>Cédula de Ciudadanía</option>
+                                    <option value="CE" {% if usuario.tipo_documento == 'CE' %}selected{% endif %}>Cédula de Extranjería</option>
+                                    <option value="TI" {% if usuario.tipo_documento == 'TI' %}selected{% endif %}>Tarjeta de Identidad</option>
+                                    <option value="PP" {% if usuario.tipo_documento == 'PP' %}selected{% endif %}>Pasaporte</option>
+                                </select>
+                                <div class="form-text">El tipo de documento no se puede cambiar.</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="numero_documento" class="form-label">Número de Documento</label>
+                                <input type="text" class="form-control" id="numero_documento" value="{{ usuario.numero_documento }}" disabled>
+                                <div class="form-text">El número de documento no se puede cambiar.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h5 class="border-bottom pb-2">Dirección</h5>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-8 mb-3">
+                                <label for="direccion" class="form-label">Dirección</label>
+                                <input type="text" class="form-control" id="direccion" name="direccion" value="{{ form_data.direccion|default:usuario.direccion }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="ciudad" class="form-label">Ciudad</label>
+                                <input type="text" class="form-control" id="ciudad" name="ciudad" value="{{ form_data.ciudad|default:usuario.ciudad }}">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h5 class="border-bottom pb-2">Preferencias de Notificación</h5>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="notificaciones_email" name="notificaciones_email" {% if form_data.notificaciones_email|default:usuario.notificaciones_email %}checked{% endif %}>
+                                    <label class="form-check-label" for="notificaciones_email">
+                                        Recibir notificaciones por correo electrónico
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="notificaciones_sms" name="notificaciones_sms" {% if form_data.notificaciones_sms|default:usuario.notificaciones_sms %}checked{% endif %}>
+                                    <label class="form-check-label" for="notificaciones_sms">
+                                        Recibir notificaciones por SMS
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="notificaciones_whatsapp" name="notificaciones_whatsapp" {% if form_data.notificaciones_whatsapp|default:usuario.notificaciones_whatsapp %}checked{% endif %}>
+                                    <label class="form-check-label" for="notificaciones_whatsapp">
+                                        Recibir notificaciones por WhatsApp
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i> Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Sección de cambio de contraseña -->
+            <div class="card shadow mt-4">
+                <div class="card-header bg-dark text-white">
+                    <h4 class="mb-0">Cambiar Contraseña</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{% url 'autenticacion:cambiar_password' %}" id="cambiarPasswordForm">
+                        {% csrf_token %}
+                        <div class="row mb-3">
+                            <div class="col-md-12 mb-3">
+                                <label for="current_password" class="form-label">Contraseña Actual</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="current_password" name="current_password" required>
+                                    <button class="btn btn-outline-secondary" type="button" id="toggleCurrentPassword">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6 mb-3">
+                                <label for="new_password" class="form-label">Nueva Contraseña</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="new_password" name="new_password" required>
+                                    <button class="btn btn-outline-secondary" type="button" id="toggleNewPassword">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">La contraseña debe tener al menos 8 caracteres, incluir letras y números.</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="new_password_confirm" class="form-label">Confirmar Nueva Contraseña</label>
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="new_password_confirm" name="new_password_confirm" required>
+                                    <button class="btn btn-outline-secondary" type="button" id="toggleNewPasswordConfirm">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-key me-2"></i> Cambiar Contraseña
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle password visibility functions
+        function setupPasswordToggle(buttonId, inputId) {
+            const toggleButton = document.querySelector('#' + buttonId);
+            const passwordInput = document.querySelector('#' + inputId);
+            
+            if (toggleButton && passwordInput) {
+                toggleButton.addEventListener('click', function() {
+                    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                    passwordInput.setAttribute('type', type);
+                    this.querySelector('i').classList.toggle('fa-eye');
+                    this.querySelector('i').classList.toggle('fa-eye-slash');
+                });
+            }
+        }
+        
+        // Setup all password toggles
+        setupPasswordToggle('toggleCurrentPassword', 'current_password');
+        setupPasswordToggle('toggleNewPassword', 'new_password');
+        setupPasswordToggle('toggleNewPasswordConfirm', 'new_password_confirm');
+        
+        // Form validation for password change
+        const cambiarPasswordForm = document.querySelector('#cambiarPasswordForm');
+        if (cambiarPasswordForm) {
+            cambiarPasswordForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const currentPassword = document.querySelector('#current_password').value;
+                const newPassword = document.querySelector('#new_password').value;
+                const newPasswordConfirm = document.querySelector('#new_password_confirm').value;
+                
+                // Validate password
+                if (newPassword.length < 8) {
+                    showAlert('La nueva contraseña debe tener al menos 8 caracteres', 'danger');
+                    return;
+                }
+                
+                if (!/\d/.test(newPassword) || !/[a-zA-Z]/.test(newPassword)) {
+                    showAlert('La nueva contraseña debe incluir letras y números', 'danger');
+                    return;
+                }
+                
+                // Check if passwords match
+                if (newPassword !== newPasswordConfirm) {
+                    showAlert('Las contraseñas no coinciden', 'danger');
+                    return;
+                }
+                
+                // Submit the form if validation passes
+                this.submit();
+            });
+        }
+    });
+    
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.role = 'alert';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        
+        const cardBody = document.querySelector('#cambiarPasswordForm').closest('.card-body');
+        cardBody.insertBefore(alertDiv, cardBody.firstChild);
+        
+        // Auto dismiss after 5 seconds
+        setTimeout(() => {
+            alertDiv.classList.remove('show');
+            setTimeout(() => alertDiv.remove(), 150);
+        }, 5000);
+    }
+</script>
+{% endblock %}

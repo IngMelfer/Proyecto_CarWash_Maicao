@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Verifica tu cuenta de Autolavados</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 20px;
+            border: 1px solid #ddd;
+        }
+        .header {
+            text-align: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .footer {
+            margin-top: 30px;
+            font-size: 12px;
+            text-align: center;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Verifica tu cuenta de Autolavados</h2>
+        </div>
+        
+        <p>Hola {{ usuario.get_full_name }},</p>
+        
+        <p>Gracias por registrarte en nuestra plataforma de Autolavados. Para completar tu registro y acceder a todos nuestros servicios, por favor verifica tu dirección de correo electrónico haciendo clic en el siguiente botón:</p>
+        
+        <p style="text-align: center;">
+            <a href="{{ verification_url }}" class="button">Verificar mi correo electrónico</a>
+        </p>
+        
+        <p>O puedes copiar y pegar el siguiente enlace en tu navegador:</p>
+        <p>{{ verification_url }}</p>
+        
+        <p>Este enlace expirará en 24 horas.</p>
+        
+        <p>Si no has solicitado esta cuenta, puedes ignorar este correo.</p>
+        
+        <p>Saludos,<br>El equipo de Autolavados</p>
+        
+        <div class="footer">
+            <p>Este es un correo electrónico automático, por favor no respondas a este mensaje.</p>
+        </div>
+    </div>
+</body>
+</html>

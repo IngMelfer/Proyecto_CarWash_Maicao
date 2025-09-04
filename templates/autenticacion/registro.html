@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+
+{% block title %}Registro - Premium Car Detailing{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white text-center">
+                    <h3 class="mb-0">Crear una cuenta</h3>
+                </div>
+                <div class="card-body p-4">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <form method="post" id="registroForm">
+                        {% csrf_token %}
+                        
+                        <h5 class="mb-3 border-bottom pb-2">Información de la cuenta</h5>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Correo Electrónico *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                    <input type="email" class="form-control" id="email" name="email" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="telefono" class="form-label">Teléfono *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                    <input type="tel" class="form-control" id="telefono" name="telefono" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="password" class="form-label">Contraseña *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                    <input type="password" class="form-control" id="password" name="password" required>
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">La contraseña debe tener al menos 8 caracteres, incluir letras y números.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="password_confirm" class="form-label">Confirmar Contraseña *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                    <input type="password" class="form-control" id="password_confirm" name="password_confirm" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h5 class="mb-3 mt-4 border-bottom pb-2">Información personal</h5>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="nombre" class="form-label">Nombre *</label>
+                                <input type="text" class="form-control" id="nombre" name="nombre" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="apellido" class="form-label">Apellido *</label>
+                                <input type="text" class="form-control" id="apellido" name="apellido" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="tipo_documento" class="form-label">Tipo de Documento *</label>
+                                <select class="form-select" id="tipo_documento" name="tipo_documento" required>
+                                    <option value="" selected disabled>Seleccione...</option>
+                                    <option value="CC">Cédula de Ciudadanía</option>
+                                    <option value="CE">Cédula de Extranjería</option>
+                                    <option value="TI">Tarjeta de Identidad</option>
+                                    <option value="PP">Pasaporte</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="numero_documento" class="form-label">Número de Documento *</label>
+                                <input type="text" class="form-control" id="numero_documento" name="numero_documento" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="direccion" class="form-label">Dirección *</label>
+                                <input type="text" class="form-control" id="direccion" name="direccion" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="ciudad" class="form-label">Ciudad *</label>
+                                <input type="text" class="form-control" id="ciudad" name="ciudad" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="fecha_nacimiento" class="form-label">Fecha de Nacimiento</label>
+                                <input type="date" class="form-control" id="fecha_nacimiento" name="fecha_nacimiento">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="recibir_notificaciones" name="recibir_notificaciones" checked>
+                            <label class="form-check-label" for="recibir_notificaciones">Deseo recibir notificaciones sobre promociones y novedades</label>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="terminos" name="terminos" required>
+                            <label class="form-check-label" for="terminos">Acepto los <a href="#" data-bs-toggle="modal" data-bs-target="#terminosModal">términos y condiciones</a> *</label>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Registrarme</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center">
+                    <p class="mb-0">¿Ya tienes una cuenta? <a href="{% url 'autenticacion:login' %}">Iniciar sesión</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Términos y Condiciones -->
+<div class="modal fade" id="terminosModal" tabindex="-1" aria-labelledby="terminosModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="terminosModalLabel">Términos y Condiciones</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>1. Aceptación de los términos</h6>
+                <p>Al registrarse en Premium Car Detailing, usted acepta estar sujeto a estos Términos de Servicio. El Servicio es propiedad y está operado por Premium Car Detailing.</p>
+                
+                <h6>2. Modificaciones de los términos</h6>
+                <p>Premium Car Detailing se reserva el derecho de modificar estos términos en cualquier momento. Le notificaremos cualquier cambio publicando los nuevos Términos de Servicio en esta ubicación.</p>
+                
+                <h6>3. Privacidad</h6>
+                <p>Su uso del Servicio está sujeto a la Política de Privacidad de Premium Car Detailing, que se incorpora a estos Términos por referencia.</p>
+                
+                <h6>4. Cuentas</h6>
+                <p>Cuando crea una cuenta con nosotros, debe proporcionarnos información precisa, completa y actualizada en todo momento. No hacerlo constituye un incumplimiento de los Términos, lo que puede resultar en la terminación inmediata de su cuenta en nuestro Servicio.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle password visibility
+        const togglePassword = document.querySelector('#togglePassword');
+        const password = document.querySelector('#password');
+        
+        togglePassword.addEventListener('click', function() {
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            this.querySelector('i').classList.toggle('fa-eye');
+            this.querySelector('i').classList.toggle('fa-eye-slash');
+        });
+        
+        // Form validation
+        const registroForm = document.querySelector('#registroForm');
+        registroForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Validar contraseñas
+            const password = document.querySelector('#password').value;
+            const passwordConfirm = document.querySelector('#password_confirm').value;
+            
+            if (password !== passwordConfirm) {
+                showAlert('Las contraseñas no coinciden', 'danger');
+                return;
+            }
+            
+            if (password.length < 8) {
+                showAlert('La contraseña debe tener al menos 8 caracteres', 'danger');
+                return;
+            }
+            
+            // Validar términos y condiciones
+            const terminos = document.querySelector('#terminos').checked;
+            if (!terminos) {
+                showAlert('Debes aceptar los términos y condiciones', 'danger');
+                return;
+            }
+            
+            // Submit the form if validation passes
+            this.submit();
+        });
+    });
+    
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.role = 'alert';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        
+        const cardBody = document.querySelector('.card-body');
+        cardBody.insertBefore(alertDiv, cardBody.firstChild);
+        
+        // Auto dismiss after 5 seconds
+        setTimeout(() => {
+            alertDiv.classList.remove('show');
+            setTimeout(() => alertDiv.remove(), 150);
+        }, 5000);
+    }
+</script>
+{% endblock %}
