@@ -1,6 +1,5 @@
-# Plataforma de Autolavados
-
-Sistema de gestión para negocios de autolavado con módulos para clientes, reservas, servicios y notificaciones.
+# Proyecto_CarWash_Maicao
+Plataforma Integral para Autolavados con Monitoreo y Fidelización en Maicao, La Guajira
 
 ## Configuración del Proyecto
 
@@ -15,8 +14,8 @@ Sistema de gestión para negocios de autolavado con módulos para clientes, rese
 1. Clonar el repositorio
 
 ```bash
-git clone https://github.com/tu-usuario/autolavados-plataforma.git
-cd autolavados-plataforma
+git clone https://github.com/IngMelfer/Proyecto_CarWash_Maicao.git
+cd Proyecto_CarWash_Maicao
 ```
 
 2. Crear y activar entorno virtual
