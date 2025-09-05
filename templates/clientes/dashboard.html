@@ -1,0 +1,233 @@
+{% extends 'base.html' %}
+
+{% block title %}Mi Dashboard - Premium Car Detailing{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-header {
+        background-color: #007bff;
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+    }
+    .dashboard-card {
+        margin-bottom: 1.5rem;
+        transition: transform 0.3s;
+        height: 100%;
+    }
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+    }
+    .dashboard-icon {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        color: #007bff;
+    }
+    .stats-value {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: #007bff;
+    }
+    .stats-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<header class="dashboard-header">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>Bienvenido, {{ cliente.nombre }} {{ cliente.apellido }}</h1>
+                <p class="lead">Este es tu panel de control personalizado</p>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="container">
+    <!-- Estadísticas rápidas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center dashboard-card">
+                <div class="card-body">
+                    <div class="stats-value">{{ turnos_pendientes }}</div>
+                    <div class="stats-label">TURNOS PENDIENTES</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center dashboard-card">
+                <div class="card-body">
+                    <div class="stats-value">{{ servicios_completados }}</div>
+                    <div class="stats-label">SERVICIOS COMPLETADOS</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center dashboard-card">
+                <div class="card-body">
+                    <div class="stats-value">{{ puntos_disponibles }}</div>
+                    <div class="stats-label">PUNTOS DISPONIBLES</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center dashboard-card">
+                <div class="card-body">
+                    <div class="stats-value">{{ vehiculos_registrados }}</div>
+                    <div class="stats-label">VEHÍCULOS REGISTRADOS</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Accesos rápidos -->
+    <h2 class="mb-4">Accesos Rápidos</h2>
+    <div class="row mb-5">
+        <div class="col-md-3">
+            <a href="{% url 'autenticacion:perfil' %}" class="text-decoration-none">
+                <div class="card text-center dashboard-card">
+                    <div class="card-body">
+                        <div class="dashboard-icon">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <h5 class="card-title">Mi Perfil</h5>
+                        <p class="card-text">Actualiza tu información personal y preferencias</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="{% url 'reservas:mis_turnos' %}" class="text-decoration-none">
+                <div class="card text-center dashboard-card">
+                    <div class="card-body">
+                        <div class="dashboard-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <h5 class="card-title">Mis Turnos</h5>
+                        <p class="card-text">Gestiona tus reservas y próximos servicios</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="{% url 'clientes:historial_servicios' %}" class="text-decoration-none">
+                <div class="card text-center dashboard-card">
+                    <div class="card-body">
+                        <div class="dashboard-icon">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        <h5 class="card-title">Historial de Servicios</h5>
+                        <p class="card-text">Revisa todos los servicios realizados a tus vehículos</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="{% url 'clientes:puntos_recompensas' %}" class="text-decoration-none">
+                <div class="card text-center dashboard-card">
+                    <div class="card-body">
+                        <div class="dashboard-icon">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <h5 class="card-title">Puntos y Recompensas</h5>
+                        <p class="card-text">Consulta y redime tus puntos acumulados</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Próximos turnos -->
+    <h2 class="mb-4">Próximos Turnos</h2>
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    {% if proximos_turnos %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Hora</th>
+                                    <th>Servicio</th>
+                                    <th>Vehículo</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for turno in proximos_turnos %}
+                                <tr>
+                                    <td>{{ turno.fecha|date:"d/m/Y" }}</td>
+                                    <td>{{ turno.hora_inicio|time:"H:i" }}</td>
+                                    <td>{{ turno.servicio.nombre }}</td>
+                                    <td>{{ turno.vehiculo.marca }} {{ turno.vehiculo.modelo }} ({{ turno.vehiculo.placa }})</td>
+                                    <td>
+                                        <span class="badge {% if turno.estado == 'PENDIENTE' %}bg-warning{% elif turno.estado == 'CONFIRMADA' %}bg-success{% elif turno.estado == 'EN_PROCESO' %}bg-info{% else %}bg-secondary{% endif %}">
+                                            {{ turno.get_estado_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="#" class="btn btn-sm btn-outline-primary">Ver detalles</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <p class="mb-0">No tienes turnos programados.</p>
+                        <a href="{% url 'reservas:reservar_turno' %}" class="btn btn-primary mt-3">
+                            <i class="fas fa-plus-circle me-2"></i> Reservar un turno
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mis vehículos -->
+    <h2 class="mb-4">Mis Vehículos</h2>
+    <div class="row">
+        {% if vehiculos %}
+            {% for vehiculo in vehiculos %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ vehiculo.marca }} {{ vehiculo.modelo }}</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">{{ vehiculo.placa }}</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Año:</strong> {{ vehiculo.anio }}</li>
+                            <li><strong>Color:</strong> {{ vehiculo.color }}</li>
+                            <li><strong>Tipo:</strong> {{ vehiculo.get_tipo_display }}</li>
+                        </ul>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <a href="#" class="btn btn-sm btn-outline-primary">Ver historial</a>
+                        <a href="{% url 'reservas:reservar_turno' %}" class="btn btn-sm btn-outline-success">Reservar turno</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body text-center py-4">
+                    <p class="mb-0">No tienes vehículos registrados.</p>
+                    <a href="#" class="btn btn-primary mt-3">
+                        <i class="fas fa-car me-2"></i> Registrar vehículo
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

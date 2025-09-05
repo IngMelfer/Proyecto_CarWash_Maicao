@@ -15,13 +15,13 @@
                     <a href="{% url 'autenticacion:perfil' %}" class="list-group-item list-group-item-action active">
                         <i class="fas fa-user-circle me-2"></i> Mi Perfil
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action">
-                        <i class="fas fa-calendar-alt me-2"></i> Mis Citas
+                    <a href="{% url 'reservas:mis_turnos' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-calendar-alt me-2"></i> Mis Turnos
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action">
+                    <a href="{% url 'clientes:historial_servicios' %}" class="list-group-item list-group-item-action">
                         <i class="fas fa-history me-2"></i> Historial de Servicios
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action">
+                    <a href="{% url 'clientes:puntos_recompensas' %}" class="list-group-item list-group-item-action">
                         <i class="fas fa-star me-2"></i> Puntos y Recompensas
                     </a>
                     <a href="{% url 'autenticacion:logout' %}" class="list-group-item list-group-item-action text-danger">
@@ -47,8 +47,28 @@
                         {% endfor %}
                     {% endif %}
                     
-                    <form method="post" id="perfilForm">
+                    <form method="post" id="perfilForm" enctype="multipart/form-data">
                         {% csrf_token %}
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-12 text-center">
+                                <div class="mb-3">
+                                    {% if usuario.foto_perfil %}
+                                        <img src="{{ usuario.foto_perfil.url }}" alt="Foto de perfil" class="rounded-circle img-thumbnail" style="width: 150px; height: 150px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white" style="width: 150px; height: 150px; margin: 0 auto;">
+                                            <i class="fas fa-user fa-4x"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="mb-3">
+                                    <label for="foto_perfil" class="form-label btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-camera me-1"></i> Cambiar foto
+                                    </label>
+                                    <input type="file" class="form-control d-none" id="foto_perfil" name="foto_perfil" accept="image/*">
+                                </div>
+                            </div>
+                        </div>
                         
                         <div class="row mb-4">
                             <div class="col-md-12">
@@ -59,11 +79,11 @@
                         <div class="row mb-3">
                             <div class="col-md-6 mb-3">
                                 <label for="nombre" class="form-label">Nombre</label>
-                                <input type="text" class="form-control" id="nombre" name="nombre" value="{{ form_data.nombre|default:usuario.nombre }}" required>
+                                <input type="text" class="form-control" id="nombre" name="nombre" value="{{ form_data.nombre|default:cliente.nombre }}" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="apellido" class="form-label">Apellido</label>
-                                <input type="text" class="form-control" id="apellido" name="apellido" value="{{ form_data.apellido|default:usuario.apellido }}" required>
+                                <input type="text" class="form-control" id="apellido" name="apellido" value="{{ form_data.apellido|default:cliente.apellido }}" required>
                             </div>
                         </div>
                         
@@ -75,7 +95,7 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="telefono" class="form-label">Teléfono</label>
-                                <input type="tel" class="form-control" id="telefono" name="telefono" value="{{ form_data.telefono|default:usuario.telefono }}">
+                                <input type="tel" class="form-control" id="telefono" name="telefono" value="{{ form_data.telefono|default:usuario.cliente.telefono }}">
                             </div>
                         </div>
                         
@@ -83,16 +103,16 @@
                             <div class="col-md-6 mb-3">
                                 <label for="tipo_documento" class="form-label">Tipo de Documento</label>
                                 <select class="form-select" id="tipo_documento" disabled>
-                                    <option value="CC" {% if usuario.tipo_documento == 'CC' %}selected{% endif %}>Cédula de Ciudadanía</option>
-                                    <option value="CE" {% if usuario.tipo_documento == 'CE' %}selected{% endif %}>Cédula de Extranjería</option>
-                                    <option value="TI" {% if usuario.tipo_documento == 'TI' %}selected{% endif %}>Tarjeta de Identidad</option>
-                                    <option value="PP" {% if usuario.tipo_documento == 'PP' %}selected{% endif %}>Pasaporte</option>
+                                    <option value="CC" {% if usuario.cliente.tipo_documento == 'CC' %}selected{% endif %}>Cédula de Ciudadanía</option>
+                                    <option value="CE" {% if usuario.cliente.tipo_documento == 'CE' %}selected{% endif %}>Cédula de Extranjería</option>
+                                    <option value="PA" {% if usuario.cliente.tipo_documento == 'PA' %}selected{% endif %}>Pasaporte</option>
+                                    <option value="NI" {% if usuario.cliente.tipo_documento == 'NI' %}selected{% endif %}>NIT</option>
                                 </select>
                                 <div class="form-text">El tipo de documento no se puede cambiar.</div>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="numero_documento" class="form-label">Número de Documento</label>
-                                <input type="text" class="form-control" id="numero_documento" value="{{ usuario.numero_documento }}" disabled>
+                                <input type="text" class="form-control" id="numero_documento" value="{{ usuario.cliente.numero_documento }}" disabled>
                                 <div class="form-text">El número de documento no se puede cambiar.</div>
                             </div>
                         </div>
@@ -106,11 +126,11 @@
                         <div class="row mb-3">
                             <div class="col-md-8 mb-3">
                                 <label for="direccion" class="form-label">Dirección</label>
-                                <input type="text" class="form-control" id="direccion" name="direccion" value="{{ form_data.direccion|default:usuario.direccion }}">
+                                <input type="text" class="form-control" id="direccion" name="direccion" value="{{ form_data.direccion|default:usuario.cliente.direccion }}">
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="ciudad" class="form-label">Ciudad</label>
-                                <input type="text" class="form-control" id="ciudad" name="ciudad" value="{{ form_data.ciudad|default:usuario.ciudad }}">
+                                <input type="text" class="form-control" id="ciudad" name="ciudad" value="{{ form_data.ciudad|default:usuario.cliente.ciudad }}">
                             </div>
                         </div>
                         
@@ -123,19 +143,19 @@
                         <div class="row mb-3">
                             <div class="col-md-12">
                                 <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="notificaciones_email" name="notificaciones_email" {% if form_data.notificaciones_email|default:usuario.notificaciones_email %}checked{% endif %}>
+                                    <input class="form-check-input" type="checkbox" id="notificaciones_email" name="notificaciones_email" {% if form_data.notificaciones_email|default:usuario.cliente.recibir_notificaciones %}checked{% endif %}>
                                     <label class="form-check-label" for="notificaciones_email">
                                         Recibir notificaciones por correo electrónico
                                     </label>
                                 </div>
                                 <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="notificaciones_sms" name="notificaciones_sms" {% if form_data.notificaciones_sms|default:usuario.notificaciones_sms %}checked{% endif %}>
+                                    <input class="form-check-input" type="checkbox" id="notificaciones_sms" name="notificaciones_sms" {% if form_data.notificaciones_sms|default:False %}checked{% endif %}>
                                     <label class="form-check-label" for="notificaciones_sms">
                                         Recibir notificaciones por SMS
                                     </label>
                                 </div>
                                 <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="notificaciones_whatsapp" name="notificaciones_whatsapp" {% if form_data.notificaciones_whatsapp|default:usuario.notificaciones_whatsapp %}checked{% endif %}>
+                                    <input class="form-check-input" type="checkbox" id="notificaciones_whatsapp" name="notificaciones_whatsapp" {% if form_data.notificaciones_whatsapp|default:False %}checked{% endif %}>
                                     <label class="form-check-label" for="notificaciones_whatsapp">
                                         Recibir notificaciones por WhatsApp
                                     </label>
@@ -208,6 +228,25 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Manejar cambio de foto de perfil
+        const fotoPerfilInput = document.querySelector('#foto_perfil');
+        if (fotoPerfilInput) {
+            fotoPerfilInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    // Mostrar indicador de carga
+                    const loadingIndicator = document.createElement('div');
+                    loadingIndicator.className = 'alert alert-info';
+                    loadingIndicator.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Subiendo foto...';
+                    
+                    const cardBody = document.querySelector('#perfilForm').closest('.card-body');
+                    cardBody.insertBefore(loadingIndicator, cardBody.firstChild);
+                    
+                    // Enviar el formulario automáticamente
+                    document.querySelector('#perfilForm').submit();
+                }
+            });
+        }
+        
         // Toggle password visibility functions
         function setupPasswordToggle(buttonId, inputId) {
             const toggleButton = document.querySelector('#' + buttonId);

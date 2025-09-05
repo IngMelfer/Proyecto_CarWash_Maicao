@@ -85,7 +85,49 @@ class LoginSerializer(serializers.Serializer):
 
 class UsuarioSerializer(serializers.ModelSerializer):
     """Serializer para mostrar información del usuario"""
+    # Campos del cliente
+    telefono = serializers.CharField(required=False, source='cliente.telefono')
+    direccion = serializers.CharField(required=False, source='cliente.direccion')
+    ciudad = serializers.CharField(required=False, source='cliente.ciudad')
+    tipo_documento = serializers.CharField(required=False, source='cliente.tipo_documento')
+    numero_documento = serializers.CharField(required=False, source='cliente.numero_documento')
+    notificaciones_email = serializers.BooleanField(required=False, source='cliente.recibir_notificaciones')
+    
     class Meta:
         model = Usuario
-        fields = ['id', 'email', 'first_name', 'last_name', 'is_verified']
+        fields = ['id', 'email', 'first_name', 'last_name', 'is_verified', 
+                 'telefono', 'direccion', 'ciudad', 'tipo_documento', 
+                 'numero_documento', 'notificaciones_email', 'foto_perfil']
         read_only_fields = ['id', 'email', 'is_verified']
+        
+    def update(self, instance, validated_data):
+        # Actualizar campos del usuario
+        if 'first_name' in validated_data:
+            instance.first_name = validated_data.get('first_name', instance.first_name)
+        if 'last_name' in validated_data:
+            instance.last_name = validated_data.get('last_name', instance.last_name)
+        
+        # Actualizar foto de perfil si se proporciona
+        if 'foto_perfil' in validated_data:
+            instance.foto_perfil = validated_data.get('foto_perfil')
+        
+        # Actualizar campos del cliente
+        cliente_data = validated_data.get('cliente', {})
+        if cliente_data and hasattr(instance, 'cliente'):
+            cliente = instance.cliente
+            if 'telefono' in cliente_data:
+                cliente.telefono = cliente_data.get('telefono', cliente.telefono)
+            if 'direccion' in cliente_data:
+                cliente.direccion = cliente_data.get('direccion', cliente.direccion)
+            if 'ciudad' in cliente_data:
+                cliente.ciudad = cliente_data.get('ciudad', cliente.ciudad)
+            if 'tipo_documento' in cliente_data:
+                cliente.tipo_documento = cliente_data.get('tipo_documento', cliente.tipo_documento)
+            if 'numero_documento' in cliente_data:
+                cliente.numero_documento = cliente_data.get('numero_documento', cliente.numero_documento)
+            if 'recibir_notificaciones' in cliente_data:
+                cliente.recibir_notificaciones = cliente_data.get('recibir_notificaciones', cliente.recibir_notificaciones)
+            cliente.save()
+        
+        instance.save()
+        return instance

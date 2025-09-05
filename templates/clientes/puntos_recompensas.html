@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+
+{% block title %}Puntos y Recompensas - Premium Car Detailing{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <!-- Menú lateral -->
+        <div class="col-md-3 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Mi Cuenta</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'autenticacion:perfil' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-user-circle me-2"></i> Mi Perfil
+                    </a>
+                    <a href="{% url 'reservas:mis_turnos' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-calendar-alt me-2"></i> Mis Turnos
+                    </a>
+                    <a href="{% url 'clientes:historial_servicios' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-history me-2"></i> Historial de Servicios
+                    </a>
+                    <a href="{% url 'clientes:puntos_recompensas' %}" class="list-group-item list-group-item-action active">
+                        <i class="fas fa-star me-2"></i> Puntos y Recompensas
+                    </a>
+                    <a href="{% url 'autenticacion:logout' %}" class="list-group-item list-group-item-action text-danger">
+                        <i class="fas fa-sign-out-alt me-2"></i> Cerrar Sesión
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contenido principal -->
+        <div class="col-md-9">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h4 class="mb-0">Mis Puntos</h4>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <div class="display-4 me-3">{{ cliente.saldo_puntos }}</div>
+                                <div>
+                                    <h5>Puntos disponibles</h5>
+                                    <p class="text-muted mb-0">Acumulados en tus servicios</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#redimirPuntosModal">
+                                <i class="fas fa-exchange-alt me-2"></i> Redimir Puntos
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h4 class="mb-0">Historial de Puntos</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Servicio</th>
+                                    <th>Puntos</th>
+                                    <th>Tipo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in historial %}
+                                <tr>
+                                    <td>{{ item.fecha_servicio|date:"d/m/Y" }}</td>
+                                    <td>{{ item.servicio }}</td>
+                                    <td>
+                                        {% if item.puntos_ganados > 0 %}
+                                            <span class="text-success">+{{ item.puntos_ganados }}</span>
+                                        {% else %}
+                                            <span class="text-danger">{{ item.puntos_ganados }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.puntos_ganados > 0 %}
+                                            <span class="badge bg-success">Acumulación</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Redención</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No hay registros de puntos</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white">
+                    <h4 class="mb-0">Programa de Recompensas</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">Descuento en Servicios</h5>
+                                    <p class="card-text">Redime 100 puntos por un descuento del 10% en tu próximo servicio.</p>
+                                    <p class="text-muted">Válido para cualquier servicio de lavado o detailing.</p>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <span class="badge bg-primary">100 puntos</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">Lavado Básico Gratis</h5>
+                                    <p class="card-text">Redime 200 puntos por un lavado básico completamente gratis.</p>
+                                    <p class="text-muted">Incluye lavado exterior y aspirado interior.</p>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <span class="badge bg-primary">200 puntos</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">Detailing Interior</h5>
+                                    <p class="card-text">Redime 350 puntos por un servicio de detailing interior.</p>
+                                    <p class="text-muted">Incluye limpieza profunda de tapicería y superficies.</p>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <span class="badge bg-primary">350 puntos</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">Lavado Premium</h5>
+                                    <p class="card-text">Redime 500 puntos por un lavado premium completo.</p>
+                                    <p class="text-muted">Incluye lavado exterior, interior, encerado y protección.</p>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <span class="badge bg-primary">500 puntos</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para redimir puntos -->
+<div class="modal fade" id="redimirPuntosModal" tabindex="-1" aria-labelledby="redimirPuntosModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="redimirPuntosModalLabel">Redimir Puntos</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="redimirPuntosForm" method="post" action="#">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="recompensaSelect" class="form-label">Selecciona una recompensa</label>
+                        <select class="form-select" id="recompensaSelect" name="recompensa" required>
+                            <option value="" selected disabled>Selecciona una opción</option>
+                            <option value="descuento_10" data-puntos="100">Descuento 10% (100 puntos)</option>
+                            <option value="lavado_basico" data-puntos="200">Lavado Básico Gratis (200 puntos)</option>
+                            <option value="detailing_interior" data-puntos="350">Detailing Interior (350 puntos)</option>
+                            <option value="lavado_premium" data-puntos="500">Lavado Premium (500 puntos)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="puntosRedimir" class="form-label">Puntos a redimir</label>
+                        <input type="number" class="form-control" id="puntosRedimir" name="puntos" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="puntosDisponibles" class="form-label">Puntos disponibles</label>
+                        <input type="text" class="form-control" id="puntosDisponibles" value="{{ cliente.saldo_puntos }}" readonly>
+                    </div>
+                    <div class="alert alert-warning" id="alertaPuntos" style="display: none;">
+                        No tienes suficientes puntos para esta recompensa.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" form="redimirPuntosForm" class="btn btn-primary" id="btnRedimir">Redimir</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const recompensaSelect = document.getElementById('recompensaSelect');
+        const puntosRedimir = document.getElementById('puntosRedimir');
+        const puntosDisponibles = document.getElementById('puntosDisponibles');
+        const alertaPuntos = document.getElementById('alertaPuntos');
+        const btnRedimir = document.getElementById('btnRedimir');
+        
+        recompensaSelect.addEventListener('change', function() {
+            const selectedOption = recompensaSelect.options[recompensaSelect.selectedIndex];
+            const puntos = selectedOption.dataset.puntos;
+            puntosRedimir.value = puntos;
+            
+            // Verificar si tiene suficientes puntos
+            if (parseInt(puntos) > parseInt(puntosDisponibles.value)) {
+                alertaPuntos.style.display = 'block';
+                btnRedimir.disabled = true;
+            } else {
+                alertaPuntos.style.display = 'none';
+                btnRedimir.disabled = false;
+            }
+        });
+    });
+</script>
+{% endblock %}

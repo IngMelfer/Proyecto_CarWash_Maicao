@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Reservar Cita - Premium Car Detailing{% endblock %}
+{% block title %}Reservar Turno - Premium Car Detailing{% endblock %}
 
 {% block content %}
 <div class="container py-5">
@@ -15,13 +15,13 @@
                     <a href="{% url 'autenticacion:perfil' %}" class="list-group-item list-group-item-action">
                         <i class="fas fa-user-circle me-2"></i> Mi Perfil
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action active">
-                        <i class="fas fa-calendar-alt me-2"></i> Mis Citas
+                    <a href="{% url 'reservas:mis_turnos' %}" class="list-group-item list-group-item-action active">
+                        <i class="fas fa-calendar-alt me-2"></i> Mis Turnos
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action">
+                    <a href="{% url 'clientes:historial_servicios' %}" class="list-group-item list-group-item-action">
                         <i class="fas fa-history me-2"></i> Historial de Servicios
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action">
+                    <a href="{% url 'clientes:puntos_recompensas' %}" class="list-group-item list-group-item-action">
                         <i class="fas fa-star me-2"></i> Puntos y Recompensas
                     </a>
                     <a href="{% url 'autenticacion:logout' %}" class="list-group-item list-group-item-action text-danger">
@@ -35,7 +35,7 @@
         <div class="col-md-9">
             <div class="card shadow">
                 <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">Reservar Cita</h4>
+                    <h4 class="mb-0">Reservar Turno</h4>
                 </div>
                 <div class="card-body">
                     {% if messages %}
@@ -60,7 +60,7 @@
                                     <div class="card h-100 service-card" data-service-id="{{ servicio.id }}">
                                         <div class="card-body">
                                             <h5 class="card-title">{{ servicio.nombre }}</h5>
-                                            <p class="card-text">{{ servicio.descripcion_corta }}</p>
+                                            <p class="card-text">{{ servicio.descripcion }}</p>
                                             <p class="card-text"><strong>Duración:</strong> {{ servicio.duracion_minutos }} minutos</p>
                                             <p class="card-text"><strong>Precio:</strong> ${{ servicio.precio }}</p>
                                         </div>
@@ -457,7 +457,7 @@
             
             // Redirigir después de 2 segundos
             setTimeout(() => {
-                window.location.href = '/reservas/mis-citas/';
+                window.location.href = '/reservas/mis-turnos/';
             }, 2000);
         });
         

@@ -208,7 +208,10 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 # Configuración de correo electrónico
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Para desarrollo
+# Para desarrollo, usar el backend de archivo que guarda los correos en un archivo
+EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')  # Directorio donde se guardarán los correos
+
 # En producción usar SMTP:
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 # EMAIL_HOST = os.environ.get('EMAIL_HOST')
@@ -216,6 +219,10 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Para desarro
 # EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 # EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 # EMAIL_USE_TLS = True
+
+# URL del sitio para enlaces en correos electrónicos
+SITE_URL = 'http://localhost:8000' if DEBUG else os.environ.get('SITE_URL', 'https://autolavados.railway.app')
+DEFAULT_FROM_EMAIL = 'noreply@premiumcardetailing.com'
 
 # Configuración para Railway.com
 if os.environ.get('RAILWAY_ENVIRONMENT') == 'production':

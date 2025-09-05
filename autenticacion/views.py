@@ -440,7 +440,8 @@ class PerfilUsuarioView(View):
             return redirect('autenticacion:login')
         
         return render(request, 'autenticacion/perfil.html', {
-            'usuario': request.user
+            'usuario': request.user,
+            'cliente': request.user.cliente
         })
     
     def post(self, request):
@@ -448,17 +449,55 @@ class PerfilUsuarioView(View):
             return redirect('autenticacion:login')
         
         # Crear un diccionario con los datos del formulario
-        data = {
-            'telefono': request.POST.get('telefono'),
-            'nombre': request.POST.get('nombre'),
-            'apellido': request.POST.get('apellido'),
-            'direccion': request.POST.get('direccion'),
-            'ciudad': request.POST.get('ciudad'),
-            'notificaciones_email': request.POST.get('notificaciones_email') == 'on',
-            'notificaciones_sms': request.POST.get('notificaciones_sms') == 'on',
-            'notificaciones_whatsapp': request.POST.get('notificaciones_whatsapp') == 'on',
-        }
+        data = {}
         
+        # Solo incluir campos que no sean nulos
+        if request.POST.get('telefono'):
+            data['telefono'] = request.POST.get('telefono')
+        if request.POST.get('direccion'):
+            data['direccion'] = request.POST.get('direccion')
+        if request.POST.get('ciudad'):
+            data['ciudad'] = request.POST.get('ciudad')
+        if request.POST.get('tipo_documento'):
+            data['tipo_documento'] = request.POST.get('tipo_documento')
+        if request.POST.get('numero_documento'):
+            data['numero_documento'] = request.POST.get('numero_documento')
+        if request.POST.get('notificaciones_email'):
+            data['notificaciones_email'] = request.POST.get('notificaciones_email') == 'on'
+        
+        # Manejar la foto de perfil si se proporciona
+        if 'foto_perfil' in request.FILES and request.FILES['foto_perfil']:
+            data['foto_perfil'] = request.FILES['foto_perfil']
+            print(f"Foto de perfil recibida: {request.FILES['foto_perfil']}")
+        else:
+            print("No se recibió foto de perfil")
+        
+        # Actualizar los campos del cliente directamente
+        cliente = request.user.cliente
+        
+        # Solo actualizar campos que no sean nulos
+        if request.POST.get('nombre'):
+            cliente.nombre = request.POST.get('nombre')
+        if request.POST.get('apellido'):
+            cliente.apellido = request.POST.get('apellido')
+        if request.POST.get('telefono'):
+            cliente.telefono = request.POST.get('telefono')
+        if request.POST.get('direccion'):
+            cliente.direccion = request.POST.get('direccion')
+        if request.POST.get('ciudad'):
+            cliente.ciudad = request.POST.get('ciudad')
+        if request.POST.get('tipo_documento'):
+            cliente.tipo_documento = request.POST.get('tipo_documento')
+        if request.POST.get('numero_documento'):
+            cliente.numero_documento = request.POST.get('numero_documento')
+        if 'notificaciones_email' in request.POST:
+            cliente.recibir_notificaciones = request.POST.get('notificaciones_email') == 'on'
+        
+        # Solo guardar si se está actualizando más que solo la foto
+        if any([request.POST.get(field) for field in ['nombre', 'apellido', 'telefono', 'direccion', 'ciudad', 'tipo_documento', 'numero_documento', 'notificaciones_email']]):
+            cliente.save()
+        
+        # Actualizar el usuario con el serializador para manejar la foto de perfil
         serializer = UsuarioSerializer(request.user, data=data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -471,6 +510,7 @@ class PerfilUsuarioView(View):
                     messages.error(request, f'{field}: {error}')
             return render(request, 'autenticacion/perfil.html', {
                 'usuario': request.user,
+                'cliente': request.user.cliente,
                 'form_data': data
             })
 
@@ -489,3 +529,40 @@ class PerfilUsuarioAPIView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class CambiarPasswordView(View):
+    """Vista para cambiar la contraseña del usuario"""
+    
+    def post(self, request):
+        if not request.user.is_authenticated:
+            return redirect('autenticacion:login')
+        
+        current_password = request.POST.get('current_password')
+        new_password = request.POST.get('new_password')
+        new_password_confirm = request.POST.get('new_password_confirm')
+        
+        # Validar que la contraseña actual sea correcta
+        if not request.user.check_password(current_password):
+            messages.error(request, 'La contraseña actual es incorrecta')
+            return redirect('autenticacion:perfil')
+        
+        # Validar que las nuevas contraseñas coincidan
+        if new_password != new_password_confirm:
+            messages.error(request, 'Las nuevas contraseñas no coinciden')
+            return redirect('autenticacion:perfil')
+        
+        # Validar que la nueva contraseña cumpla con los requisitos
+        if len(new_password) < 8:
+            messages.error(request, 'La nueva contraseña debe tener al menos 8 caracteres')
+            return redirect('autenticacion:perfil')
+        
+        # Cambiar la contraseña
+        request.user.set_password(new_password)
+        request.user.save()
+        
+        # Actualizar la sesión para que el usuario no tenga que iniciar sesión nuevamente
+        update_session_auth_hash(request, request.user)
+        
+        messages.success(request, 'Contraseña cambiada exitosamente')
+        return redirect('autenticacion:perfil')

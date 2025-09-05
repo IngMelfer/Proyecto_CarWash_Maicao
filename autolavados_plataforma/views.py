@@ -4,12 +4,15 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 
-# Reemplazar la vista basada en clase por una vista basada en función
-from django.contrib.auth.decorators import login_required
-
 @login_required(login_url='/autenticacion/login/')
 def home_view(request):
     """Vista para la página principal"""
+    
+    # Si el usuario es un cliente, redirigir al dashboard
+    if hasattr(request.user, 'cliente'):
+        return redirect('clientes:dashboard')
+    
+    # Si es administrador u otro tipo de usuario, mostrar la vista normal
     context = {
         'title': 'Plataforma de Autolavados',
         'api_endpoints': [

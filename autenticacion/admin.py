@@ -17,7 +17,7 @@ class UsuarioAdmin(UserAdmin):
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         (_('Información Personal'), {'fields': ('first_name', 'last_name')}),
-        (_('Verificación'), {'fields': ('is_verified', 'verification_token', 'token_created_at')}),
+        (_('Verificación'), {'fields': ('is_verified',)}),
         (_('Permisos'), {
             'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
         }),

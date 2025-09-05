@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}Historial de Servicios - Premium Car Detailing{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <!-- Menú lateral -->
+        <div class="col-md-3 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">Mi Cuenta</h5>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'autenticacion:perfil' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-user-circle me-2"></i> Mi Perfil
+                    </a>
+                    <a href="{% url 'reservas:mis_turnos' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-calendar-alt me-2"></i> Mis Turnos
+                    </a>
+                    <a href="{% url 'clientes:historial_servicios' %}" class="list-group-item list-group-item-action active">
+                        <i class="fas fa-history me-2"></i> Historial de Servicios
+                    </a>
+                    <a href="{% url 'clientes:puntos_recompensas' %}" class="list-group-item list-group-item-action">
+                        <i class="fas fa-star me-2"></i> Puntos y Recompensas
+                    </a>
+                    <a href="{% url 'autenticacion:logout' %}" class="list-group-item list-group-item-action text-danger">
+                        <i class="fas fa-sign-out-alt me-2"></i> Cerrar Sesión
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contenido principal -->
+        <div class="col-md-9">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Mi Historial de Servicios</h4>
+                    <span class="badge bg-primary">{{ historial.count }} servicios</span>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    {% if historial %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Servicio</th>
+                                        <th>Monto</th>
+                                        <th>Puntos</th>
+                                        <th>Detalles</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for servicio in historial %}
+                                        <tr>
+                                            <td>{{ servicio.fecha_servicio|date:"d/m/Y H:i" }}</td>
+                                            <td>{{ servicio.servicio }}</td>
+                                            <td>${{ servicio.monto }}</td>
+                                            <td>
+                                                <span class="badge bg-success">+{{ servicio.puntos_ganados }}</span>
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#detalleServicio{{ servicio.id }}">
+                                                    <i class="fas fa-info-circle"></i> Ver
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- Modal de detalles -->
+                                        <div class="modal fade" id="detalleServicio{{ servicio.id }}" tabindex="-1" aria-labelledby="detalleServicioLabel{{ servicio.id }}" aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header bg-dark text-white">
+                                                        <h5 class="modal-title" id="detalleServicioLabel{{ servicio.id }}">Detalles del Servicio</h5>
+                                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <h5 class="mb-3">{{ servicio.servicio }}</h5>
+                                                        <p><strong>Fecha:</strong> {{ servicio.fecha_servicio|date:"d/m/Y H:i" }}</p>
+                                                        <p><strong>Monto:</strong> ${{ servicio.monto }}</p>
+                                                        <p><strong>Puntos ganados:</strong> {{ servicio.puntos_ganados }}</p>
+                                                        
+                                                        {% if servicio.descripcion %}
+                                                            <div class="mb-3">
+                                                                <h6>Descripción:</h6>
+                                                                <p class="text-muted">{{ servicio.descripcion }}</p>
+                                                            </div>
+                                                        {% endif %}
+                                                        
+                                                        {% if servicio.comentarios %}
+                                                            <div class="mb-3">
+                                                                <h6>Comentarios:</h6>
+                                                                <p class="text-muted">{{ servicio.comentarios }}</p>
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i> No tienes servicios registrados en tu historial.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Sección de puntos acumulados -->
+            <div class="card shadow mt-4">
+                <div class="card-header bg-dark text-white">
+                    <h4 class="mb-0">Mis Puntos</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h5>Puntos Disponibles</h5>
+                            <div class="d-flex align-items-center">
+                                <div class="display-4 me-3">{{ cliente.saldo_puntos }}</div>
+                                <div>
+                                    <p class="mb-0 text-muted">Puntos acumulados</p>
+                                    <a href="#" class="btn btn-sm btn-primary mt-2">
+                                        <i class="fas fa-gift me-1"></i> Canjear Puntos
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">¿Cómo funcionan los puntos?</h5>
+                                    <p class="card-text">Por cada servicio completado, acumulas puntos que puedes canjear por descuentos en futuros servicios.</p>
+                                    <ul class="mb-0">
+                                        <li>Lavado Básico: 10 puntos</li>
+                                        <li>Lavado Premium: 20 puntos</li>
+                                        <li>Detallado Completo: 50 puntos</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

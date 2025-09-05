@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Mis Citas - Premium Car Detailing{% endblock %}
+{% block title %}Mis Turnos - Premium Car Detailing{% endblock %}
 
 {% block content %}
 <div class="container py-5">
@@ -16,12 +16,12 @@
                         <i class="fas fa-user-circle me-2"></i> Mi Perfil
                     </a>
                     <a href="#" class="list-group-item list-group-item-action active">
-                        <i class="fas fa-calendar-alt me-2"></i> Mis Citas
+                        <i class="fas fa-calendar-alt me-2"></i> Mis Turnos
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action">
+                    <a href="{% url 'clientes:historial_servicios' %}" class="list-group-item list-group-item-action">
                         <i class="fas fa-history me-2"></i> Historial de Servicios
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action">
+                    <a href="{% url 'clientes:puntos_recompensas' %}" class="list-group-item list-group-item-action">
                         <i class="fas fa-star me-2"></i> Puntos y Recompensas
                     </a>
                     <a href="{% url 'autenticacion:logout' %}" class="list-group-item list-group-item-action text-danger">
@@ -35,9 +35,9 @@
         <div class="col-md-9">
             <div class="card shadow">
                 <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">Mis Citas</h4>
-                    <a href="{% url 'reservas:reservar_cita' %}" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus me-1"></i> Nueva Cita
+                    <h4 class="mb-0">Mis Turnos</h4>
+                    <a href="{% url 'reservas:reservar_turno' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus me-1"></i> Nuevo Turno
                     </a>
                 </div>
                 <div class="card-body">
@@ -50,8 +50,8 @@
                         {% endfor %}
                     {% endif %}
                     
-                    <!-- Pestañas para filtrar citas -->
-                    <ul class="nav nav-tabs mb-4" id="citasTabs" role="tablist">
+                    <!-- Pestañas para filtrar turnos -->
+                    <ul class="nav nav-tabs mb-4" id="turnosTabs" role="tablist">
                         <li class="nav-item" role="presentation">
                             <button class="nav-link active" id="proximas-tab" data-bs-toggle="tab" data-bs-target="#proximas" type="button" role="tab" aria-controls="proximas" aria-selected="true">
                                 Próximas
@@ -70,12 +70,12 @@
                     </ul>
                     
                     <!-- Contenido de las pestañas -->
-                    <div class="tab-content" id="citasTabsContent">
-                        <!-- Citas Próximas -->
+                    <div class="tab-content" id="turnosTabsContent">
+                        <!-- Turnos Próximos -->
                         <div class="tab-pane fade show active" id="proximas" role="tabpanel" aria-labelledby="proximas-tab">
-                            {% if citas_proximas %}
+                            {% if proximas %}
                                 <div class="row row-cols-1 row-cols-md-2 g-4">
-                                    {% for cita in citas_proximas %}
+                                    {% for cita in proximas %}
                                         <div class="col">
                                             <div class="card h-100 border-primary">
                                                 <div class="card-header bg-primary bg-opacity-10 d-flex justify-content-between align-items-center">
@@ -118,7 +118,7 @@
                                             <div class="modal-dialog">
                                                 <div class="modal-content">
                                                     <div class="modal-header">
-                                                        <h5 class="modal-title" id="detalleModalLabel{{ cita.id }}">Detalles de la Cita</h5>
+                                                        <h5 class="modal-title" id="detalleModalLabel{{ cita.id }}">Detalles del Turno</h5>
                                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                     </div>
                                                     <div class="modal-body">
@@ -161,11 +161,11 @@
                                             <div class="modal-dialog">
                                                 <div class="modal-content">
                                                     <div class="modal-header">
-                                                        <h5 class="modal-title" id="cancelarModalLabel{{ cita.id }}">Cancelar Cita</h5>
+                                                        <h5 class="modal-title" id="cancelarModalLabel{{ cita.id }}">Cancelar Turno</h5>
                                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                     </div>
                                                     <div class="modal-body">
-                                                        <p>¿Estás seguro de que deseas cancelar esta cita?</p>
+                                                        <p>¿Estás seguro de que deseas cancelar este turno?</p>
                                                         <p><strong>Servicio:</strong> {{ cita.servicio.nombre }}</p>
                                                         <p><strong>Fecha:</strong> {{ cita.fecha|date:"l, j \d\e F \d\e Y" }}</p>
                                                         <p><strong>Hora:</strong> {{ cita.hora_inicio|time:"H:i" }}</p>
@@ -175,7 +175,7 @@
                                                             <strong>Nota:</strong> Las cancelaciones con menos de 24 horas de anticipación pueden estar sujetas a un cargo del 30% del valor del servicio.
                                                         </div>
                                                         
-                                                        <form method="post" action="{% url 'reservas:cancelar_cita' cita.id %}">
+                                                        <form method="post" action="{% url 'reservas:cancelar_turno' cita.id %}">
                                                             {% csrf_token %}
                                                             <div class="mb-3">
                                                                 <label for="motivo_cancelacion{{ cita.id }}" class="form-label">Motivo de cancelación</label>
@@ -194,17 +194,17 @@
                             {% else %}
                                 <div class="alert alert-info">
                                     <i class="fas fa-info-circle me-2"></i>
-                                    No tienes citas próximas programadas.
-                                    <a href="{% url 'reservas:reservar_cita' %}" class="alert-link">¡Reserva una ahora!</a>
+                                    No tienes turnos próximos programados.
+                                    <a href="{% url 'reservas:reservar_turno' %}" class="alert-link">¡Reserva uno ahora!</a>
                                 </div>
                             {% endif %}
                         </div>
                         
-                        <!-- Citas Pasadas -->
+                        <!-- Turnos Pasados -->
                         <div class="tab-pane fade" id="pasadas" role="tabpanel" aria-labelledby="pasadas-tab">
-                            {% if citas_pasadas %}
+                            {% if pasadas %}
                                 <div class="row row-cols-1 row-cols-md-2 g-4">
-                                    {% for cita in citas_pasadas %}
+                                    {% for cita in pasadas %}
                                         <div class="col">
                                             <div class="card h-100">
                                                 <div class="card-header bg-light d-flex justify-content-between align-items-center">
@@ -235,7 +235,7 @@
                                                             <i class="fas fa-eye me-1"></i> Ver Detalles
                                                         </button>
                                                         {% if not cita.calificacion %}
-                                                            <a href="{% url 'reservas:calificar_cita' cita.id %}" class="btn btn-outline-primary btn-sm">
+                                                            <a href="{% url 'reservas:calificar_turno' cita.id %}" class="btn btn-outline-primary btn-sm">
                                                                 <i class="fas fa-star me-1"></i> Calificar
                                                             </a>
                                                         {% else %}
@@ -324,7 +324,7 @@
                                                         <div class="modal-body">
                                                             <p>Tu opinión es importante para nosotros. Por favor, califica el servicio recibido:</p>
                                                             
-                                                            <form method="post" action="{% url 'reservas:calificar_cita' cita.id %}">
+                                                            <form method="post" action="{% url 'reservas:calificar_turno' cita.id %}">
                                                                 {% csrf_token %}
                                                                 <div class="mb-3">
                                                                     <label class="form-label">Calificación</label>
@@ -362,16 +362,16 @@
                             {% else %}
                                 <div class="alert alert-info">
                                     <i class="fas fa-info-circle me-2"></i>
-                                    No tienes citas pasadas.
+                                    No tienes turnos pasados.
                                 </div>
                             {% endif %}
                         </div>
                         
-                        <!-- Citas Canceladas -->
+                        <!-- Turnos Cancelados -->
                         <div class="tab-pane fade" id="canceladas" role="tabpanel" aria-labelledby="canceladas-tab">
-                            {% if citas_canceladas %}
+                            {% if canceladas %}
                                 <div class="row row-cols-1 row-cols-md-2 g-4">
-                                    {% for cita in citas_canceladas %}
+                                    {% for cita in canceladas %}
                                         <div class="col">
                                             <div class="card h-100 border-danger border-opacity-25">
                                                 <div class="card-header bg-danger bg-opacity-10 d-flex justify-content-between align-items-center">
@@ -399,7 +399,7 @@
                                                 <div class="card-footer bg-transparent">
                                                     <div class="d-flex justify-content-between">
                                                         <small class="text-muted">Cancelada el {{ cita.fecha_cancelacion|date:"j/m/Y" }}</small>
-                                                        <a href="{% url 'reservas:reservar_cita' %}" class="btn btn-outline-primary btn-sm">
+                                                        <a href="{% url 'reservas:reservar_turno' %}" class="btn btn-outline-primary btn-sm">
                                                             <i class="fas fa-redo me-1"></i> Reservar de nuevo
                                                         </a>
                                                     </div>
@@ -411,7 +411,7 @@
                             {% else %}
                                 <div class="alert alert-info">
                                     <i class="fas fa-info-circle me-2"></i>
-                                    No tienes citas canceladas.
+                                    No tienes turnos cancelados.
                                 </div>
                             {% endif %}
                         </div>

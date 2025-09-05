@@ -1,9 +1,11 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from rest_framework import status, viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.views import APIView
+from django.views import View
+from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import Cliente, HistorialServicio
 from .serializers import ClienteSerializer, HistorialServicioSerializer
 from notificaciones.models import Notificacion
@@ -127,3 +129,87 @@ class HistorialServicioViewSet(viewsets.ReadOnlyModelViewSet):
             return HistorialServicio.objects.filter(cliente=cliente)
         except Cliente.DoesNotExist:
             return HistorialServicio.objects.none()
+
+
+class HistorialServiciosView(LoginRequiredMixin, View):
+    """Vista para mostrar el historial de servicios del cliente"""
+    login_url = '/autenticacion/login/'
+    
+    def get(self, request):
+        if not hasattr(request.user, 'cliente'):
+            return redirect('home')
+        
+        # Obtener el historial de servicios del cliente
+        historial = HistorialServicio.objects.filter(cliente=request.user.cliente).order_by('-fecha_servicio')
+        
+        return render(request, 'clientes/historial_servicios.html', {
+            'historial': historial,
+            'cliente': request.user.cliente
+        })
+
+
+class PuntosRecompensasView(LoginRequiredMixin, View):
+    """Vista para mostrar los puntos y recompensas del cliente"""
+    login_url = '/autenticacion/login/'
+    
+    def get(self, request):
+        if not hasattr(request.user, 'cliente'):
+            return redirect('home')
+        
+        # Obtener el cliente y su historial de servicios
+        cliente = request.user.cliente
+        historial = HistorialServicio.objects.filter(cliente=cliente).order_by('-fecha_servicio')
+        
+        return render(request, 'clientes/puntos_recompensas.html', {
+            'cliente': cliente,
+            'historial': historial
+        })
+
+
+class DashboardClienteView(LoginRequiredMixin, View):
+    """Vista para mostrar el dashboard personalizado del cliente"""
+    login_url = '/autenticacion/login/'
+    
+    def get(self, request):
+        if not hasattr(request.user, 'cliente'):
+            return redirect('home')
+        
+        # Obtener el cliente
+        cliente = request.user.cliente
+        
+        # Obtener estadísticas del cliente
+        from reservas.models import Reserva, Vehiculo
+        
+        # Turnos pendientes
+        turnos_pendientes = Reserva.objects.filter(
+            cliente=cliente,
+            estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA]
+        ).count()
+        
+        # Servicios completados
+        servicios_completados = HistorialServicio.objects.filter(cliente=cliente).count()
+        
+        # Puntos disponibles
+        puntos_disponibles = cliente.saldo_puntos
+        
+        # Vehículos registrados
+        vehiculos_registrados = Vehiculo.objects.filter(cliente=cliente).count()
+        
+        # Próximos turnos
+        proximos_turnos = Reserva.objects.filter(
+            cliente=cliente,
+            estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA]
+        ).order_by('fecha_hora')[:5]
+        
+        # Vehículos del cliente
+        vehiculos = Vehiculo.objects.filter(cliente=cliente)
+        
+        return render(request, 'clientes/dashboard.html', {
+            'cliente': cliente,
+            'turnos_pendientes': turnos_pendientes,
+            'servicios_completados': servicios_completados,
+            'puntos_disponibles': puntos_disponibles,
+            'vehiculos_registrados': vehiculos_registrados,
+            'proximos_turnos': proximos_turnos,
+            'vehiculos': vehiculos
+        })

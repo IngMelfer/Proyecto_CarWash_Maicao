@@ -30,8 +30,10 @@ urlpatterns = [
     # Rutas para vistas basadas en plantillas con namespace
     path('reservas/', include(('reservas.urls', 'reservas'), namespace='reservas')),
     path('autenticacion/', include(('autenticacion.urls', 'autenticacion'), namespace='autenticacion')),
+    path('clientes/', include(('clientes.urls', 'clientes'), namespace='clientes')),
 ]
 
-# Servir archivos estáticos en desarrollo
+# Servir archivos estáticos y medios en desarrollo
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

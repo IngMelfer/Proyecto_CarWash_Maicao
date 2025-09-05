@@ -8,4 +8,7 @@ router.register(r'historial', views.HistorialServicioViewSet, basename='historia
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('historial-servicios/', views.HistorialServiciosView.as_view(), name='historial_servicios'),
+    path('puntos-recompensas/', views.PuntosRecompensasView.as_view(), name='puntos_recompensas'),
+    path('dashboard/', views.DashboardClienteView.as_view(), name='dashboard'),
 ]

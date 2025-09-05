@@ -20,8 +20,8 @@ from datetime import datetime, timedelta
 # Create your views here.
 
 # Vistas basadas en clases para plantillas HTML
-class ReservarCitaView(LoginRequiredMixin, TemplateView):
-    template_name = 'reservas/reservar_cita.html'
+class ReservarTurnoView(LoginRequiredMixin, TemplateView):
+    template_name = 'reservas/reservar_turno.html'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -41,7 +41,7 @@ class ReservarCitaView(LoginRequiredMixin, TemplateView):
             # Validar datos
             if not all([servicio_id, fecha_str, hora_str, vehiculo_id]):
                 messages.error(request, 'Por favor complete todos los campos requeridos.')
-                return redirect('reservar_cita')
+                return redirect('reservas:reservar_turno')
             
             # Obtener objetos
             servicio = get_object_or_404(Servicio, id=servicio_id)
@@ -54,7 +54,7 @@ class ReservarCitaView(LoginRequiredMixin, TemplateView):
             # Verificar que la fecha no sea en el pasado
             if fecha_hora < timezone.now():
                 messages.error(request, 'No se pueden hacer reservas para fechas pasadas.')
-                return redirect('reservar_cita')
+                return redirect('reservas:reservar_turno')
             
             # Verificar disponibilidad
             horario = HorarioDisponible.objects.filter(
@@ -66,7 +66,7 @@ class ReservarCitaView(LoginRequiredMixin, TemplateView):
             
             if not horario or horario.esta_lleno:
                 messages.error(request, 'El horario seleccionado no está disponible.')
-                return redirect('reservar_cita')
+                return redirect('reservas:reservar_turno')
             
             # Crear la reserva
             reserva = Reserva.objects.create(
@@ -89,15 +89,15 @@ class ReservarCitaView(LoginRequiredMixin, TemplateView):
             )
             
             messages.success(request, 'Reserva creada exitosamente. Recibirás una confirmación pronto.')
-            return redirect('mis_citas')
+            return redirect('reservas:mis_turnos')
             
         except Exception as e:
             messages.error(request, f'Error al crear la reserva: {str(e)}')
-            return redirect('reservar_cita')
+            return redirect('reservas:reservar_turno')
 
 
-class MisCitasView(LoginRequiredMixin, TemplateView):
-    template_name = 'reservas/mis_citas.html'
+class MisTurnosView(LoginRequiredMixin, TemplateView):
+    template_name = 'reservas/mis_turnos.html'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -127,15 +127,15 @@ class MisCitasView(LoginRequiredMixin, TemplateView):
         return context
 
 
-class CancelarCitaView(LoginRequiredMixin, View):
-    def post(self, request, cita_id, *args, **kwargs):
-        reserva = get_object_or_404(Reserva, id=cita_id, cliente=request.user.cliente)
+class CancelarTurnoView(LoginRequiredMixin, View):
+    def post(self, request, turno_id, *args, **kwargs):
+        reserva = get_object_or_404(Reserva, id=turno_id, cliente=request.user.cliente)
         motivo = request.POST.get('motivo', '')
         
         # Verificar si la reserva puede ser cancelada
         if reserva.estado in [Reserva.EN_PROCESO, Reserva.COMPLETADA]:
             messages.error(request, 'No se puede cancelar una reserva en proceso o completada.')
-            return redirect('mis_citas')
+            return redirect('mis_turnos')
         
         # Verificar si la cancelación es con menos de 24 horas de anticipación
         horas_anticipacion = (reserva.fecha_hora - timezone.now()).total_seconds() / 3600
@@ -172,29 +172,29 @@ class CancelarCitaView(LoginRequiredMixin, View):
         if cargo_cancelacion:
             messages.warning(request, 'Se ha aplicado un cargo por cancelación tardía.')
             
-        return redirect('mis_citas')
+        return redirect('mis_turnos')
 
 
-class CalificarCitaView(LoginRequiredMixin, View):
-    template_name = 'reservas/calificar_cita.html'
+class CalificarTurnoView(LoginRequiredMixin, View):
+    template_name = 'reservas/calificar_turno.html'
     
-    def get(self, request, cita_id, *args, **kwargs):
-        reserva = get_object_or_404(Reserva, id=cita_id, cliente=request.user.cliente)
+    def get(self, request, turno_id, *args, **kwargs):
+        reserva = get_object_or_404(Reserva, id=turno_id, cliente=request.user.cliente)
         
         # Verificar si la reserva puede ser calificada
         if reserva.estado != Reserva.COMPLETADA:
             messages.error(request, 'Solo se pueden calificar servicios completados.')
-            return redirect('mis_citas')
+            return redirect('mis_turnos')
         
         return render(request, self.template_name, {'reserva': reserva})
     
-    def post(self, request, cita_id, *args, **kwargs):
-        reserva = get_object_or_404(Reserva, id=cita_id, cliente=request.user.cliente)
+    def post(self, request, turno_id, *args, **kwargs):
+        reserva = get_object_or_404(Reserva, id=turno_id, cliente=request.user.cliente)
         
         # Verificar si la reserva puede ser calificada
         if reserva.estado != Reserva.COMPLETADA:
             messages.error(request, 'Solo se pueden calificar servicios completados.')
-            return redirect('mis_citas')
+            return redirect('mis_turnos')
         
         # Obtener datos del formulario
         puntuacion = request.POST.get('puntuacion')
@@ -234,7 +234,7 @@ class CalificarCitaView(LoginRequiredMixin, View):
             )
         
         messages.success(request, 'Gracias por calificar nuestro servicio.')
-        return redirect('mis_citas')
+        return redirect('mis_turnos')
 
 
 class ObtenerHorariosDisponiblesView(LoginRequiredMixin, View):

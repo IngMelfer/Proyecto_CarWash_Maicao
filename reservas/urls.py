@@ -3,10 +3,10 @@ from . import views
 
 urlpatterns = [
     # Rutas para vistas basadas en plantillas
-    path('reservar-cita/', views.ReservarCitaView.as_view(), name='reservar_cita'),
-    path('mis-citas/', views.MisCitasView.as_view(), name='mis_citas'),
-    path('cancelar-cita/<int:cita_id>/', views.CancelarCitaView.as_view(), name='cancelar_cita'),
-    path('calificar-cita/<int:cita_id>/', views.CalificarCitaView.as_view(), name='calificar_cita'),
+    path('reservar-turno/', views.ReservarTurnoView.as_view(), name='reservar_turno'),
+    path('mis-turnos/', views.MisTurnosView.as_view(), name='mis_turnos'),
+    path('cancelar-turno/<int:turno_id>/', views.CancelarTurnoView.as_view(), name='cancelar_turno'),
+    path('calificar-turno/<int:turno_id>/', views.CalificarTurnoView.as_view(), name='calificar_turno'),
     # Rutas para AJAX
     path('obtener-horarios-disponibles/', views.ObtenerHorariosDisponiblesView.as_view(), name='obtener_horarios_disponibles'),
 ]

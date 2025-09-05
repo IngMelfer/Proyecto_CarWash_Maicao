@@ -11,7 +11,8 @@ from .views import (
     PerfilUsuarioView,
     PerfilUsuarioAPIView,
     RecuperarPasswordView,
-    ResetPasswordView
+    ResetPasswordView,
+    CambiarPasswordView
 )
 
 app_name = 'autenticacion'
@@ -36,6 +37,7 @@ urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('perfil/', PerfilUsuarioView.as_view(), name='perfil'),
+    path('cambiar-password/', CambiarPasswordView.as_view(), name='cambiar_password'),
     path('recuperar-password/', RecuperarPasswordView.as_view(), name='recuperar_password'),
     path('reset-password/<uuid:token>/', ResetPasswordView.as_view(), name='reset_password'),
     
