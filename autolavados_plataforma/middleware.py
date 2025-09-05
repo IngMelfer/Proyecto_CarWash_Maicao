@@ -15,7 +15,7 @@ class LoginRequiredMiddleware:
             r'^/autenticacion/reset-password/.*$',
             r'^/autenticacion/api/login/$',
             r'^/autenticacion/api/registro/$',
-            r'^/admin/login/$',
+            r'^/admin/.*$',  # Permitir acceso a todo el panel de administración
             r'^/static/.*$',  # Permitir acceso a archivos estáticos
         ]
         self.exempt_url_patterns = [re.compile(url) for url in self.exempt_urls]
