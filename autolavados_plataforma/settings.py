@@ -57,10 +57,11 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',  # CORS middleware
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',  # Asegura protección CSRF
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'autolavados_plataforma.middleware.CSRFDebugMiddleware',  # Middleware para diagnosticar problemas CSRF
     'autolavados_plataforma.middleware.LoginRequiredMiddleware',
 ]
 
@@ -199,14 +200,76 @@ LOGOUT_REDIRECT_URL = '/autenticacion/login/'
 
 # Configuración de sesión
 SESSION_COOKIE_AGE = 1209600  # 2 semanas en segundos
+SESSION_COOKIE_SAMESITE = "Lax"  # Valor más seguro que permite el funcionamiento normal
+SESSION_COOKIE_SECURE = False  # No requerir HTTPS para cookies de sesión en desarrollo
+# SESSION_COOKIE_DOMAIN = None  # Comentado para permitir cualquier dominio  # Permitir cualquier dominio
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # La sesión no expira al cerrar el navegador
 
+# Configuración de cookies CSRF
+CSRF_COOKIE_HTTPONLY = False  # Permitir acceso desde JavaScript
+CSRF_COOKIE_SAMESITE = "Lax"  # Valor más seguro que permite el funcionamiento normal
+CSRF_USE_SESSIONS = False  # Usar cookies en lugar de sesiones
+CSRF_COOKIE_SECURE = False  # No requerir HTTPS para cookies CSRF en desarrollo
+
+# Configuración de logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'autolavados_plataforma.middleware': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
+
 # Configuración de CORS
-CORS_ALLOW_ALL_ORIGINS = DEBUG  # En desarrollo permitir todos los orígenes
+CORS_ALLOW_ALL_ORIGINS = True  # En desarrollo permitir todos los orígenes
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
 ]
+# Configuración adicional de CORS para permitir credenciales
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
 
 # Configuración de correo electrónico
 # Para desarrollo, usar el backend de archivo que guarda los correos en un archivo
