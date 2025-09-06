@@ -439,9 +439,17 @@ class PerfilUsuarioView(View):
         if not request.user.is_authenticated:
             return redirect('autenticacion:login')
         
+        # Verificar si el usuario tiene un cliente asociado
+        cliente = None
+        try:
+            cliente = request.user.cliente
+        except:
+            # Si no tiene cliente asociado, no enviamos ese contexto
+            pass
+        
         return render(request, 'autenticacion/perfil.html', {
             'usuario': request.user,
-            'cliente': request.user.cliente
+            'cliente': cliente
         })
     
     def post(self, request):
@@ -468,34 +476,52 @@ class PerfilUsuarioView(View):
         # Manejar la foto de perfil si se proporciona
         if 'foto_perfil' in request.FILES and request.FILES['foto_perfil']:
             data['foto_perfil'] = request.FILES['foto_perfil']
+            # Actualizar la foto de perfil del usuario
+            request.user.foto_perfil = request.FILES['foto_perfil']
+            request.user.save()
             print(f"Foto de perfil recibida: {request.FILES['foto_perfil']}")
         else:
             print("No se recibió foto de perfil")
         
-        # Actualizar los campos del cliente directamente
-        cliente = request.user.cliente
-        
-        # Solo actualizar campos que no sean nulos
-        if request.POST.get('nombre'):
-            cliente.nombre = request.POST.get('nombre')
-        if request.POST.get('apellido'):
-            cliente.apellido = request.POST.get('apellido')
-        if request.POST.get('telefono'):
-            cliente.telefono = request.POST.get('telefono')
-        if request.POST.get('direccion'):
-            cliente.direccion = request.POST.get('direccion')
-        if request.POST.get('ciudad'):
-            cliente.ciudad = request.POST.get('ciudad')
-        if request.POST.get('tipo_documento'):
-            cliente.tipo_documento = request.POST.get('tipo_documento')
-        if request.POST.get('numero_documento'):
-            cliente.numero_documento = request.POST.get('numero_documento')
-        if 'notificaciones_email' in request.POST:
-            cliente.recibir_notificaciones = request.POST.get('notificaciones_email') == 'on'
-        
-        # Solo guardar si se está actualizando más que solo la foto
-        if any([request.POST.get(field) for field in ['nombre', 'apellido', 'telefono', 'direccion', 'ciudad', 'tipo_documento', 'numero_documento', 'notificaciones_email']]):
+        # Verificar si el usuario tiene un cliente asociado
+        try:
+            cliente = request.user.cliente
+            
+            # Solo actualizar campos que no sean nulos
+            if request.POST.get('nombre'):
+                cliente.nombre = request.POST.get('nombre')
+                # También actualizar el nombre del usuario
+                request.user.first_name = request.POST.get('nombre')
+            if request.POST.get('apellido'):
+                cliente.apellido = request.POST.get('apellido')
+                # También actualizar el apellido del usuario
+                request.user.last_name = request.POST.get('apellido')
+            if request.POST.get('telefono'):
+                cliente.telefono = request.POST.get('telefono')
+            if request.POST.get('direccion'):
+                cliente.direccion = request.POST.get('direccion')
+            if request.POST.get('ciudad'):
+                cliente.ciudad = request.POST.get('ciudad')
+            if request.POST.get('tipo_documento'):
+                cliente.tipo_documento = request.POST.get('tipo_documento')
+            if request.POST.get('numero_documento'):
+                cliente.numero_documento = request.POST.get('numero_documento')
+            if 'notificaciones_email' in request.POST:
+                cliente.recibir_notificaciones = request.POST.get('notificaciones_email') == 'on'
+            
+            # Guardar los cambios del cliente
             cliente.save()
+        except:
+            # Si no tiene cliente asociado, actualizar solo los datos del usuario
+            if request.POST.get('nombre'):
+                request.user.first_name = request.POST.get('nombre')
+            if request.POST.get('apellido'):
+                request.user.last_name = request.POST.get('apellido')
+        
+        # Guardar los cambios del usuario
+        request.user.save()
+        
+        # Ya no necesitamos esta parte porque guardamos el cliente dentro del bloque try
         
         # Actualizar el usuario con el serializador para manejar la foto de perfil
         serializer = UsuarioSerializer(request.user, data=data, partial=True)
@@ -508,9 +534,16 @@ class PerfilUsuarioView(View):
             for field, errors in serializer.errors.items():
                 for error in errors:
                     messages.error(request, f'{field}: {error}')
+            # Verificar si el usuario tiene un cliente asociado
+            cliente = None
+            try:
+                cliente = request.user.cliente
+            except:
+                pass
+                
             return render(request, 'autenticacion/perfil.html', {
                 'usuario': request.user,
-                'cliente': request.user.cliente,
+                'cliente': cliente,
                 'form_data': data
             })
 

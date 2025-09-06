@@ -1,7 +1,26 @@
 from django.shortcuts import redirect
 from django.conf import settings
 from django.urls import resolve
+from django.utils.deprecation import MiddlewareMixin
 import re
+import logging
+
+logger = logging.getLogger(__name__)
+
+class CSRFDebugMiddleware(MiddlewareMixin):
+    """Middleware para diagnosticar problemas con CSRF"""
+    
+    def process_request(self, request):
+        # Registrar información sobre cookies y tokens CSRF
+        logger.debug(f"CSRF Cookie: {request.COOKIES.get('csrftoken')}, CSRF Token: {request.META.get('CSRF_COOKIE')}")
+        return None
+    
+    def process_response(self, request, response):
+        # Asegurar que la cookie CSRF esté configurada correctamente
+        if 'csrftoken' not in request.COOKIES and 'Set-Cookie' in response:
+            logger.debug(f"Setting CSRF cookie in response: {response['Set-Cookie']}")
+        return response
+
 
 class LoginRequiredMiddleware:
     def __init__(self, get_response):

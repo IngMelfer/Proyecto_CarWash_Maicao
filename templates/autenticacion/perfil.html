@@ -79,11 +79,11 @@
                         <div class="row mb-3">
                             <div class="col-md-6 mb-3">
                                 <label for="nombre" class="form-label">Nombre</label>
-                                <input type="text" class="form-control" id="nombre" name="nombre" value="{{ form_data.nombre|default:cliente.nombre }}" required>
+                                <input type="text" class="form-control" id="nombre" name="nombre" value="{% if form_data.nombre %}{{ form_data.nombre }}{% elif cliente %}{{ cliente.nombre }}{% else %}{{ usuario.first_name }}{% endif %}" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="apellido" class="form-label">Apellido</label>
-                                <input type="text" class="form-control" id="apellido" name="apellido" value="{{ form_data.apellido|default:cliente.apellido }}" required>
+                                <input type="text" class="form-control" id="apellido" name="apellido" value="{% if form_data.apellido %}{{ form_data.apellido }}{% elif cliente %}{{ cliente.apellido }}{% else %}{{ usuario.last_name }}{% endif %}" required>
                             </div>
                         </div>
                         
@@ -95,27 +95,37 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="telefono" class="form-label">Teléfono</label>
-                                <input type="tel" class="form-control" id="telefono" name="telefono" value="{{ form_data.telefono|default:usuario.cliente.telefono }}">
+                                <input type="tel" class="form-control" id="telefono" name="telefono" value="{% if form_data.telefono %}{{ form_data.telefono }}{% elif cliente %}{{ cliente.telefono }}{% else %}{% endif %}">
                             </div>
                         </div>
                         
+                        {% if cliente %}
                         <div class="row mb-3">
                             <div class="col-md-6 mb-3">
                                 <label for="tipo_documento" class="form-label">Tipo de Documento</label>
                                 <select class="form-select" id="tipo_documento" disabled>
-                                    <option value="CC" {% if usuario.cliente.tipo_documento == 'CC' %}selected{% endif %}>Cédula de Ciudadanía</option>
-                                    <option value="CE" {% if usuario.cliente.tipo_documento == 'CE' %}selected{% endif %}>Cédula de Extranjería</option>
-                                    <option value="PA" {% if usuario.cliente.tipo_documento == 'PA' %}selected{% endif %}>Pasaporte</option>
-                                    <option value="NI" {% if usuario.cliente.tipo_documento == 'NI' %}selected{% endif %}>NIT</option>
+                                    <option value="CC" {% if cliente.tipo_documento == 'CC' %}selected{% endif %}>Cédula de Ciudadanía</option>
+                                    <option value="CE" {% if cliente.tipo_documento == 'CE' %}selected{% endif %}>Cédula de Extranjería</option>
+                                    <option value="PA" {% if cliente.tipo_documento == 'PA' %}selected{% endif %}>Pasaporte</option>
+                                    <option value="NI" {% if cliente.tipo_documento == 'NI' %}selected{% endif %}>NIT</option>
                                 </select>
                                 <div class="form-text">El tipo de documento no se puede cambiar.</div>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="numero_documento" class="form-label">Número de Documento</label>
-                                <input type="text" class="form-control" id="numero_documento" value="{{ usuario.cliente.numero_documento }}" disabled>
+                                <input type="text" class="form-control" id="numero_documento" value="{{ cliente.numero_documento }}" disabled>
                                 <div class="form-text">El número de documento no se puede cambiar.</div>
                             </div>
                         </div>
+                        {% else %}
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i> No hay información de documento disponible. Por favor, complete su perfil de cliente.
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
                         
                         <div class="row mb-4">
                             <div class="col-md-12">
@@ -126,11 +136,11 @@
                         <div class="row mb-3">
                             <div class="col-md-8 mb-3">
                                 <label for="direccion" class="form-label">Dirección</label>
-                                <input type="text" class="form-control" id="direccion" name="direccion" value="{{ form_data.direccion|default:usuario.cliente.direccion }}">
+                                <input type="text" class="form-control" id="direccion" name="direccion" value="{% if form_data.direccion %}{{ form_data.direccion }}{% elif cliente %}{{ cliente.direccion }}{% else %}{% endif %}">
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label for="ciudad" class="form-label">Ciudad</label>
-                                <input type="text" class="form-control" id="ciudad" name="ciudad" value="{{ form_data.ciudad|default:usuario.cliente.ciudad }}">
+                                <input type="text" class="form-control" id="ciudad" name="ciudad" value="{% if form_data.ciudad %}{{ form_data.ciudad }}{% elif cliente %}{{ cliente.ciudad }}{% else %}{% endif %}">
                             </div>
                         </div>
                         
@@ -143,7 +153,7 @@
                         <div class="row mb-3">
                             <div class="col-md-12">
                                 <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="notificaciones_email" name="notificaciones_email" {% if form_data.notificaciones_email|default:usuario.cliente.recibir_notificaciones %}checked{% endif %}>
+                                    <input class="form-check-input" type="checkbox" id="notificaciones_email" name="notificaciones_email" {% if form_data.notificaciones_email %}checked{% elif cliente and cliente.recibir_notificaciones %}checked{% endif %}>
                                     <label class="form-check-label" for="notificaciones_email">
                                         Recibir notificaciones por correo electrónico
                                     </label>
