@@ -15,6 +15,7 @@
                     <a href="{% url 'autenticacion:perfil' %}" class="list-group-item list-group-item-action">
                         <i class="fas fa-user-circle me-2"></i> Mi Perfil
                     </a>
+                    {% if not user.is_staff %}
                     <a href="{% url 'reservas:mis_turnos' %}" class="list-group-item list-group-item-action active">
                         <i class="fas fa-calendar-alt me-2"></i> Mis Turnos
                     </a>
@@ -24,6 +25,7 @@
                     <a href="{% url 'clientes:puntos_recompensas' %}" class="list-group-item list-group-item-action">
                         <i class="fas fa-star me-2"></i> Puntos y Recompensas
                     </a>
+                    {% endif %}
                     <a href="{% url 'autenticacion:logout' %}" class="list-group-item list-group-item-action text-danger">
                         <i class="fas fa-sign-out-alt me-2"></i> Cerrar Sesión
                     </a>
