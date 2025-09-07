@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-k03^2#n1=kuog)$x+9n6#+i)yz^&w=!vvwlios7!yu+r*rp$jx
 DEBUG = True
 
 # Permitir acceso desde localhost, IP local y cualquier host a través de port forwarding
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '*']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', 'meldog.pythonanywhere.com', '*']
 
 
 # Application definition
@@ -91,10 +91,24 @@ WSGI_APPLICATION = 'autolavados_plataforma.wsgi.application'
 
 # Importar dotenv para variables de entorno
 import os
+import sentry_sdk
 from dotenv import load_dotenv
+from sentry_sdk.integrations.django import DjangoIntegration
 
 # Cargar variables de entorno desde .env
 load_dotenv()
+
+# Configuración de Sentry para monitoreo en tiempo real
+sentry_sdk.init(
+    dsn=os.environ.get('SENTRY_DSN', ''),
+    integrations=[
+        DjangoIntegration(),
+    ],
+    # Enviar información de rendimiento
+    traces_sample_rate=0.5,
+    # Capturar errores en solicitudes fallidas
+    send_default_pii=True
+)
 
 # Importar dj-database-url para Railway.com
 import dj_database_url
@@ -200,16 +214,18 @@ LOGOUT_REDIRECT_URL = '/autenticacion/login/'
 
 # Configuración de sesión
 SESSION_COOKIE_AGE = 1209600  # 2 semanas en segundos
-SESSION_COOKIE_SAMESITE = "Lax"  # Valor más seguro que permite el funcionamiento normal
+SESSION_COOKIE_SAMESITE = None  # Permitir solicitudes cross-site
 SESSION_COOKIE_SECURE = False  # No requerir HTTPS para cookies de sesión en desarrollo
-# SESSION_COOKIE_DOMAIN = None  # Comentado para permitir cualquier dominio  # Permitir cualquier dominio
+# SESSION_COOKIE_DOMAIN = None  # Comentado para permitir cualquier dominio
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # La sesión no expira al cerrar el navegador
+SESSION_COOKIE_HTTPONLY = True  # Prevenir acceso desde JavaScript para mayor seguridad
 
 # Configuración de cookies CSRF
 CSRF_COOKIE_HTTPONLY = False  # Permitir acceso desde JavaScript
-CSRF_COOKIE_SAMESITE = "Lax"  # Valor más seguro que permite el funcionamiento normal
-CSRF_USE_SESSIONS = False  # Usar cookies en lugar de sesiones
+CSRF_COOKIE_SAMESITE = None  # Permitir solicitudes cross-site
+CSRF_USE_SESSIONS = True  # Usar sesiones en lugar de cookies para mayor seguridad
 CSRF_COOKIE_SECURE = False  # No requerir HTTPS para cookies CSRF en desarrollo
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']  # Orígenes confiables
 
 # Configuración de logging
 LOGGING = {
@@ -247,6 +263,8 @@ CORS_ALLOW_ALL_ORIGINS = True  # En desarrollo permitir todos los orígenes
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://127.0.0.1:3000',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
 ]
 # Configuración adicional de CORS para permitir credenciales
 CORS_ALLOW_CREDENTIALS = True
@@ -303,3 +321,27 @@ if os.environ.get('RAILWAY_ENVIRONMENT') == 'production':
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+
+# Configuración para PythonAnywhere
+if 'PYTHONANYWHERE_DOMAIN' in os.environ or 'PYTHONANYWHERE_SITE' in os.environ:
+    # Configuración de seguridad
+    DEBUG = False
+    ALLOWED_HOSTS = ['meldog.pythonanywhere.com', os.environ.get('PYTHONANYWHERE_DOMAIN', ''), '*']
+    
+    # Configuración de archivos estáticos
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    
+    # Configuración de seguridad adicional
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # Configuración de correo electrónico para producción
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+    EMAIL_PORT = os.environ.get('EMAIL_PORT', 587)
+    EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+    EMAIL_USE_TLS = True

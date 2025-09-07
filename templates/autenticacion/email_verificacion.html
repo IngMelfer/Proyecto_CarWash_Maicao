@@ -47,7 +47,7 @@
             <h2>Verifica tu cuenta de Autolavados</h2>
         </div>
         
-        <p>Hola {{ usuario.get_full_name }},</p>
+        <p>Hola {% if usuario.get_full_name %}{{ usuario.get_full_name }}{% else %}{{ usuario.email }}{% endif %},</p>
         
         <p>Gracias por registrarte en nuestra plataforma de Autolavados. Para completar tu registro y acceder a todos nuestros servicios, por favor verifica tu dirección de correo electrónico haciendo clic en el siguiente botón:</p>
         

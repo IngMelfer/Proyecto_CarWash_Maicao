@@ -79,11 +79,11 @@
                         <div class="row mb-3">
                             <div class="col-md-6 mb-3">
                                 <label for="nombre" class="form-label">Nombre</label>
-                                <input type="text" class="form-control" id="nombre" name="nombre" value="{% if form_data.nombre %}{{ form_data.nombre }}{% elif cliente %}{{ cliente.nombre }}{% else %}{{ usuario.first_name }}{% endif %}" required>
+                                <input type="text" class="form-control" id="nombre" name="nombre" value="{% if form_data.nombre %}{{ form_data.nombre }}{% elif cliente and cliente.nombre %}{{ cliente.nombre }}{% else %}{{ usuario.first_name }}{% endif %}" required>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="apellido" class="form-label">Apellido</label>
-                                <input type="text" class="form-control" id="apellido" name="apellido" value="{% if form_data.apellido %}{{ form_data.apellido }}{% elif cliente %}{{ cliente.apellido }}{% else %}{{ usuario.last_name }}{% endif %}" required>
+                                <input type="text" class="form-control" id="apellido" name="apellido" value="{% if form_data.apellido %}{{ form_data.apellido }}{% elif cliente and cliente.apellido %}{{ cliente.apellido }}{% else %}{{ usuario.last_name }}{% endif %}" required>
                             </div>
                         </div>
                         
@@ -95,7 +95,7 @@
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="telefono" class="form-label">Teléfono</label>
-                                <input type="tel" class="form-control" id="telefono" name="telefono" value="{% if form_data.telefono %}{{ form_data.telefono }}{% elif cliente %}{{ cliente.telefono }}{% else %}{% endif %}">
+                                <input type="tel" class="form-control" id="telefono" name="telefono" value="{% if form_data.telefono %}{{ form_data.telefono }}{% elif cliente and cliente.telefono %}{{ cliente.telefono }}{% else %}{% endif %}">
                             </div>
                         </div>
                         
