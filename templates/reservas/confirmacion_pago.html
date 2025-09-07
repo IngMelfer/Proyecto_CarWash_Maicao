@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmación de Pago{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="fas fa-check-circle me-2"></i> ¡Pago Confirmado!</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-success mb-4">
+                        <p class="mb-0">Su reserva ha sido confirmada exitosamente. A continuación encontrará los detalles de su reserva.</p>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5 class="border-bottom pb-2">Detalles de la Reserva:</h5>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Servicio:
+                                    <span class="fw-bold">{{ reserva.servicio.nombre }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Fecha y Hora:
+                                    <span class="fw-bold">{{ reserva.fecha_hora|date:"d/m/Y H:i" }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Bahía:
+                                    <span class="fw-bold">{{ reserva.bahia.nombre }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Vehículo:
+                                    <span class="fw-bold">{{ reserva.vehiculo.marca }} {{ reserva.vehiculo.modelo }} ({{ reserva.vehiculo.placa }})</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="border-bottom pb-2">Detalles del Pago:</h5>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Monto:
+                                    <span class="fw-bold">${{ reserva.servicio.precio|floatformat:0 }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Referencia:
+                                    <span class="fw-bold">{{ reserva.referencia_pago }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Medio de Pago:
+                                    <span class="fw-bold">{{ reserva.medio_pago.nombre }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Estado:
+                                    <span class="badge bg-success">Confirmado</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    {% if qr_url %}
+                    <div class="row mb-4">
+                        <div class="col-12 text-center">
+                            <h5 class="border-bottom pb-2">Acceso a Cámara de la Bahía</h5>
+                            <p>Escanee el siguiente código QR para acceder a la transmisión en vivo de la bahía:</p>
+                            <div class="mb-3">
+                                <img src="{{ qr_url }}" alt="Código QR para acceso a cámara" class="img-fluid" style="max-width: 200px;">
+                            </div>
+                            <p class="text-muted small">El acceso a la cámara estará disponible 15 minutos antes y después de su turno.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="text-center mt-4">
+                        <a href="{% url 'reservas:mis_turnos' %}" class="btn btn-primary">
+                            <i class="fas fa-calendar-alt me-2"></i> Ver Mis Turnos
+                        </a>
+                        <a href="{% url 'home' %}" class="btn btn-outline-secondary ms-2">
+                            <i class="fas fa-home me-2"></i> Ir al Inicio
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

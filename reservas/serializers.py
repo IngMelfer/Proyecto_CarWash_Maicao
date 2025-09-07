@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
-from .models import Servicio, Reserva, Vehiculo, HorarioDisponible
+from .models import Servicio, Reserva, Vehiculo, HorarioDisponible, Bahia
 from clientes.models import Cliente
 from clientes.serializers import ClienteSerializer
 
@@ -26,8 +26,8 @@ class ReservaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reserva
         fields = ['id', 'cliente', 'servicio', 'servicio_id', 'fecha_hora', 'estado', 
-                 'estado_display', 'notas', 'fecha_creacion', 'fecha_actualizacion']
-        read_only_fields = ['estado', 'fecha_creacion', 'fecha_actualizacion']
+                 'estado_display', 'bahia', 'notas', 'fecha_creacion', 'fecha_actualizacion']
+        read_only_fields = ['estado', 'bahia', 'fecha_creacion', 'fecha_actualizacion']
     
     def validate_fecha_hora(self, value):
         """Validar que la fecha y hora de la reserva sea futura"""
@@ -95,6 +95,23 @@ class VehiculoSerializer(serializers.ModelSerializer):
             if Vehiculo.objects.filter(cliente=cliente, placa=value).exclude(id=self.instance.id if self.instance else None).exists():
                 raise serializers.ValidationError(_('Ya tienes un vehículo registrado con esta placa'))
         return value
+
+
+class BahiaSerializer(serializers.ModelSerializer):
+    """Serializer para el modelo Bahia"""
+    codigo_qr_url = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Bahia
+        fields = ['id', 'nombre', 'descripcion', 'activo', 'tiene_camara', 'ip_camara', 'codigo_qr', 'codigo_qr_url']
+    
+    def get_codigo_qr_url(self, obj):
+        """Retorna la URL del código QR si existe"""
+        if obj.codigo_qr:
+            request = self.context.get('request')
+            if request is not None:
+                return request.build_absolute_uri(obj.codigo_qr.url)
+        return None
 
 
 class HorarioDisponibleSerializer(serializers.ModelSerializer):

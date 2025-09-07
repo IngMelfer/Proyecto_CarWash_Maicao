@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}Procesando Pago con Nequi{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Procesando Pago con Nequi</h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <img src="/static/img/nequi-logo.png" alt="Nequi Logo" class="img-fluid" style="max-height: 80px;">
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <p class="mb-0"><i class="fas fa-info-circle me-2"></i> <strong>Simulación de Pago:</strong> Esta es una simulación del proceso de pago con Nequi.</p>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Detalles de la Reserva:</h5>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Servicio:
+                                    <span class="fw-bold">{{ reserva.servicio.nombre }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Fecha y Hora:
+                                    <span class="fw-bold">{{ reserva.fecha_hora|date:"d/m/Y H:i" }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Bahía:
+                                    <span class="fw-bold">{{ reserva.bahia.nombre }}</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Detalles del Pago:</h5>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Monto:
+                                    <span class="fw-bold">${{ monto|floatformat:0 }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Referencia:
+                                    <span class="fw-bold">{{ referencia }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Medio de Pago:
+                                    <span class="fw-bold">{{ medio_pago.nombre }}</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="progress mb-4" style="height: 25px;">
+                        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">Procesando...</div>
+                    </div>
+                    
+                    <div id="processingMessage" class="text-center mb-4">
+                        <p><i class="fas fa-spinner fa-spin me-2"></i> Procesando su pago con Nequi...</p>
+                    </div>
+                    
+                    <div id="successMessage" class="text-center mb-4" style="display: none;">
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i> ¡Pago procesado exitosamente!
+                        </div>
+                        <p>Redirigiendo a la página de confirmación...</p>
+                    </div>
+                    
+                    <div class="text-center">
+                        <a href="{% url 'reservas:confirmar_pago' reserva.id %}" id="continueButton" class="btn btn-primary btn-lg" style="display: none;">
+                            Continuar <i class="fas fa-arrow-right ms-2"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Simulación del proceso de pago
+    document.addEventListener('DOMContentLoaded', function() {
+        const progressBar = document.getElementById('progressBar');
+        const processingMessage = document.getElementById('processingMessage');
+        const successMessage = document.getElementById('successMessage');
+        const continueButton = document.getElementById('continueButton');
+        
+        // Simular progreso
+        let progress = 0;
+        const interval = setInterval(function() {
+            progress += 10;
+            progressBar.style.width = progress + '%';
+            progressBar.setAttribute('aria-valuenow', progress);
+            progressBar.textContent = progress + '%';
+            
+            if (progress >= 100) {
+                clearInterval(interval);
+                processingMessage.style.display = 'none';
+                successMessage.style.display = 'block';
+                continueButton.style.display = 'inline-block';
+                
+                // Redirección automática después de 3 segundos
+                setTimeout(function() {
+                    window.location.href = "{% url 'reservas:confirmar_pago' reserva.id %}";
+                }, 3000);
+            }
+        }, 500);
+    });
+</script>
+{% endblock %}

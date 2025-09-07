@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pago con PayU - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Pago con PayU</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <p><strong>Reserva:</strong> {{ reserva.servicio.nombre }}</p>
+                        <p><strong>Fecha y hora:</strong> {{ reserva.fecha_hora|date:"d/m/Y H:i" }}</p>
+                        <p><strong>Monto a pagar:</strong> ${{ monto|floatformat:0 }}</p>
+                        <p><strong>Referencia:</strong> {{ referencia }}</p>
+                    </div>
+                    
+                    <div class="text-center mb-4">
+                        <img src="{% static 'img/payu_logo.png' %}" alt="PayU" class="img-fluid" style="max-height: 60px;">
+                    </div>
+                    
+                    <div id="payment-form" class="text-center">
+                        <p>Serás redirigido a la pasarela de pago segura de PayU.</p>
+                        <form method="post" id="payu-form" action="{% if medio_pago.sandbox %}https://sandbox.checkout.payulatam.com/ppp-web-gateway-payu/{% else %}https://checkout.payulatam.com/ppp-web-gateway-payu/{% endif %}">
+                            <input name="merchantId" type="hidden" value="{{ merchant_id }}">
+                            <input name="accountId" type="hidden" value="{{ medio_pago.merchant_id }}">
+                            <input name="description" type="hidden" value="{{ descripcion }}">
+                            <input name="referenceCode" type="hidden" value="{{ referencia }}">
+                            <input name="amount" type="hidden" value="{{ monto }}">
+                            <input name="tax" type="hidden" value="0">
+                            <input name="taxReturnBase" type="hidden" value="0">
+                            <input name="currency" type="hidden" value="COP">
+                            <input name="signature" type="hidden" id="signature">
+                            <input name="test" type="hidden" value="{% if medio_pago.sandbox %}1{% else %}0{% endif %}">
+                            <input name="buyerEmail" type="hidden" value="{{ reserva.cliente.user.email }}">
+                            <input name="responseUrl" type="hidden" value="{{ redirect_url }}">
+                            <input name="confirmationUrl" type="hidden" value="{{ request.build_absolute_uri|urlencode }}{% url 'reservas:payu_callback' %}">
+                            <button type="submit" class="btn btn-primary btn-lg">Continuar al pago</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Generar la firma para PayU
+        const apiKey = '{{ medio_pago.api_secret }}';
+        const merchantId = '{{ merchant_id }}';
+        const referenceCode = '{{ referencia }}';
+        const amount = '{{ monto }}';
+        const currency = 'COP';
+        
+        // Concatenar los valores en el orden requerido por PayU
+        const signatureString = `${apiKey}~${merchantId}~${referenceCode}~${amount}~${currency}`;
+        
+        // Calcular el hash MD5
+        const signature = CryptoJS.MD5(signatureString).toString();
+        
+        // Asignar la firma al campo oculto
+        document.getElementById('signature').value = signature;
+    });
+</script>
+{% endblock %}

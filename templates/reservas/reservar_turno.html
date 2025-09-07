@@ -51,6 +51,9 @@
                     
                     <form method="post" id="reservaForm">
                         {% csrf_token %}
+                        <input type="hidden" name="bahia_id" id="bahiaInput">
+                        <!-- Campo oculto para depurar -->
+                        <input type="hidden" name="debug_info" id="debugInfo" value="">
                         
                         <!-- Paso 1: Selección de Servicio -->
                         <div class="reservation-step" id="step1">
@@ -68,7 +71,7 @@
                                         </div>
                                         <div class="card-footer bg-transparent">
                                             <div class="form-check">
-                                                <input class="form-check-input service-radio" type="radio" name="servicio_id" id="servicio{{ servicio.id }}" value="{{ servicio.id }}">
+                                                <input class="form-check-input service-radio" type="radio" name="servicio" id="servicio{{ servicio.id }}" value="{{ servicio.id }}">
                                                 <label class="form-check-label" for="servicio{{ servicio.id }}">
                                                     Seleccionar
                                                 </label>
@@ -119,56 +122,73 @@
                         </div>
                         
                         <!-- Paso 3: Información del Vehículo -->
-                        <div class="reservation-step" id="step3" style="display: none;">
-                            <h5 class="border-bottom pb-2 mb-4">Paso 3: Información del Vehículo</h5>
-                            
-                            <div class="row mb-3">
-                                <div class="col-md-6 mb-3">
-                                    <label for="marca" class="form-label">Marca</label>
-                                    <input type="text" class="form-control" id="marca" name="marca" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="modelo" class="form-label">Modelo</label>
-                                    <input type="text" class="form-control" id="modelo" name="modelo" required>
-                                </div>
-                            </div>
-                            
-                            <div class="row mb-3">
-                                <div class="col-md-6 mb-3">
-                                    <label for="anio" class="form-label">Año</label>
-                                    <input type="number" class="form-control" id="anio" name="anio" min="1900" max="2099" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="placa" class="form-label">Placa</label>
-                                    <input type="text" class="form-control" id="placa" name="placa" required>
-                                </div>
-                            </div>
-                            
-                            <div class="row mb-3">
-                                <div class="col-md-6 mb-3">
-                                    <label for="tipo_vehiculo" class="form-label">Tipo de Vehículo</label>
-                                    <select class="form-select" id="tipo_vehiculo" name="tipo_vehiculo" required>
-                                        <option value="" disabled selected>Seleccione...</option>
-                                        <option value="sedan">Sedán</option>
-                                        <option value="suv">SUV</option>
-                                        <option value="pickup">Pickup</option>
-                                        <option value="hatchback">Hatchback</option>
-                                        <option value="deportivo">Deportivo</option>
-                                        <option value="otro">Otro</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="color" class="form-label">Color</label>
-                                    <input type="text" class="form-control" id="color" name="color" required>
-                                </div>
-                            </div>
-                            
-                            <div class="row mb-3">
-                                <div class="col-md-12">
-                                    <label for="observaciones" class="form-label">Observaciones (opcional)</label>
-                                    <textarea class="form-control" id="observaciones" name="observaciones" rows="3" placeholder="Indique cualquier detalle importante sobre su vehículo o el servicio que necesita"></textarea>
-                                </div>
-                            </div>
+        <div class="reservation-step" id="step3" style="display: none;">
+            <h5 class="border-bottom pb-2 mb-4">Paso 3: Información del Vehículo</h5>
+            
+            <!-- Selección de vehículo existente -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <label for="vehiculo" class="form-label">Seleccionar vehículo existente</label>
+                    <select class="form-select" id="vehiculo" name="vehiculo">
+                        <option value="" selected>-- Seleccionar vehículo o ingresar uno nuevo --</option>
+                        {% for vehiculo in vehiculos %}
+                            <option value="{{ vehiculo.id }}">{{ vehiculo.marca }} {{ vehiculo.modelo }} ({{ vehiculo.placa }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div id="nuevoVehiculoForm">
+                <h6 class="mb-3">O ingresa un nuevo vehículo</h6>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6 mb-3">
+                        <label for="marca" class="form-label">Marca</label>
+                        <input type="text" class="form-control" id="marca" name="marca">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="modelo" class="form-label">Modelo</label>
+                        <input type="text" class="form-control" id="modelo" name="modelo">
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6 mb-3">
+                        <label for="anio" class="form-label">Año</label>
+                        <input type="number" class="form-control" id="anio" name="anio" min="1900" max="2099">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="placa" class="form-label">Placa</label>
+                        <input type="text" class="form-control" id="placa" name="placa">
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6 mb-3">
+                        <label for="tipo_vehiculo" class="form-label">Tipo de Vehículo</label>
+                        <select class="form-select" id="tipo_vehiculo" name="tipo_vehiculo">
+                            <option value="" disabled selected>Seleccione...</option>
+                            <option value="sedan">Sedán</option>
+                            <option value="suv">SUV</option>
+                            <option value="pickup">Pickup</option>
+                            <option value="hatchback">Hatchback</option>
+                            <option value="deportivo">Deportivo</option>
+                            <option value="otro">Otro</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="color" class="form-label">Color</label>
+                        <input type="text" class="form-control" id="color" name="color">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <label for="observaciones" class="form-label">Observaciones (opcional)</label>
+                    <textarea class="form-control" id="observaciones" name="observaciones" rows="3" placeholder="Indique cualquier detalle importante sobre su vehículo o el servicio que necesita"></textarea>
+                </div>
+            </div>
                             
                             <div class="d-flex justify-content-between mt-4">
                                 <button type="button" class="btn btn-outline-secondary" id="backToStep2">
@@ -180,9 +200,221 @@
                             </div>
                         </div>
                         
-                        <!-- Paso 4: Confirmación -->
+                        <!-- Paso 4: Selección de Bahía -->
                         <div class="reservation-step" id="step4" style="display: none;">
-                            <h5 class="border-bottom pb-2 mb-4">Paso 4: Confirmar Reserva</h5>
+                            <h5 class="border-bottom pb-2 mb-4">Paso 4: Selecciona tu Bahía</h5>
+                            
+                            <div class="alert alert-info mb-4">
+                                <i class="fas fa-info-circle me-2"></i> Selecciona la bahía donde deseas que se realice tu servicio. Las bahías con cámara te permiten ver tu vehículo durante el proceso.
+                            </div>
+                            
+                            <div id="bahiasContainer" class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+                                <div class="text-center w-100">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Cargando bahías...</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-outline-secondary" id="backToStep3">
+                                    <i class="fas fa-arrow-left me-2"></i> Anterior
+                                </button>
+                                <button type="button" class="btn btn-primary" id="nextToStep5">
+                                    Siguiente <i class="fas fa-arrow-right ms-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Paso 5: Medio de Pago -->
+                        <div class="reservation-step" id="step5" style="display: none;">
+                            <h5 class="border-bottom pb-2 mb-4">Paso 5: Seleccionar Medio de Pago</h5>
+                            
+                            <div class="form-group mb-4">
+                                <label class="form-label">Medio de Pago</label>
+                                
+                                <!-- Campo oculto para almacenar el medio de pago seleccionado -->
+                                <input type="hidden" id="medioPagoInput" name="medio_pago" required>
+                                
+                                <!-- Contenedor para las tarjetas de medios de pago -->
+                                <div id="mediosPagoContainer" class="row row-cols-1 row-cols-md-3 g-4 mt-2">
+                                    <!-- Nequi -->
+                                    <div class="col-12 mb-2">
+                                        <h6 class="text-muted">Nequi</h6>
+                                    </div>
+                                    {% for medio in medios_pago %}
+                                        <div class="col">
+                                            <div class="card h-100 medio-pago-card" data-medio-id="{{ medio.id }}">
+                                                <div class="card-body text-center">
+                                                    <div class="medio-pago-icon mb-3">
+                                                        <i class="fas fa-qrcode fa-3x text-dark"></i>
+                                                    </div>
+                                                    <h5 class="card-title">{{ medio.nombre }}</h5>
+                                                </div>
+                                                <div class="card-footer bg-transparent">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input medio-pago-radio" type="radio" name="medio_pago_visual" id="medio{{ medio.id }}" value="{{ medio.id }}">
+                                                        <label class="form-check-label" for="medio{{ medio.id }}">
+                                                            Seleccionar
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                
+                                <div class="mt-3" id="medioPagoSeleccionado" style="display: none;">
+                                    <div class="alert alert-success">
+                                        <i class="fas fa-check-circle me-2"></i> Medio de pago seleccionado: <strong id="medioPagoNombre"></strong>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <script>
+                                // Inicializar el selector de medio de pago con tarjetas y manejar la selección de vehículo
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Manejar la selección de vehículo
+                    const vehiculoSelect = document.getElementById('vehiculo');
+                    const nuevoVehiculoForm = document.getElementById('nuevoVehiculoForm');
+                    
+                    if (vehiculoSelect && nuevoVehiculoForm) {
+                        vehiculoSelect.addEventListener('change', function() {
+                            if (this.value) {
+                                // Si se seleccionó un vehículo existente, ocultar el formulario de nuevo vehículo
+                                nuevoVehiculoForm.style.display = 'none';
+                            } else {
+                                // Si no se seleccionó un vehículo existente, mostrar el formulario de nuevo vehículo
+                                nuevoVehiculoForm.style.display = 'block';
+                            }
+                        });
+                        
+                        // Ejecutar el evento change al cargar la página para establecer el estado inicial
+                        vehiculoSelect.dispatchEvent(new Event('change'));
+                    }
+                                    // Asegurarse de que todos los elementos existan
+                                    const medioPagoInput = document.getElementById('medioPagoInput');
+                                    const medioPagoSeleccionado = document.getElementById('medioPagoSeleccionado');
+                                    const medioPagoNombre = document.getElementById('medioPagoNombre');
+                                    const medioPagoCards = document.querySelectorAll('.medio-pago-card');
+                                    const medioPagoRadios = document.querySelectorAll('.medio-pago-radio');
+                                    
+                                    console.log('Inicializando selector de medio de pago');
+                                    console.log('Tarjetas encontradas:', medioPagoCards.length);
+                                    console.log('Radios encontrados:', medioPagoRadios.length);
+                                    
+                                    // Variable para almacenar el medio de pago seleccionado
+                                    let selectedMedioPago = null;
+                                    
+                                    // Función para mostrar el medio de pago seleccionado
+                                    function mostrarMedioPagoSeleccionado(medioPagoId, medioPagoText) {
+                                        console.log('Seleccionando medio de pago:', medioPagoId, medioPagoText);
+                                        if (medioPagoId) {
+                                            medioPagoInput.value = medioPagoId;
+                                            medioPagoNombre.textContent = medioPagoText;
+                                            medioPagoSeleccionado.style.display = 'block';
+                                            selectedMedioPago = medioPagoId;
+                                            
+                                            // Actualizar estilos de todas las tarjetas
+                                            medioPagoCards.forEach(card => {
+                                                if (parseInt(card.dataset.medioId) === parseInt(medioPagoId)) {
+                                                    card.classList.add('border-primary', 'border-3');
+                                                    card.classList.add('shadow');
+                                                    card.classList.add('selected');
+                                                } else {
+                                                    card.classList.remove('border-primary', 'border-3');
+                                                    card.classList.remove('shadow');
+                                                    card.classList.remove('selected');
+                                                }
+                                            });
+                                        }
+                                    }
+                                    
+                                    // Hacer que toda la tarjeta sea clickeable
+                                    medioPagoCards.forEach(card => {
+                                        // Asegurarse de que la tarjeta tenga el atributo data-medio-id
+                                        if (!card.dataset.medioId) {
+                                            console.error('Tarjeta sin atributo data-medio-id:', card);
+                                            return;
+                                        }
+                                        
+                                        // Hacer que toda la tarjeta sea clickeable
+                                        card.style.cursor = 'pointer';
+                                        card.style.transition = 'all 0.2s ease-in-out';
+                                        
+                                        card.addEventListener('click', function(event) {
+                                            console.log('Click en tarjeta:', this.dataset.medioId);
+                                            const medioPagoId = parseInt(this.dataset.medioId);
+                                            const radio = document.querySelector(`#medio${medioPagoId}`);
+                                            
+                                            if (radio) {
+                                                radio.checked = true;
+                                                
+                                                // Obtener el nombre del medio de pago
+                                                const medioPagoText = this.querySelector('.card-title').textContent.trim();
+                                                
+                                                // Actualizar UI
+                                                mostrarMedioPagoSeleccionado(medioPagoId, medioPagoText);
+                                            } else {
+                                                console.error('No se encontró el radio button para el medio de pago:', medioPagoId);
+                                            }
+                                        });
+                                        
+                                        // Efecto hover
+                                        card.addEventListener('mouseenter', function() {
+                                            if (!selectedMedioPago || parseInt(this.dataset.medioId) !== parseInt(selectedMedioPago)) {
+                                                this.classList.add('border-info');
+                                                this.classList.add('shadow-sm');
+                                            }
+                                        });
+                                        
+                                        card.addEventListener('mouseleave', function() {
+                                            if (!selectedMedioPago || parseInt(this.dataset.medioId) !== parseInt(selectedMedioPago)) {
+                                                this.classList.remove('border-info');
+                                                this.classList.remove('shadow-sm');
+                                            }
+                                        });
+                                    });
+                                    
+                                    // Agregar evento de cambio a los radios
+                                    medioPagoRadios.forEach(radio => {
+                                        radio.addEventListener('change', function() {
+                                            console.log('Cambio en radio button:', this.value);
+                                            if (this.checked) {
+                                                const medioPagoId = parseInt(this.value);
+                                                const card = document.querySelector(`.medio-pago-card[data-medio-id="${medioPagoId}"]`);
+                                                
+                                                if (card) {
+                                                    const medioPagoText = card.querySelector('.card-title').textContent.trim();
+                                                    
+                                                    // Actualizar UI
+                                                    mostrarMedioPagoSeleccionado(medioPagoId, medioPagoText);
+                                                } else {
+                                                    console.error('No se encontró la tarjeta para el medio de pago:', medioPagoId);
+                                                }
+                                            }
+                                        });
+                                    });
+                                    
+                                    // No inicializar automáticamente ningún medio de pago
+                                    // El usuario debe seleccionar explícitamente un medio de pago
+                                    console.log('Esperando que el usuario seleccione un medio de pago');
+                                });
+                            </script>
+                            
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-outline-secondary" id="backToStep4">
+                                    <i class="fas fa-arrow-left me-2"></i> Anterior
+                                </button>
+                                <button type="button" class="btn btn-primary" id="nextToStep6">
+                                    Siguiente <i class="fas fa-arrow-right ms-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Paso 6: Confirmación -->
+                        <div class="reservation-step" id="step6" style="display: none;">
+                            <h5 class="border-bottom pb-2 mb-4">Paso 6: Confirmar Reserva</h5>
                             
                             <div class="card mb-4">
                                 <div class="card-header bg-light">
@@ -194,11 +426,13 @@
                                             <p><strong>Servicio:</strong> <span id="resumen-servicio"></span></p>
                                             <p><strong>Fecha:</strong> <span id="resumen-fecha"></span></p>
                                             <p><strong>Hora:</strong> <span id="resumen-hora"></span></p>
+                                            <p><strong>Bahía:</strong> <span id="resumen-bahia"></span></p>
                                         </div>
                                         <div class="col-md-6">
                                             <p><strong>Vehículo:</strong> <span id="resumen-vehiculo"></span></p>
                                             <p><strong>Placa:</strong> <span id="resumen-placa"></span></p>
                                             <p><strong>Precio:</strong> <span id="resumen-precio"></span></p>
+                                            <p><strong>Medio de Pago:</strong> <span id="resumen-medio-pago"></span></p>
                                         </div>
                                     </div>
                                     <div class="row">
@@ -210,14 +444,15 @@
                             </div>
                             
                             <div class="form-check mb-4">
-                                <input class="form-check-input" type="checkbox" id="terminos" name="terminos" required>
-                                <label class="form-check-label" for="terminos">
-                                    Acepto los <a href="#" data-bs-toggle="modal" data-bs-target="#terminosModal">Términos y Condiciones</a> del servicio
-                                </label>
-                            </div>
+                <input class="form-check-input" type="checkbox" id="terminos" name="terminos" required>
+                <label class="form-check-label" for="terminos">
+                    Acepto los <a href="#" data-bs-toggle="modal" data-bs-target="#terminosModal">Términos y Condiciones</a> del servicio
+                </label>
+                <div class="invalid-feedback">Debes aceptar los términos y condiciones para continuar.</div>
+            </div>
                             
                             <div class="d-flex justify-content-between mt-4">
-                                <button type="button" class="btn btn-outline-secondary" id="backToStep3">
+                                <button type="button" class="btn btn-outline-secondary" id="backToStep5">
                                     <i class="fas fa-arrow-left me-2"></i> Anterior
                                 </button>
                                 <button type="submit" class="btn btn-success">
@@ -265,13 +500,33 @@
 {% endblock %}
 
 {% block extra_js %}
+<style>
+    .bahia-card {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    .bahia-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .bahia-card.border-primary {
+        border-color: #0d6efd;
+        background-color: rgba(13, 110, 253, 0.05);
+    }
+    .bahia-icon {
+        color: #0d6efd;
+    }
+</style>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Variables para almacenar la selección
         let selectedService = null;
         let selectedDate = null;
         let selectedTime = null;
+        let selectedBahia = null;
         let servicePrices = {};
+        let availableBahias = [];
         
         // Obtener precios de servicios
         {% for servicio in servicios %}
@@ -304,6 +559,11 @@
         const backToStep2 = document.querySelector('#backToStep2');
         const nextToStep4 = document.querySelector('#nextToStep4');
         const backToStep3 = document.querySelector('#backToStep3');
+        const nextToStep5 = document.querySelector('#nextToStep5');
+        const backToStep4 = document.querySelector('#backToStep4');
+        
+        // Definir el elemento de medio de pago para usarlo en todo el script
+        const medioPagoElement = document.querySelector('#medioPago');
         
         nextToStep2.addEventListener('click', function() {
             if (!selectedService) {
@@ -341,30 +601,27 @@
         });
         
         nextToStep4.addEventListener('click', function() {
-            // Validar campos del vehículo
-            const marca = document.querySelector('#marca').value;
-            const modelo = document.querySelector('#modelo').value;
-            const anio = document.querySelector('#anio').value;
-            const placa = document.querySelector('#placa').value;
-            const tipoVehiculo = document.querySelector('#tipo_vehiculo').value;
-            const color = document.querySelector('#color').value;
+            // Verificar si se seleccionó un vehículo existente
+            const vehiculoSelect = document.querySelector('#vehiculo');
+            const vehiculoSeleccionado = vehiculoSelect.value;
             
-            if (!marca || !modelo || !anio || !placa || !tipoVehiculo || !color) {
-                showAlert('Por favor completa todos los campos obligatorios', 'warning');
-                return;
+            if (!vehiculoSeleccionado) {
+                // Si no se seleccionó un vehículo existente, validar los campos del nuevo vehículo
+                const marca = document.querySelector('#marca').value;
+                const modelo = document.querySelector('#modelo').value;
+                const anio = document.querySelector('#anio').value;
+                const placa = document.querySelector('#placa').value;
+                const tipo_vehiculo = document.querySelector('#tipo_vehiculo').value;
+                const color = document.querySelector('#color').value;
+                
+                if (!marca || !modelo || !anio || !placa || !tipo_vehiculo || !color) {
+                    showAlert('Por favor completa todos los campos obligatorios', 'warning');
+                    return;
+                }
             }
             
-            // Actualizar resumen
-            const servicioNombre = document.querySelector(`#servicio${selectedService}`).closest('.service-card').querySelector('.card-title').textContent;
-            document.querySelector('#resumen-servicio').textContent = servicioNombre;
-            document.querySelector('#resumen-fecha').textContent = formatDate(selectedDate);
-            document.querySelector('#resumen-hora').textContent = selectedTime;
-            document.querySelector('#resumen-vehiculo').textContent = `${marca} ${modelo} ${anio}`;
-            document.querySelector('#resumen-placa').textContent = placa;
-            document.querySelector('#resumen-precio').textContent = `$${servicePrices[selectedService]}`;
-            
-            const observaciones = document.querySelector('#observaciones').value;
-            document.querySelector('#resumen-observaciones').textContent = observaciones || '-';
+            // Cargar las bahías disponibles para el horario seleccionado
+            cargarBahiasDisponibles(selectedDate, selectedTime, selectedService);
             
             document.querySelector('#step3').style.display = 'none';
             document.querySelector('#step4').style.display = 'block';
@@ -373,6 +630,78 @@
         backToStep3.addEventListener('click', function() {
             document.querySelector('#step4').style.display = 'none';
             document.querySelector('#step3').style.display = 'block';
+        });
+        
+        nextToStep5.addEventListener('click', function() {
+            if (!selectedBahia) {
+                showAlert('Por favor selecciona una bahía', 'warning');
+                return;
+            }
+            
+            document.querySelector('#step4').style.display = 'none';
+            document.querySelector('#step5').style.display = 'block';
+        });
+        
+        backToStep4.addEventListener('click', function() {
+            document.querySelector('#step5').style.display = 'none';
+            document.querySelector('#step4').style.display = 'block';
+        });
+        
+        // Nuevo evento para el paso 5 -> 6
+        const nextToStep6 = document.querySelector('#nextToStep6');
+        nextToStep6.addEventListener('click', function() {
+            const medioPagoInput = document.querySelector('#medioPagoInput');
+            const medioPago = medioPagoInput.value;
+            if (!medioPago) {
+                mostrarAlerta('Por favor selecciona un medio de pago', 'warning');
+                return;
+            }
+            
+            // Marcar automáticamente el checkbox de términos y condiciones
+            document.querySelector('#terminos').checked = true;
+            
+            // Actualizar resumen
+            const servicioNombre = document.querySelector(`#servicio${selectedService}`).closest('.service-card').querySelector('.card-title').textContent;
+            document.querySelector('#resumen-servicio').textContent = servicioNombre;
+            document.querySelector('#resumen-fecha').textContent = formatDate(selectedDate);
+            document.querySelector('#resumen-hora').textContent = selectedTime;
+            
+            const marca = document.querySelector('#marca').value;
+            const modelo = document.querySelector('#modelo').value;
+            const anio = document.querySelector('#anio').value;
+            const placa = document.querySelector('#placa').value;
+            
+            document.querySelector('#resumen-vehiculo').textContent = `${marca} ${modelo} ${anio}`;
+            document.querySelector('#resumen-placa').textContent = placa;
+            document.querySelector('#resumen-precio').textContent = `$${servicePrices[selectedService]}`;
+            
+            const observaciones = document.querySelector('#observaciones').value;
+            document.querySelector('#resumen-observaciones').textContent = observaciones || '-';
+            
+            // Añadir información de la bahía seleccionada al resumen
+            const bahiaSeleccionada = availableBahias.find(b => b.id === selectedBahia);
+            if (bahiaSeleccionada) {
+                document.querySelector('#resumen-bahia').innerHTML = `${bahiaSeleccionada.nombre} ${bahiaSeleccionada.tiene_camara ? '<span class="badge bg-info"><i class="fas fa-video me-1"></i> Con cámara</span>' : ''}`;
+            } else {
+                document.querySelector('#resumen-bahia').textContent = 'No seleccionada';
+            }
+            
+            // Añadir información del medio de pago al resumen
+            const medioPagoCard = document.querySelector(`.medio-pago-card.selected`);
+            const medioPagoText = medioPagoCard ? medioPagoCard.querySelector('.card-title').textContent : 'No seleccionado';
+            document.querySelector('#resumen-medio-pago').textContent = medioPagoText;
+            
+            // Marcar automáticamente el checkbox de términos y condiciones
+            document.querySelector('#terminos').checked = true;
+            
+            document.querySelector('#step5').style.display = 'none';
+            document.querySelector('#step6').style.display = 'block';
+        });
+        
+        const backToStep5 = document.querySelector('#backToStep5');
+        backToStep5.addEventListener('click', function() {
+            document.querySelector('#step6').style.display = 'none';
+            document.querySelector('#step5').style.display = 'block';
         });
         
         // Manejo de fecha y horarios
@@ -397,47 +726,183 @@
         
         // Función para cargar horarios disponibles
         function cargarHorariosDisponibles(fecha, servicioId) {
-            // En un caso real, aquí harías una petición AJAX al servidor
-            // para obtener los horarios disponibles según la fecha y el servicio
+            // Mostrar indicador de carga
+            horariosContainer.innerHTML = '<div class="text-center w-100"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div></div>';
             
-            // Simulación de horarios disponibles
-            const horariosDisponibles = [
-                '08:00', '09:00', '10:00', '11:00', '12:00', 
-                '14:00', '15:00', '16:00', '17:00'
-            ];
-            
-            // Limpiar contenedor
-            horariosContainer.innerHTML = '';
-            
-            // Mostrar horarios
-            if (horariosDisponibles.length > 0) {
-                horariosDisponibles.forEach(horario => {
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.className = 'btn btn-outline-primary time-slot';
-                    btn.textContent = horario;
-                    btn.dataset.time = horario;
+            // Realizar petición AJAX al servidor
+            fetch(`/reservas/obtener_horarios_disponibles/?fecha=${fecha}&servicio_id=${servicioId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Limpiar contenedor
+                    horariosContainer.innerHTML = '';
                     
-                    btn.addEventListener('click', function() {
-                        // Desmarcar todos los botones
-                        document.querySelectorAll('.time-slot').forEach(b => {
-                            b.classList.remove('active');
-                            b.classList.replace('btn-primary', 'btn-outline-primary');
+                    // Verificar si hay error
+                    if (data.error) {
+                        horariosContainer.innerHTML = `<div class="alert alert-danger w-100">${data.error}</div>`;
+                        return;
+                    }
+                    
+                    // Mostrar horarios en una lista desplegable
+                    if (data.horarios && data.horarios.length > 0) {
+                        // Crear el select
+                        const selectContainer = document.createElement('div');
+                        selectContainer.className = 'form-group w-100';
+                        
+                        const select = document.createElement('select');
+                        select.className = 'form-select time-select';
+                        select.id = 'horarioSelect';
+                        
+                        // Opción por defecto
+                        const defaultOption = document.createElement('option');
+                        defaultOption.value = '';
+                        defaultOption.textContent = 'Seleccione un horario';
+                        defaultOption.selected = true;
+                        defaultOption.disabled = true;
+                        select.appendChild(defaultOption);
+                        
+                        // Agregar opciones de horarios
+                        data.horarios.forEach(horario => {
+                            const option = document.createElement('option');
+                            option.value = horario.hora_inicio;
+                            option.textContent = `${horario.hora_inicio} a ${horario.hora_fin} - ${horario.bahias_disponibles} bahías disponibles`;
+                            option.dataset.horaFin = horario.hora_fin; // Guardar la hora de fin para usarla después
+                            
+                            // Si no está disponible, deshabilitar la opción
+                            if (!horario.disponible) {
+                                option.disabled = true;
+                            }
+                            
+                            select.appendChild(option);
                         });
                         
-                        // Marcar el botón seleccionado
-                        this.classList.add('active');
-                        this.classList.replace('btn-outline-primary', 'btn-primary');
+                        // Mostrar el número total de horarios disponibles
+                        const infoHorarios = document.createElement('div');
+                        infoHorarios.className = 'mt-2 text-info';
+                        infoHorarios.textContent = `Total de horarios disponibles: ${data.horarios.length}`;
+                        selectContainer.appendChild(infoHorarios);
                         
-                        // Guardar selección
-                        selectedTime = this.dataset.time;
-                    });
-                    
-                    horariosContainer.appendChild(btn);
+                        // Evento de cambio
+                        select.addEventListener('change', function() {
+                            // Guardar selección
+                            selectedTime = this.value;
+                            // Guardar la hora de fin
+                            const selectedOption = this.options[this.selectedIndex];
+                            const horaFin = selectedOption.dataset.horaFin;
+                            
+                            // Asignar el valor al campo oculto de hora
+                            const horaInput = document.createElement('input');
+                            horaInput.type = 'hidden';
+                            horaInput.name = 'hora';
+                            horaInput.value = selectedTime;
+                            
+                            // Eliminar cualquier campo de hora anterior
+                            const oldHoraInput = document.querySelector('input[name="hora"]');
+                            if (oldHoraInput) {
+                                oldHoraInput.remove();
+                            }
+                            
+                            // Agregar el nuevo campo al formulario
+                            document.getElementById('reservaForm').appendChild(horaInput);
+                            
+                            // Limpiar la selección de bahía anterior
+                            selectedBahia = null;
+                        });
+                        
+                        selectContainer.appendChild(select);
+                        horariosContainer.appendChild(selectContainer);
+                    } else {
+                        horariosContainer.innerHTML = '<div class="alert alert-warning w-100">No hay horarios disponibles para la fecha seleccionada.</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    horariosContainer.innerHTML = '<div class="alert alert-danger w-100">Error al cargar los horarios disponibles. Por favor, inténtalo de nuevo.</div>';
                 });
-            } else {
-                horariosContainer.innerHTML = '<div class="alert alert-warning w-100">No hay horarios disponibles para la fecha seleccionada.</div>';
-            }
+        }
+        
+        // Función para cargar bahías disponibles
+        function cargarBahiasDisponibles(fecha, hora, servicioId) {
+            const bahiasContainer = document.querySelector('#bahiasContainer');
+            
+            // Mostrar indicador de carga
+            bahiasContainer.innerHTML = '<div class="text-center w-100"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando bahías...</span></div></div>';
+            
+            // Realizar petición AJAX al servidor
+            fetch(`/reservas/obtener_bahias_disponibles/?fecha=${fecha}&hora=${hora}&servicio_id=${servicioId}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Limpiar contenedor
+                    bahiasContainer.innerHTML = '';
+                    
+                    // Verificar si hay error
+                    if (data.error) {
+                        bahiasContainer.innerHTML = `<div class="alert alert-danger w-100">${data.error}</div>`;
+                        return;
+                    }
+                    
+                    // Guardar las bahías disponibles (corregido para usar bahias_disponibles)
+                    availableBahias = data.bahias_disponibles;
+                    
+                    // Mostrar bahías en tarjetas visuales
+                    if (data.bahias_disponibles && data.bahias_disponibles.length > 0) {
+                        data.bahias_disponibles.forEach(bahia => {
+                            const bahiaCard = document.createElement('div');
+                            bahiaCard.className = 'col';
+                            
+                            // Crear tarjeta con estilo visual
+                            bahiaCard.innerHTML = `
+                                <div class="card h-100 bahia-card" data-bahia-id="${bahia.id}">
+                                    <div class="card-body text-center">
+                                        <div class="bahia-icon mb-3">
+                                            <i class="fas fa-car fa-3x"></i>
+                                        </div>
+                                        <h5 class="card-title">${bahia.nombre}</h5>
+                                        <p class="card-text">${bahia.descripcion || 'Sin descripción'}</p>
+                                        ${bahia.tiene_camara ? 
+                                            `<div class="badge bg-info mb-2"><i class="fas fa-video me-1"></i> Con cámara</div>` : 
+                                            `<div class="badge bg-secondary mb-2"><i class="fas fa-video-slash me-1"></i> Sin cámara</div>`
+                                        }
+                                    </div>
+                                    <div class="card-footer bg-transparent">
+                                        <div class="form-check">
+                                            <input class="form-check-input bahia-radio" type="radio" name="bahia_id" id="bahia${bahia.id}" value="${bahia.id}">
+                                            <label class="form-check-label" for="bahia${bahia.id}">
+                                                Seleccionar
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            bahiasContainer.appendChild(bahiaCard);
+                        });
+                        
+                        // Agregar evento de clic a las tarjetas de bahías
+                        const bahiaCards = document.querySelectorAll('.bahia-card');
+                        const bahiaRadios = document.querySelectorAll('.bahia-radio');
+                        
+                        bahiaCards.forEach(card => {
+                            card.addEventListener('click', function() {
+                                const bahiaId = parseInt(this.dataset.bahiaId);
+                                const radio = document.querySelector(`#bahia${bahiaId}`);
+                                radio.checked = true;
+                                
+                                // Actualizar estilos
+                                bahiaCards.forEach(c => c.classList.remove('border-primary'));
+                                this.classList.add('border-primary');
+                                
+                                // Guardar selección
+                                selectedBahia = bahiaId;
+                            });
+                        });
+                    } else {
+                        bahiasContainer.innerHTML = '<div class="alert alert-warning w-100">No hay bahías disponibles para el horario seleccionado.</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    bahiasContainer.innerHTML = '<div class="alert alert-danger w-100">Error al cargar las bahías disponibles. Por favor, inténtalo de nuevo.</div>';
+                });
         }
         
         // Validación del formulario
@@ -445,22 +910,337 @@
         reservaForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
+            // Verificar todos los campos requeridos
+            const servicio = document.querySelector('input[name="servicio"]:checked');
+            const fecha = document.querySelector('#fecha').value;
+            const hora = document.querySelector('input[name="hora"]')?.value || selectedTime; // Verificar tanto el campo oculto como la variable global
+            
+            // Verificar campos del vehículo
+            let vehiculoCompleto = false;
+            const vehiculoSelectElement = document.querySelector('#vehiculo');
+            
+            if (vehiculoSelectElement && vehiculoSelectElement.value) {
+                // Si se seleccionó un vehículo existente, está completo
+                vehiculoCompleto = true;
+            } else {
+                // Si no se seleccionó un vehículo existente, verificar los campos del nuevo vehículo
+                const marca = document.querySelector('#marca').value;
+                const modelo = document.querySelector('#modelo').value;
+                const anio = document.querySelector('#anio').value;
+                const placa = document.querySelector('#placa').value;
+                const tipo_vehiculo = document.querySelector('#tipo_vehiculo').value;
+                const color = document.querySelector('#color').value;
+                vehiculoCompleto = marca && modelo && anio && placa && tipo_vehiculo && color;
+            }
+            
             const terminos = document.querySelector('#terminos').checked;
-            if (!terminos) {
-                showAlert('Debes aceptar los términos y condiciones', 'warning');
+            
+            // Validar campos obligatorios
+            if (!servicio) {
+                mostrarAlerta('Por favor selecciona un servicio', 'warning');
                 return;
             }
             
-            // Aquí se enviaría el formulario
-            // En un caso real, podrías usar fetch o axios para enviar los datos
+            if (!fecha) {
+                mostrarAlerta('Por favor selecciona una fecha', 'warning');
+                return;
+            }
             
-            // Simulación de envío exitoso
-            showAlert('Reserva realizada con éxito. Redirigiendo...', 'success');
+            if (!hora) {
+                mostrarAlerta('Por favor selecciona un horario', 'warning');
+                return;
+            }
             
-            // Redirigir después de 2 segundos
-            setTimeout(() => {
-                window.location.href = '/reservas/mis-turnos/';
-            }, 2000);
+            if (!vehiculoCompleto) {
+                mostrarAlerta('Por favor completa todos los campos del vehículo', 'warning');
+                return;
+            }
+            
+            if (!terminos) {
+                mostrarAlerta('Debes aceptar los términos y condiciones', 'warning');
+                return;
+            }
+            
+            // Verificar que se haya seleccionado un medio de pago
+            const medioPagoInput = document.getElementById('medioPagoInput');
+            if (!medioPagoInput || !medioPagoInput.value) {
+                mostrarAlerta('Por favor selecciona un medio de pago', 'warning');
+                return;
+            }
+            
+            // Verificar que se haya seleccionado una bahía
+            if (!selectedBahia) {
+                mostrarAlerta('Por favor selecciona una bahía', 'warning');
+                return;
+            }
+            
+            // Asignar valores a los campos ocultos
+            document.querySelector('#bahiaInput').value = selectedBahia;
+            
+            // Verificar que el checkbox de términos esté marcado
+            const terminosCheckbox = document.querySelector('#terminos');
+            if (!terminosCheckbox.checked) {
+                mostrarAlerta('Debes aceptar los términos y condiciones', 'warning');
+                return;
+            }
+            
+            // Depurar para ver si el campo existe
+            console.log('Campo medio_pago:', medioPagoInput);
+            console.log('Bahía seleccionada:', selectedBahia);
+            
+            // Guardar información de depuración
+            const medioPagoSeleccionado = document.querySelector('.medio-pago-radio:checked');
+            const medioPagoCard = document.querySelector(`.medio-pago-card[data-medio-id="${medioPagoInput.value}"]`);
+            const medioPagoText = medioPagoCard ? medioPagoCard.querySelector('.card-title').textContent.trim() : '';
+            
+            document.getElementById('debugInfo').value = JSON.stringify({
+                servicio: servicio.value,
+                fecha: fecha,
+                hora: hora,
+                vehiculo: {
+                    marca: marca,
+                    modelo: modelo,
+                    anio: anio,
+                    placa: placa,
+                    tipo: tipo_vehiculo,
+                    color: color
+                },
+                bahia: selectedBahia,
+                medioPago: medioPagoInput.value,
+                medioPagoText: medioPagoText
+            });
+            
+            // Asignar el valor de la bahía seleccionada al campo oculto
+            document.querySelector('#bahiaInput').value = selectedBahia;
+            
+            // Mostrar spinner de carga
+            const submitBtn = document.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...';
+            submitBtn.disabled = true;
+            
+            // Obtener todos los datos del formulario
+            const formData = new FormData(reservaForm);
+            
+            // Depurar los datos del formulario
+            console.log('Enviando formulario con medio de pago:', formData.get('medio_pago'));
+            console.log('Hora seleccionada:', formData.get('hora'));
+            console.log('Términos aceptados:', document.querySelector('#terminos').checked);
+            
+            // Asegurarse de que todos los campos necesarios estén en el formData
+            if (!formData.has('bahia_id') && selectedBahia) {
+                formData.append('bahia_id', selectedBahia);
+            }
+            
+            if (!formData.has('medio_pago') && medioPagoInput.value) {
+                formData.append('medio_pago', medioPagoInput.value);
+            }
+            
+            if (!formData.has('hora') && selectedTime) {
+                formData.append('hora', selectedTime);
+            }
+            
+            // Asegurarse de que los campos del vehículo estén en el formData
+            const vehiculoSelectForm = document.querySelector('#vehiculo');
+            
+            // Asegurarse de que el campo vehiculo_id esté en el formData
+            if (vehiculoSelectForm && vehiculoSelectForm.value) {
+                // Si hay un vehículo seleccionado, enviar su ID
+                if (!formData.has('vehiculo')) {
+                    formData.append('vehiculo', vehiculoSelectForm.value);
+                }
+            } else {
+                // Si no hay vehículo seleccionado, asegurarse de que se envíen los campos del nuevo vehículo
+                const marca = document.querySelector('#marca');
+                const modelo = document.querySelector('#modelo');
+                const anio = document.querySelector('#anio');
+                const placa = document.querySelector('#placa');
+                const tipo_vehiculo = document.querySelector('#tipo_vehiculo');
+                const color = document.querySelector('#color');
+                
+                // Agregar un campo 'vehiculo' con valor 'nuevo' para indicar que se está creando un vehículo nuevo
+                if (!formData.has('vehiculo')) {
+                    formData.append('vehiculo', 'nuevo');
+                }
+                
+                if (marca && !formData.has('marca')) formData.append('marca', marca.value);
+                if (modelo && !formData.has('modelo')) formData.append('modelo', modelo.value);
+                if (anio && !formData.has('anio')) formData.append('anio', anio.value);
+                if (placa && !formData.has('placa')) formData.append('placa', placa.value);
+                if (tipo_vehiculo && !formData.has('tipo_vehiculo')) formData.append('tipo_vehiculo', tipo_vehiculo.value);
+                if (color && !formData.has('color')) formData.append('color', color.value);
+            }
+            
+            console.log('Datos del formulario antes de enviar:');
+            for (let pair of formData.entries()) {
+                console.log(pair[0] + ': ' + pair[1]);
+            }
+            
+            // Asegurarse de que el campo de términos esté incluido en el formData
+            if (!formData.has('terminos')) {
+                formData.append('terminos', document.querySelector('#terminos').checked ? 'on' : '');
+            }
+            
+            // Verificar todos los campos requeridos antes de enviar
+            console.log('Verificando campos requeridos:');
+            const camposRequeridos = ['servicio', 'fecha', 'hora', 'bahia_id', 'medio_pago'];
+            let faltanCampos = false;
+            
+            // Verificar si el campo vehiculo está presente o si se están enviando los datos para un nuevo vehículo
+            if (!formData.has('vehiculo')) {
+                // Si no hay campo vehiculo, verificar si hay datos para un nuevo vehículo
+                const tieneDatosNuevoVehiculo = formData.has('marca') && formData.has('modelo') && 
+                                               formData.has('anio') && formData.has('placa') && 
+                                               formData.has('tipo_vehiculo') && formData.has('color');
+                
+                if (!tieneDatosNuevoVehiculo) {
+                    console.error('Falta el campo vehiculo en el formulario');
+                    faltanCampos = true;
+                } else {
+                    // Si hay datos para un nuevo vehículo, agregar 'nuevo' como valor para vehiculo
+                    formData.append('vehiculo', 'nuevo');
+                    console.log('Campo vehiculo: nuevo (agregado automáticamente)');
+                }
+            } else {
+                console.log(`Campo vehiculo: ${formData.get('vehiculo')}`);
+            }
+            
+            // Verificar el resto de campos requeridos
+            camposRequeridos.forEach(campo => {
+                if (!formData.has(campo) || !formData.get(campo)) {
+                    console.error(`Falta el campo requerido: ${campo}`);
+                    faltanCampos = true;
+                } else {
+                    console.log(`Campo ${campo}: ${formData.get(campo)}`);
+                }
+            });
+            
+            if (faltanCampos) {
+                mostrarAlerta('Por favor complete todos los campos requeridos', 'warning');
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+                return;
+            }
+            
+            // Enviar el formulario mediante fetch
+            fetch(reservaForm.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Crear modal de confirmación exitosa
+                    const modalHTML = `
+                    <div class="modal fade" id="confirmacionModal" tabindex="-1" aria-labelledby="confirmacionModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header bg-success text-white">
+                                    <h5 class="modal-title" id="confirmacionModalLabel">
+                                        <i class="fas fa-check-circle me-2"></i> ¡Reserva Confirmada!
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="text-center mb-4">
+                                        <div class="display-1 text-success mb-3">
+                                            <i class="fas fa-calendar-check"></i>
+                                        </div>
+                                        <h4>Tu reserva ha sido confirmada exitosamente</h4>
+                                        <p class="text-muted">Se ha enviado un correo electrónico con los detalles de tu reserva</p>
+                                    </div>
+                                    
+                                    <div class="card mb-4">
+                                        <div class="card-header bg-light">
+                                            <h5 class="mb-0">Detalles de la Reserva</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <p><strong>Servicio:</strong> ${document.querySelector('#resumen-servicio').textContent}</p>
+                                                    <p><strong>Fecha:</strong> ${document.querySelector('#resumen-fecha').textContent}</p>
+                                                    <p><strong>Hora:</strong> ${document.querySelector('#resumen-hora').textContent}</p>
+                                                    <p><strong>Bahía:</strong> ${document.querySelector('#resumen-bahia').textContent}</p>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <p><strong>Vehículo:</strong> ${document.querySelector('#resumen-vehiculo').textContent}</p>
+                                                    <p><strong>Placa:</strong> ${document.querySelector('#resumen-placa').textContent}</p>
+                                                    <p><strong>Precio:</strong> ${document.querySelector('#resumen-precio').textContent}</p>
+                                                    <p><strong>Medio de Pago:</strong> ${document.querySelector('#resumen-medio-pago').textContent}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    ${data.tiene_camara ? `
+                                    <div class="card mb-4">
+                                        <div class="card-header bg-light">
+                                            <h5 class="mb-0"><i class="fas fa-qrcode me-2"></i> Código QR para Acceso a Cámara</h5>
+                                        </div>
+                                        <div class="card-body text-center">
+                                            <p>Escanea este código QR para acceder a la transmisión en vivo de tu vehículo</p>
+                                            <div class="qr-container my-3">
+                                                <img src="${data.qr_url}" alt="Código QR" class="img-fluid" style="max-width: 200px;">
+                                            </div>
+                                            <p class="text-muted small">Este código QR estará activo desde la fecha y hora de tu reserva hasta que finalice el servicio</p>
+                                        </div>
+                                    </div>
+                                    ` : ''}
+                                    
+                                    ${data.tiene_qr_pago ? `
+                                    <div class="card mb-4">
+                                        <div class="card-header bg-light">
+                                            <h5 class="mb-0"><i class="fas fa-qrcode me-2"></i> Código QR para Pago con ${data.medio_pago}</h5>
+                                        </div>
+                                        <div class="card-body text-center">
+                                            <p>Escanea este código QR para realizar el pago de tu reserva</p>
+                                            <div class="qr-container my-3">
+                                                <img src="${data.qr_pago_url}" alt="Código QR de Pago" class="img-fluid" style="max-width: 200px;">
+                                            </div>
+                                            <p class="text-muted small">Este código QR te llevará a la página de pago con ${data.medio_pago}</p>
+                                        </div>
+                                    </div>
+                                    ` : ''}
+                                </div>
+                                <div class="modal-footer">
+                                    <a href="/reservas/mis-turnos/" class="btn btn-primary">
+                                        <i class="fas fa-calendar me-2"></i> Ver Mis Turnos
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                    
+                    // Agregar el modal al DOM
+                    const modalContainer = document.createElement('div');
+                    modalContainer.innerHTML = modalHTML;
+                    document.body.appendChild(modalContainer.firstElementChild);
+                    
+                    // Mostrar el modal
+                    const confirmacionModal = new bootstrap.Modal(document.getElementById('confirmacionModal'));
+                    confirmacionModal.show();
+                    
+                    // Redirigir cuando se cierre el modal
+                    document.getElementById('confirmacionModal').addEventListener('hidden.bs.modal', function () {
+                        window.location.href = '/reservas/mis-turnos/';
+                    });
+                } else {
+                    // Mostrar error
+                    mostrarAlerta(data.error || 'Ha ocurrido un error al procesar la reserva', 'danger');
+                    submitBtn.innerHTML = originalBtnText;
+                    submitBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarAlerta('Ha ocurrido un error al procesar la reserva', 'danger');
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+            });
         });
         
         // Funciones auxiliares
@@ -476,7 +1256,7 @@
             return `${year}-${month}-${day}`;
         }
         
-        function showAlert(message, type) {
+        function mostrarAlerta(message, type) {
             const alertDiv = document.createElement('div');
             alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
             alertDiv.role = 'alert';
@@ -494,6 +1274,9 @@
                 setTimeout(() => alertDiv.remove(), 150);
             }, 5000);
         }
+        
+        // Alias para compatibilidad
+        const showAlert = mostrarAlerta;
     });
 </script>
 {% endblock %}

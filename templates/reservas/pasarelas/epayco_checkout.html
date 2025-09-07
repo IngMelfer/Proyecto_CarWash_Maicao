@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pago con ePayco - {{ block.super }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Pago con ePayco</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <p><strong>Reserva:</strong> {{ reserva.servicio.nombre }}</p>
+                        <p><strong>Fecha y hora:</strong> {{ reserva.fecha_hora|date:"d/m/Y H:i" }}</p>
+                        <p><strong>Monto a pagar:</strong> ${{ monto|floatformat:0 }}</p>
+                        <p><strong>Referencia:</strong> {{ referencia }}</p>
+                    </div>
+                    
+                    <div class="text-center mb-4">
+                        <img src="{% static 'img/epayco_logo.png' %}" alt="ePayco" class="img-fluid" style="max-height: 60px;">
+                    </div>
+                    
+                    <div id="payment-form" class="text-center">
+                        <p>Serás redirigido a la pasarela de pago segura de ePayco.</p>
+                        <button id="checkout-button" class="btn btn-primary btn-lg">Continuar al pago</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://checkout.epayco.co/checkout.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkoutButton = document.getElementById('checkout-button');
+        
+        checkoutButton.addEventListener('click', function() {
+            const handler = ePayco.checkout.configure({
+                key: '{{ public_key }}',
+                test: {% if medio_pago.sandbox %}true{% else %}false{% endif %}
+            });
+            
+            handler.open({
+                name: '{{ reserva.servicio.nombre }}',
+                description: '{{ descripcion }}',
+                invoice: '{{ referencia }}',
+                currency: 'cop',
+                amount: '{{ monto }}',
+                tax_base: '0',
+                tax: '0',
+                country: 'co',
+                lang: 'es',
+                external: 'false',
+                response: '{{ redirect_url }}',
+                confirmation: '{{ request.build_absolute_uri|urlencode }}{% url "reservas:epayco_callback" %}',
+                
+                // Información del cliente
+                name_billing: '{{ reserva.cliente.user.get_full_name }}',
+                address_billing: 'N/A',
+                type_doc_billing: 'cc',
+                mobilephone_billing: '{{ reserva.cliente.telefono }}',
+                number_doc_billing: '{{ reserva.cliente.documento }}',
+                email_billing: '{{ reserva.cliente.user.email }}',
+                
+                // Información extra
+                extra1: '{{ referencia }}',
+                extra2: '{{ reserva.id }}',
+                extra3: '{{ reserva.cliente.id }}'
+            });
+        });
+    });
+</script>
+{% endblock %}

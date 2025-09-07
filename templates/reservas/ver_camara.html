@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block title %}Ver Cámara - Premium Car Detailing{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'inicio' %}">Inicio</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'reservas:mis_turnos' %}">Mis Turnos</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Ver Cámara</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Cámara en vivo - {{ bahia.nombre }}</h5>
+                    <span class="badge bg-success" id="estado-camara">En línea</span>
+                </div>
+                <div class="card-body">
+                    {% if bahia.tiene_camara and bahia.ip_camara %}
+                        <div class="text-center mb-4">
+                            <div class="ratio ratio-16x9 mb-3">
+                                <iframe src="http://{{ bahia.ip_camara }}" allowfullscreen id="camara-iframe"></iframe>
+                            </div>
+                            <div class="alert alert-info" id="mensaje-camara">
+                                <i class="fas fa-info-circle me-2"></i> Visualizando el servicio en tiempo real
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card mb-3">
+                                    <div class="card-header bg-secondary text-white">
+                                        <h6 class="mb-0">Detalles del Servicio</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <p><strong>Servicio:</strong> {{ reserva.servicio.nombre }}</p>
+                                        <p><strong>Fecha y Hora:</strong> {{ reserva.fecha_hora|date:"d/m/Y H:i" }}</p>
+                                        <p><strong>Estado:</strong> {{ reserva.get_estado_display }}</p>
+                                        <p><strong>Bahía:</strong> {{ bahia.nombre }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header bg-secondary text-white">
+                                        <h6 class="mb-0">Información del Vehículo</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        {% if vehiculo %}
+                                            <p><strong>Tipo:</strong> {{ vehiculo.get_tipo_display }}</p>
+                                            <p><strong>Marca y Modelo:</strong> {{ vehiculo.marca }} {{ vehiculo.modelo }}</p>
+                                            <p><strong>Año:</strong> {{ vehiculo.anio }}</p>
+                                            <p><strong>Placa:</strong> {{ vehiculo.placa }}</p>
+                                        {% else %}
+                                            <p class="text-muted">No hay información del vehículo disponible</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i> Esta bahía no tiene cámara configurada o no está disponible en este momento.
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'reservas:mis_turnos' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i> Volver a Mis Turnos
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const camaraIframe = document.getElementById('camara-iframe');
+        const estadoCamara = document.getElementById('estado-camara');
+        const mensajeCamara = document.getElementById('mensaje-camara');
+        
+        // Verificar el estado de la cámara periódicamente
+        function verificarEstadoCamara() {
+            try {
+                // Intentar acceder al contenido del iframe
+                const iframeContent = camaraIframe.contentWindow || camaraIframe.contentDocument;
+                
+                // Si no podemos acceder, la cámara podría estar desconectada
+                if (!iframeContent) {
+                    estadoCamara.textContent = 'Desconectada';
+                    estadoCamara.classList.remove('bg-success');
+                    estadoCamara.classList.add('bg-danger');
+                    mensajeCamara.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i> La cámara parece estar desconectada. Intente recargar la página.';
+                    mensajeCamara.classList.remove('alert-info');
+                    mensajeCamara.classList.add('alert-danger');
+                }
+            } catch (error) {
+                console.error('Error al verificar el estado de la cámara:', error);
+            }
+        }
+        
+        // Verificar cada 30 segundos
+        setInterval(verificarEstadoCamara, 30000);
+        
+        // Verificar después de cargar la página
+        camaraIframe.onload = function() {
+            verificarEstadoCamara();
+        };
+        
+        // Si hay error al cargar el iframe
+        camaraIframe.onerror = function() {
+            estadoCamara.textContent = 'Error';
+            estadoCamara.classList.remove('bg-success');
+            estadoCamara.classList.add('bg-danger');
+            mensajeCamara.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i> Error al conectar con la cámara. Por favor, intente más tarde.';
+            mensajeCamara.classList.remove('alert-info');
+            mensajeCamara.classList.add('alert-danger');
+        };
+    });
+</script>
+{% endblock %}

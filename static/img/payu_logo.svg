@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60">
+  <style>
+    .payu-text-pay { fill: #00A1E4; font-family: Arial, sans-serif; font-weight: bold; }
+    .payu-text-u { fill: #EB6B0A; font-family: Arial, sans-serif; font-weight: bold; }
+  </style>
+  <g>
+    <text x="40" y="38" class="payu-text-pay" font-size="28">Pay</text>
+    <text x="100" y="38" class="payu-text-u" font-size="28">U</text>
+  </g>
+</svg>

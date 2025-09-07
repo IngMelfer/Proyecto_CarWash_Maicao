@@ -5,6 +5,7 @@ from . import views
 router = DefaultRouter()
 router.register(r'servicios', views.ServicioViewSet, basename='servicio')
 router.register(r'reservas', views.ReservaViewSet, basename='reserva')
+router.register(r'bahias', views.BahiaViewSet, basename='bahia')
 
 urlpatterns = [
     path('', include(router.urls)),
