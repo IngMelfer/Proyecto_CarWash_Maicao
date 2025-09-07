@@ -8,6 +8,7 @@ Plataforma Integral para Autolavados con Monitoreo y Fidelización en Maicao, La
 - Python 3.10+
 - MySQL 8.0+ o SQLite (desarrollo)
 - Pip
+- Visual Studio Code (opcional)
 
 ### Instalación
 
@@ -43,25 +44,46 @@ pip install -r requirements.txt
 cp .env.example .env
 
 # Editar el archivo .env con tus configuraciones
-```
-
 5. Ejecutar migraciones
 
 ```bash
 python manage.py migrate
 ```
 
-6. Crear superusuario
+6. Crear superusuario (opcional)
 
 ```bash
 python manage.py createsuperuser
 ```
 
-7. Iniciar servidor de desarrollo
+7. Ejecutar servidor de desarrollo
 
 ```bash
 python manage.py runserver
 ```
+
+### Configuración en Visual Studio Code
+
+1. Abrir el proyecto en Visual Studio Code
+
+2. Instalar la extensión de Python para VS Code
+
+3. Seleccionar el intérprete de Python del entorno virtual:
+   - Presiona `Ctrl+Shift+P`
+   - Escribe "Python: Select Interpreter"
+   - Selecciona el intérprete de la carpeta `venv`
+
+4. Para solucionar problemas comunes:
+
+   - Si aparece error de PyMySQL, asegúrate de instalarlo:
+     ```bash
+     pip install PyMySQL==1.1.0
+     ```
+
+   - Si aparece error de psycopg2, instala la versión binaria:
+     ```bash
+     pip install psycopg2-binary==2.9.9
+     ```
 
 ## API REST
 

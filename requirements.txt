@@ -12,8 +12,7 @@ sqlparse==0.4.4
 typing_extensions==4.8.0
 tzdata==2023.3
 whitenoise==6.5.0
-# Monitoreo y despliegue
-sentry-sdk==1.39.1
+# Despliegue
 psycopg2-binary==2.9.9
 # Para AWS S3 (opcional)
 # django-storages==1.14.2

@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-k03^2#n1=kuog)$x+9n6#+i)yz^&w=!vvwlios7!yu+r*rp$jx
 DEBUG = True
 
 # Permitir acceso desde localhost, IP local y cualquier host a través de port forwarding
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', 'meldog.pythonanywhere.com', '*']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '*']
 
 
 # Application definition
@@ -91,24 +91,10 @@ WSGI_APPLICATION = 'autolavados_plataforma.wsgi.application'
 
 # Importar dotenv para variables de entorno
 import os
-import sentry_sdk
 from dotenv import load_dotenv
-from sentry_sdk.integrations.django import DjangoIntegration
 
 # Cargar variables de entorno desde .env
 load_dotenv()
-
-# Configuración de Sentry para monitoreo en tiempo real
-sentry_sdk.init(
-    dsn=os.environ.get('SENTRY_DSN', ''),
-    integrations=[
-        DjangoIntegration(),
-    ],
-    # Enviar información de rendimiento
-    traces_sample_rate=0.5,
-    # Capturar errores en solicitudes fallidas
-    send_default_pii=True
-)
 
 # Importar dj-database-url para Railway.com
 import dj_database_url
@@ -322,26 +308,10 @@ if os.environ.get('RAILWAY_ENVIRONMENT') == 'production':
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
 
-# Configuración para PythonAnywhere
-if 'PYTHONANYWHERE_DOMAIN' in os.environ or 'PYTHONANYWHERE_SITE' in os.environ:
-    # Configuración de seguridad
-    DEBUG = False
-    ALLOWED_HOSTS = ['meldog.pythonanywhere.com', os.environ.get('PYTHONANYWHERE_DOMAIN', ''), '*']
-    
-    # Configuración de archivos estáticos
-    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-    
-    # Configuración de seguridad adicional
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
-    
-    # Configuración de correo electrónico para producción
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
-    EMAIL_PORT = os.environ.get('EMAIL_PORT', 587)
-    EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
-    EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
-    EMAIL_USE_TLS = True
+# Configuración de correo electrónico para producción (cuando sea necesario)
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+# EMAIL_PORT = os.environ.get('EMAIL_PORT', 587)
+# EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+# EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+# EMAIL_USE_TLS = True
