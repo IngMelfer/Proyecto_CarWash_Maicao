@@ -96,38 +96,13 @@ from dotenv import load_dotenv
 # Cargar variables de entorno desde .env
 load_dotenv()
 
-# Importar dj-database-url para Railway.com
-import dj_database_url
-
-# Configuración de la base de datos
-# Si estamos en Railway.com, usar la URL de la base de datos proporcionada por Railway
-if os.environ.get('RAILWAY_ENVIRONMENT') == 'production':
-    DATABASES = {
-        'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
+# Configuración de la base de datos - Usando SQLite por defecto
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
-else:
-    # En desarrollo local, usar MySQL si está disponible, de lo contrario SQLite
-    if os.environ.get('USE_MYSQL', 'False').lower() == 'true':
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.mysql',
-                'NAME': os.environ.get('DB_NAME', 'autolavados_db'),
-                'USER': os.environ.get('DB_USER', 'root'),
-                'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-                'HOST': os.environ.get('DB_HOST', 'localhost'),
-                'PORT': os.environ.get('DB_PORT', '3306'),
-                'OPTIONS': {
-                    'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-                },
-            }
-        }
-    else:
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': BASE_DIR / 'db.sqlite3',
-            }
-        }
+}
 
 
 # Password validation
@@ -289,24 +264,8 @@ EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')  # Directorio donde se g
 # EMAIL_USE_TLS = True
 
 # URL del sitio para enlaces en correos electrónicos
-SITE_URL = 'http://localhost:8000' if DEBUG else os.environ.get('SITE_URL', 'https://autolavados.railway.app')
+SITE_URL = 'http://localhost:8000'
 DEFAULT_FROM_EMAIL = 'noreply@premiumcardetailing.com'
-
-# Configuración para Railway.com
-if os.environ.get('RAILWAY_ENVIRONMENT') == 'production':
-    # Configuración de seguridad
-    DEBUG = False
-    ALLOWED_HOSTS = ['.railway.app', os.environ.get('RAILWAY_STATIC_URL', ''), '*']
-    
-    # Configuración de archivos estáticos
-    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-    
-    # Configuración de seguridad adicional
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
 
 # Configuración de correo electrónico para producción (cuando sea necesario)
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
