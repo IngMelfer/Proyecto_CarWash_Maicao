@@ -50,6 +50,7 @@
 <div class="container">
     <!-- Estadísticas rápidas -->
     <div class="row mb-4">
+        {% if not user.is_staff %}
         <div class="col-md-3">
             <div class="card text-center dashboard-card">
                 <div class="card-body">
@@ -82,6 +83,16 @@
                 </div>
             </div>
         </div>
+        {% else %}
+        <div class="col-md-12">
+            <div class="card text-center dashboard-card">
+                <div class="card-body">
+                    <div class="stats-value"><i class="fas fa-user-shield"></i></div>
+                    <div class="stats-label">CUENTA DE ADMINISTRADOR</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Accesos rápidos -->
@@ -100,6 +111,7 @@
                 </div>
             </a>
         </div>
+        {% if not user.is_staff %}
         <div class="col-md-3">
             <a href="{% url 'reservas:mis_turnos' %}" class="text-decoration-none">
                 <div class="card text-center dashboard-card">
@@ -139,9 +151,11 @@
                 </div>
             </a>
         </div>
+        {% endif %}
     </div>
 
     <!-- Próximos turnos -->
+    {% if not user.is_staff %}
     <h2 class="mb-4">Próximos Turnos</h2>
     <div class="row mb-5">
         <div class="col-md-12">
@@ -192,8 +206,10 @@
             </div>
         </div>
     </div>
+    {% endif %}
 
     <!-- Mis vehículos -->
+    {% if not user.is_staff %}
     <h2 class="mb-4">Mis Vehículos</h2>
     <div class="row">
         {% if vehiculos %}
@@ -229,5 +245,6 @@
         </div>
         {% endif %}
     </div>
+    {% endif %}
 </div>
 {% endblock %}
