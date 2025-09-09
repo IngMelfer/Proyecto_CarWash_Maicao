@@ -534,7 +534,7 @@ class VerCamaraView(View):
         # Obtener el vehículo asociado a la reserva si existe
         vehiculo = None
         try:
-            vehiculo = Vehiculo.objects.filter(cliente=reserva.cliente).first()
+            vehiculo = reserva.vehiculo
         except:
             pass
         
@@ -572,10 +572,14 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
             # Verificar si es una solicitud AJAX
             is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
             
+            # Imprimir información de depuración
+            print(f"Headers de la solicitud: {request.headers}")
+            print(f"Es AJAX: {is_ajax}")
+            
             # Validar datos
             if not all([servicio_id, fecha_str, hora_str, vehiculo_id, bahia_id, medio_pago_id]):
                 if is_ajax:
-                    return JsonResponse({'success': False, 'error': 'Por favor complete todos los campos requeridos.'})
+                    return JsonResponse({'success': False, 'error': 'Por favor complete todos los campos requeridos.'}, status=200)
                 messages.error(request, 'Por favor complete todos los campos requeridos.')
                 return redirect('reservas:reservar_turno')
             
@@ -584,16 +588,24 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
             
             # Manejar el caso de un nuevo vehículo
             if vehiculo_id == 'nuevo':
-                # Crear un nuevo vehículo con los datos del formulario
-                vehiculo = Vehiculo.objects.create(
-                    cliente=request.user.cliente,
-                    marca=request.POST.get('marca'),
-                    modelo=request.POST.get('modelo'),
-                    anio=request.POST.get('anio'),
-                    placa=request.POST.get('placa'),
-                    tipo=request.POST.get('tipo_vehiculo'),
-                    color=request.POST.get('color')
-                )
+                # Verificar si ya existe un vehículo con la misma placa para este cliente
+                placa = request.POST.get('placa')
+                vehiculo_existente = Vehiculo.objects.filter(cliente=request.user.cliente, placa=placa).first()
+                
+                if vehiculo_existente:
+                    # Si ya existe, usar ese vehículo
+                    vehiculo = vehiculo_existente
+                else:
+                    # Si no existe, crear uno nuevo
+                    vehiculo = Vehiculo.objects.create(
+                        cliente=request.user.cliente,
+                        marca=request.POST.get('marca'),
+                        modelo=request.POST.get('modelo'),
+                        anio=request.POST.get('anio'),
+                        placa=placa,
+                        tipo=request.POST.get('tipo_vehiculo'),
+                        color=request.POST.get('color')
+                    )
             else:
                 # Obtener el vehículo existente
                 vehiculo = get_object_or_404(Vehiculo, id=vehiculo_id, cliente=request.user.cliente)
@@ -622,7 +634,9 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
             
             if not horario or horario.esta_lleno:
                 if is_ajax:
-                    return JsonResponse({'success': False, 'error': 'El horario seleccionado no está disponible.'})
+                    response = JsonResponse({'success': False, 'error': 'El horario seleccionado no está disponible.'}, status=200)
+                    response['Content-Type'] = 'application/json'
+                    return response
                 messages.error(request, 'El horario seleccionado no está disponible.')
                 return redirect('reservas:reservar_turno')
             
@@ -641,7 +655,9 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
             
             if not bahias_disponibles.exists():
                 if is_ajax:
-                    return JsonResponse({'success': False, 'error': 'No hay bahías disponibles para el horario seleccionado.'})
+                    response = JsonResponse({'success': False, 'error': 'No hay bahías disponibles para el horario seleccionado.'}, status=200)
+                    response['Content-Type'] = 'application/json'
+                    return response
                 messages.error(request, 'No hay bahías disponibles para el horario seleccionado.')
                 return redirect('reservas:reservar_turno')
             
@@ -654,6 +670,7 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
                 servicio=servicio,
                 fecha_hora=fecha_hora,
                 bahia=bahia,
+                vehiculo=vehiculo,  # Asociar el vehículo a la reserva
                 notas=notas,
                 estado=Reserva.PENDIENTE,
                 medio_pago=medio_pago
@@ -661,6 +678,15 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
             
             # Si el medio de pago es una pasarela, redirigir al proceso de pago
             if medio_pago.es_pasarela():
+                # Si es una solicitud AJAX, devolver una respuesta JSON con la URL de redirección
+                if is_ajax:
+                    redirect_url = reverse('reservas:procesar_pago', args=[reserva.id])
+                    return JsonResponse({
+                        'success': True,
+                        'redirect': True,
+                        'redirect_url': redirect_url
+                    }, status=200)
+                # Si no es AJAX, redirigir normalmente
                 return redirect('reservas:procesar_pago', reserva_id=reserva.id)
             
             # Incrementar contador de reservas en el horario
@@ -770,15 +796,17 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
             )
             
             if is_ajax:
-                return JsonResponse({
-                    'success': True, 
-                    'tiene_camara': tiene_camara,
-                    'qr_url': qr_url,
-                    'qr_pago_url': qr_pago_url,
-                    'tiene_qr_pago': qr_pago_url is not None,
-                    'medio_pago': medio_pago.get_tipo_display(),
-                    'reserva_id': reserva.id
-                })
+                response = JsonResponse({
+                'success': True, 
+                'tiene_camara': tiene_camara,
+                'qr_url': qr_url,
+                'qr_pago_url': qr_pago_url,
+                'tiene_qr_pago': qr_pago_url is not None,
+                'medio_pago': medio_pago.get_tipo_display(),
+                'reserva_id': reserva.id
+            }, status=200)
+            response['Content-Type'] = 'application/json'
+            return response
             
             messages.success(request, 'Reserva creada exitosamente. Recibirás una confirmación pronto.')
             return redirect('reservas:mis_turnos')
@@ -787,7 +815,22 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
             import traceback
             print(traceback.format_exc())
             if 'is_ajax' in locals() and is_ajax:
-                return JsonResponse({'success': False, 'error': f'Error al crear la reserva: {str(e)}'})
+                # Asegurarse de que el mensaje de error sea serializable
+                error_msg = str(e)
+                try:
+                    # Intentar serializar para verificar que no haya problemas
+                    import json
+                    json.dumps({'success': False, 'error': error_msg})
+                    # Asegurarse de que la respuesta tenga el encabezado Content-Type correcto
+                    response = JsonResponse({'success': False, 'error': error_msg}, status=200)
+                    response['Content-Type'] = 'application/json'
+                    return response
+                except Exception as json_error:
+                    # Si hay un error al serializar, devolver un mensaje genérico
+                    print(f"Error al serializar la excepción: {str(json_error)}")
+                    response = JsonResponse({'success': False, 'error': 'Error interno del servidor. Por favor intente nuevamente.'}, status=200)
+                    response['Content-Type'] = 'application/json'
+                    return response
             messages.error(request, f'Error al crear la reserva: {str(e)}')
             return redirect('reservas:reservar_turno')
 
@@ -811,14 +854,31 @@ class MisTurnosView(LoginRequiredMixin, TemplateView):
             estado=Reserva.COMPLETADA
         ).order_by('-fecha_hora')
         
+        # Incluir tanto canceladas como incumplidas
         canceladas = Reserva.objects.filter(
             cliente=cliente,
-            estado=Reserva.CANCELADA
+            estado__in=[Reserva.CANCELADA, Reserva.INCUMPLIDA]
         ).order_by('-fecha_hora')
         
         context['proximas'] = proximas
         context['pasadas'] = pasadas
         context['canceladas'] = canceladas
+        
+        # Verificar si hay un turno_id en la URL para abrir el modal automáticamente
+        turno_id = self.request.GET.get('turno_id')
+        if turno_id:
+            try:
+                turno = Reserva.objects.get(id=turno_id, cliente=cliente)
+                context['turno_id'] = turno_id
+                # Determinar en qué pestaña está el turno
+                if turno in proximas:
+                    context['active_tab'] = 'proximas'
+                elif turno in pasadas:
+                    context['active_tab'] = 'pasadas'
+                elif turno in canceladas:
+                    context['active_tab'] = 'canceladas'
+            except Reserva.DoesNotExist:
+                pass
         
         return context
 
@@ -826,12 +886,12 @@ class MisTurnosView(LoginRequiredMixin, TemplateView):
 class CancelarTurnoView(LoginRequiredMixin, View):
     def post(self, request, turno_id, *args, **kwargs):
         reserva = get_object_or_404(Reserva, id=turno_id, cliente=request.user.cliente)
-        motivo = request.POST.get('motivo', '')
+        motivo = request.POST.get('motivo_cancelacion', '')
         
         # Verificar si la reserva puede ser cancelada
         if reserva.estado in [Reserva.EN_PROCESO, Reserva.COMPLETADA]:
             messages.error(request, 'No se puede cancelar una reserva en proceso o completada.')
-            return redirect('mis_turnos')
+            return redirect('reservas:mis_turnos')
         
         # Verificar si la cancelación es con menos de 24 horas de anticipación
         horas_anticipacion = (reserva.fecha_hora - timezone.now()).total_seconds() / 3600
@@ -843,7 +903,9 @@ class CancelarTurnoView(LoginRequiredMixin, View):
         # Cancelar la reserva
         reserva.estado = Reserva.CANCELADA
         reserva.notas = f"{reserva.notas}\n\nMotivo de cancelación: {motivo}"
-        reserva.save(update_fields=['estado', 'notas'])
+        # Actualizar explícitamente la fecha_actualizacion con la zona horaria correcta
+        reserva.fecha_actualizacion = timezone.now()
+        reserva.save(update_fields=['estado', 'notas', 'fecha_actualizacion'])
         
         # Decrementar contador de reservas en el horario si existe
         horario = HorarioDisponible.objects.filter(
@@ -854,7 +916,7 @@ class CancelarTurnoView(LoginRequiredMixin, View):
         
         if horario:
             horario.decrementar_reservas()
-        
+            
         # Crear notificación
         mensaje = f'Tu reserva para el servicio {reserva.servicio.nombre} programada para el {reserva.fecha_hora.strftime("%d/%m/%Y a las %H:%M")} ha sido cancelada.'
         if cargo_cancelacion:
@@ -867,11 +929,22 @@ class CancelarTurnoView(LoginRequiredMixin, View):
             mensaje=mensaje,
         )
         
+        # Verificar si es una solicitud AJAX
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            response = JsonResponse({
+                'success': True, 
+                'message': 'Turno cancelado correctamente',
+                'cargo_cancelacion': cargo_cancelacion
+            }, status=200)
+            response['Content-Type'] = 'application/json'
+            return response
+        
+        # Para solicitudes normales
         messages.success(request, 'Reserva cancelada exitosamente.')
         if cargo_cancelacion:
             messages.warning(request, 'Se ha aplicado un cargo por cancelación tardía.')
             
-        return redirect('mis_turnos')
+        return redirect('reservas:mis_turnos')
 
 
 class CalificarTurnoView(LoginRequiredMixin, View):
@@ -883,7 +956,7 @@ class CalificarTurnoView(LoginRequiredMixin, View):
         # Verificar si la reserva puede ser calificada
         if reserva.estado != Reserva.COMPLETADA:
             messages.error(request, 'Solo se pueden calificar servicios completados.')
-            return redirect('mis_turnos')
+            return redirect('reservas:mis_turnos')
         
         return render(request, self.template_name, {'reserva': reserva})
     
@@ -948,9 +1021,13 @@ class ObtenerMediosPagoView(LoginRequiredMixin, View):
                 'es_pasarela': mp.es_pasarela()
             } for mp in medios_pago]
             
-            return JsonResponse({'medios_pago': data})
+            response = JsonResponse({'medios_pago': data}, status=200)
+            response['Content-Type'] = 'application/json'
+            return response
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
+            response = JsonResponse({'error': str(e)}, status=500)
+            response['Content-Type'] = 'application/json'
+            return response
 
 
 class ObtenerHorariosDisponiblesView(LoginRequiredMixin, View):
@@ -988,16 +1065,20 @@ class ObtenerHorariosDisponiblesView(LoginRequiredMixin, View):
                 disponible=True
             ).order_by('hora_inicio')
             
-            # Filtrar horarios que están llenos (esta_lleno es una propiedad calculada, no un campo)
-            # Nota: No podemos usar exclude(esta_lleno=True) porque es una propiedad calculada
-            horarios_filtrados = []
-            for h in horarios_disponibles:
-                if h.reservas_actuales < h.capacidad:  # Verificación directa en lugar de usar la propiedad
-                    horarios_filtrados.append(h)
-            horarios_disponibles = horarios_filtrados
+            # Ya no filtramos los horarios llenos, los mostraremos todos pero con indicador de disponibilidad
+            # Mantenemos la lista original de horarios_disponibles
             
-            # Si no hay horarios específicos para esa fecha, usar la disponibilidad general
+            # Si no hay horarios específicos para esa fecha, verificar si hay registros en HorarioDisponible para esta fecha
             if not horarios_disponibles:
+                # Verificar si existen registros para esta fecha en la base de datos
+                existe_registro = HorarioDisponible.objects.filter(fecha=fecha).exists()
+                
+                # Si no existen registros para esta fecha, no generar horarios automáticos
+                if not existe_registro:
+                    # No hay horarios disponibles para esta fecha
+                    return JsonResponse({'horarios': []})
+                
+                # Si hay registros pero no hay disponibles, usar la disponibilidad general
                 # Obtener el día de la semana (0-6, donde 0 es lunes)
                 dia_semana = fecha.weekday()
                 
@@ -1011,22 +1092,44 @@ class ObtenerHorariosDisponiblesView(LoginRequiredMixin, View):
                 horarios = []
                 for disp in disponibilidad_general:
                     # Crear intervalos exactos según la duración del servicio seleccionado
-                    # Empezamos desde la hora de inicio del día
-                    hora_actual = disp.hora_inicio
+                    # Si es el día actual, empezamos desde la hora actual
+                    # Usar timezone.now() y convertirlo a hora local para comparaciones correctas
+                    now_local = timezone.localtime(timezone.now())
+                    if fecha == now_local.date():
+                        # Usar la hora actual si estamos dentro del horario de atención, o la hora de inicio si aún no ha comenzado
+                        hora_actual_sistema = now_local.time()
+                        
+                        # Verificar si la hora actual ya está fuera del horario de atención
+                        if hora_actual_sistema >= disp.hora_fin:
+                            # Si ya pasó la hora de cierre, no hay horarios disponibles para hoy
+                            continue
+                            
+                        if hora_actual_sistema >= disp.hora_inicio:
+                            hora_actual = hora_actual_sistema
+                        else:
+                            hora_actual = disp.hora_inicio
+                    else:
+                        # Para fechas futuras, usar la hora de inicio normal
+                        hora_actual = disp.hora_inicio
                     
-                    # Generamos horarios en intervalos de 30 minutos para mostrar más opciones
-                    # Usamos un intervalo fijo de 30 minutos para mostrar más opciones
-                    intervalo_minutos = 30
+                    # Generamos horarios en intervalos de 15 minutos para mostrar más opciones
+                    # Usamos un intervalo más pequeño para ofrecer mayor flexibilidad
+                    intervalo_minutos = 15
                     
-                    while hora_actual < disp.hora_fin:
+                    # Aseguramos que haya al menos duracion_servicio minutos disponibles
+                    while hora_actual <= (datetime.combine(fecha, disp.hora_fin) - timedelta(minutes=duracion_servicio)).time():
                         # Calculamos la hora de fin del servicio
                         hora_fin = (datetime.combine(fecha, hora_actual) + timedelta(minutes=duracion_servicio)).time()
                         
                         # Solo agregamos el horario si el servicio cabe completamente en el horario disponible
                         if hora_fin <= disp.hora_fin:
                             # Verificamos disponibilidad de bahías para este horario
-                            hora_inicio_dt = timezone.make_aware(datetime.combine(fecha, hora_actual))
-                            hora_fin_dt = timezone.make_aware(datetime.combine(fecha, hora_fin))
+                            hora_inicio_dt = datetime.combine(fecha, hora_actual)
+                            hora_fin_dt = datetime.combine(fecha, hora_fin)
+                            
+                            # Asegurar que las fechas sean aware para consistencia con el resto del código
+                            hora_inicio_dt = timezone.make_aware(hora_inicio_dt)
+                            hora_fin_dt = timezone.make_aware(hora_fin_dt)
                             
                             # Obtenemos todas las bahías activas
                             bahias_activas = Bahia.objects.filter(activo=True)
@@ -1048,8 +1151,10 @@ class ObtenerHorariosDisponiblesView(LoginRequiredMixin, View):
                             for reserva in otras_reservas:
                                 # Calcular la hora de fin de la reserva según la duración del servicio
                                 fin_reserva = reserva.fecha_hora + timedelta(minutes=reserva.servicio.duracion_minutos)
+                                # Asegurar que ambas fechas sean aware o naive para la comparación
+                                hora_inicio_dt_aware = timezone.make_aware(hora_inicio_dt) if timezone.is_naive(hora_inicio_dt) else hora_inicio_dt
                                 # Si la reserva termina después de nuestra hora de inicio, hay solapamiento
-                                if fin_reserva > hora_inicio_dt:
+                                if fin_reserva > hora_inicio_dt_aware:
                                     reservas_solapadas = reservas_solapadas | Reserva.objects.filter(id=reserva.id)
                             
                             # Obtener las bahías ocupadas
@@ -1058,14 +1163,14 @@ class ObtenerHorariosDisponiblesView(LoginRequiredMixin, View):
                             # Calcular bahías disponibles
                             bahias_disponibles = bahias_activas.exclude(id__in=bahias_ocupadas).count()
                             
-                            # Solo agregamos el horario si hay bahías disponibles
-                            if bahias_disponibles > 0:
-                                horarios.append({
-                                    'hora_inicio': hora_actual.strftime('%H:%M'),
-                                    'hora_fin': hora_fin.strftime('%H:%M'),
-                                    'disponible': True,
-                                    'bahias_disponibles': bahias_disponibles
-                                })
+                            # Agregamos el horario siempre, pero marcamos si está disponible o no
+                            horarios.append({
+                                'hora_inicio': hora_actual.strftime('%H:%M'),
+                                'hora_fin': hora_fin.strftime('%H:%M'),
+                                'disponible': bahias_disponibles > 0,
+                                'bahias_disponibles': bahias_disponibles,
+                                'bahias_totales': bahias_activas.count()
+                            })
                         
                         # Avanzamos en intervalos de 30 minutos para mostrar más opciones
                         hora_actual = (datetime.combine(fecha, hora_actual) + timedelta(minutes=intervalo_minutos)).time()
@@ -1077,10 +1182,23 @@ class ObtenerHorariosDisponiblesView(LoginRequiredMixin, View):
                 horarios = []
                 for h in horarios_disponibles:
                     # Para cada horario, verificar si hay bahías disponibles y si el servicio cabe en el horario
+                    
+                    # Si es el día actual, verificar que la hora de inicio sea posterior a la hora actual
+                    # Usar timezone.now() y convertirlo a hora local para comparaciones correctas
+                    now_local = timezone.localtime(timezone.now())
+                    if fecha == now_local.date():
+                        hora_actual = now_local.time()
+                        # Si la hora de inicio ya pasó o estamos fuera del horario de atención, saltamos este horario
+                        if h.hora_inicio < hora_actual or hora_actual >= h.hora_fin:
+                            continue
+                        
                     hora_inicio = datetime.combine(fecha, h.hora_inicio)
+                    # Asegurar que la fecha sea aware para consistencia
+                    hora_inicio = timezone.make_aware(hora_inicio)
                     # Calcular hora fin según la duración del servicio
                     hora_fin_servicio = hora_inicio + timedelta(minutes=duracion_servicio)
                     hora_fin = datetime.combine(fecha, h.hora_fin)
+                    hora_fin = timezone.make_aware(hora_fin)
                     
                     # Verificar que el servicio quepa en el horario disponible
                     if hora_fin_servicio.time() > h.hora_fin:
@@ -1091,15 +1209,15 @@ class ObtenerHorariosDisponiblesView(LoginRequiredMixin, View):
                     
                     # Obtener las reservas que se solapan con este horario considerando la duración del servicio
                     reservas_solapadas = Reserva.objects.filter(
-                        fecha_hora__lt=timezone.make_aware(hora_fin_servicio),
-                        fecha_hora__gte=timezone.make_aware(hora_inicio),
+                        fecha_hora__lt=hora_fin_servicio,
+                        fecha_hora__gte=hora_inicio,
                         estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA, Reserva.EN_PROCESO]
                     )
                     
                     # También considerar reservas que empezaron antes pero terminan durante nuestro horario
                     # Obtener todas las reservas activas que podrían solaparse
                     otras_reservas = Reserva.objects.filter(
-                        fecha_hora__lt=timezone.make_aware(hora_inicio),
+                        fecha_hora__lt=hora_inicio,
                         estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA, Reserva.EN_PROCESO]
                     )
                     
@@ -1107,8 +1225,10 @@ class ObtenerHorariosDisponiblesView(LoginRequiredMixin, View):
                     for reserva in otras_reservas:
                         # Calcular la hora de fin de la reserva según la duración del servicio
                         fin_reserva = reserva.fecha_hora + timedelta(minutes=reserva.servicio.duracion_minutos)
+                        # Asegurar que ambas fechas sean aware o naive para la comparación
+                        hora_inicio_aware = timezone.make_aware(hora_inicio) if timezone.is_naive(hora_inicio) else hora_inicio
                         # Si la reserva termina después de nuestra hora de inicio, hay solapamiento
-                        if fin_reserva > timezone.make_aware(hora_inicio):
+                        if fin_reserva > hora_inicio_aware:
                             reservas_solapadas = reservas_solapadas | Reserva.objects.filter(id=reserva.id)
                     
                     # Obtener las bahías ocupadas
@@ -1117,47 +1237,73 @@ class ObtenerHorariosDisponiblesView(LoginRequiredMixin, View):
                     # Calcular bahías disponibles
                     bahias_disponibles = bahias_activas.exclude(id__in=bahias_ocupadas).count()
                     
-                    # Solo agregar el horario si hay bahías disponibles
-                    if bahias_disponibles > 0:
-                        # Crear intervalos de 30 minutos dentro del horario disponible
+                    # Agregar todos los horarios, incluso los que no tienen bahías disponibles
+                    # Ya no filtramos por bahías disponibles
+                    # Crear intervalos de 30 minutos dentro del horario disponible
+                    # Si es el día actual, empezamos desde la hora actual
+                    now_local = timezone.localtime(timezone.now())
+                    if fecha == now_local.date():
+                        hora_actual_sistema = now_local.time()
+                        # Si ya pasó la hora de cierre, no hay horarios disponibles
+                        if hora_actual_sistema >= h.hora_fin:
+                            continue
+                            
+                        if hora_actual_sistema >= h.hora_inicio:
+                            hora_actual = hora_actual_sistema
+                        else:
+                            hora_actual = h.hora_inicio
+                    else:
                         hora_actual = h.hora_inicio
-                        intervalo_minutos = 30
                         
-                        while hora_actual <= (datetime.combine(fecha, h.hora_fin) - timedelta(minutes=duracion_servicio)).time():
-                            hora_fin_intervalo = (datetime.combine(fecha, hora_actual) + timedelta(minutes=duracion_servicio)).time()
-                            
-                            # Verificar disponibilidad específica para este intervalo
-                            hora_inicio_dt = timezone.make_aware(datetime.combine(fecha, hora_actual))
-                            hora_fin_dt = timezone.make_aware(datetime.combine(fecha, hora_fin_intervalo))
-                            
-                            # Verificar reservas solapadas para este intervalo específico
-                            reservas_intervalo = Reserva.objects.filter(
-                                fecha_hora__lt=hora_fin_dt,
-                                fecha_hora__gte=hora_inicio_dt,
-                                estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA, Reserva.EN_PROCESO]
-                            ).count()
-                            
-                            # Si hay menos reservas que bahías, hay disponibilidad
-                            bahias_disponibles_intervalo = bahias_activas.count() - reservas_intervalo
-                            
-                            if bahias_disponibles_intervalo > 0:
-                                horarios.append({
-                                    'hora_inicio': hora_actual.strftime('%H:%M'),
-                                    'hora_fin': hora_fin_intervalo.strftime('%H:%M'),
-                                    'disponible': True,
-                                    'bahias_disponibles': bahias_disponibles_intervalo
-                                })
-                            
-                            # Avanzar al siguiente intervalo
-                            hora_actual = (datetime.combine(fecha, hora_actual) + timedelta(minutes=intervalo_minutos)).time()
+                    intervalo_minutos = 15
+                    
+                    while hora_actual <= (datetime.combine(fecha, h.hora_fin) - timedelta(minutes=duracion_servicio)).time():
+                        hora_fin_intervalo = (datetime.combine(fecha, hora_actual) + timedelta(minutes=duracion_servicio)).time()
+                        
+                        # Verificar disponibilidad específica para este intervalo
+                        hora_inicio_dt = datetime.combine(fecha, hora_actual)
+                        hora_fin_dt = datetime.combine(fecha, hora_fin_intervalo)
+                        
+                        # Asegurar que las fechas sean aware para consistencia
+                        hora_inicio_dt = timezone.make_aware(hora_inicio_dt)
+                        hora_fin_dt = timezone.make_aware(hora_fin_dt)
+                        
+                        # Obtener todas las bahías activas para este intervalo
+                        bahias_activas_intervalo = Bahia.objects.filter(activo=True)
+                        
+                        # Verificar reservas solapadas para este intervalo específico
+                        reservas_intervalo = Reserva.objects.filter(
+                            fecha_hora__lt=hora_fin_dt,
+                            fecha_hora__gte=hora_inicio_dt,
+                            estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA, Reserva.EN_PROCESO]
+                        ).count()
+                        
+                        # Calculamos las bahías disponibles para este intervalo
+                        bahias_disponibles_intervalo = bahias_activas.count() - reservas_intervalo
+                        
+                        # Agregamos el horario siempre, pero marcamos si está disponible o no
+                        horarios.append({
+                            'hora_inicio': hora_actual.strftime('%H:%M'),
+                            'hora_fin': hora_fin_intervalo.strftime('%H:%M'),
+                            'disponible': bahias_disponibles_intervalo > 0,
+                            'bahias_disponibles': bahias_disponibles_intervalo,
+                            'bahias_totales': bahias_activas_intervalo.count()
+                        })
+                        
+                        # Avanzar al siguiente intervalo
+                        hora_actual = (datetime.combine(fecha, hora_actual) + timedelta(minutes=intervalo_minutos)).time()
             
-            return JsonResponse({'horarios': horarios})
+            response = JsonResponse({'horarios': horarios}, status=200)
+            response['Content-Type'] = 'application/json'
+            return response
             
         except Exception as e:
             import traceback
             print(f"Error al cargar horarios disponibles: {str(e)}")
             print(traceback.format_exc())
-            return JsonResponse({'error': 'Error al cargar los horarios disponibles. Por favor, inténtalo de nuevo.'}, status=500)
+            response = JsonResponse({'error': 'Error al cargar los horarios disponibles. Por favor, inténtalo de nuevo.'}, status=500)
+            response['Content-Type'] = 'application/json'
+            return response
 
 class ServicioViewSet(viewsets.ModelViewSet):
     """ViewSet para el modelo Servicio"""
@@ -1335,19 +1481,23 @@ class ObtenerBahiasDisponiblesView(LoginRequiredMixin, View):
                 'tiene_camara': bahia.tiene_camara
             } for bahia in bahias_disponibles]
             
-            return JsonResponse({
+            response = JsonResponse({
                 'fecha_hora': fecha_hora.strftime('%Y-%m-%d %H:%M'),
                 'servicio': servicio.nombre,
                 'duracion_minutos': duracion_servicio,
                 'bahias_disponibles': bahias_data,
                 'total_disponibles': bahias_disponibles.count()
-            })
+            }, status=200)
+            response['Content-Type'] = 'application/json'
+            return response
             
         except Exception as e:
             import traceback
             print(f"Error al obtener bahías disponibles: {str(e)}")
             print(traceback.format_exc())
-            return JsonResponse({'error': 'Error al obtener las bahías disponibles. Por favor, inténtalo de nuevo.'}, status=500)
+            response = JsonResponse({'error': 'Error al obtener las bahías disponibles. Por favor, inténtalo de nuevo.'}, status=500)
+            response['Content-Type'] = 'application/json'
+            return response
 
 
 class BahiaViewSet(viewsets.ModelViewSet):

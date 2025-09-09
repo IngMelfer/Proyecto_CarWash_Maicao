@@ -177,8 +177,8 @@
                             <tbody>
                                 {% for turno in proximos_turnos %}
                                 <tr>
-                                    <td>{{ turno.fecha|date:"d/m/Y" }}</td>
-                                    <td>{{ turno.hora_inicio|time:"H:i" }}</td>
+                                    <td>{{ turno.fecha_hora|date:"d/m/Y" }}</td>
+                                    <td>{{ turno.fecha_hora|time:"H:i" }}</td>
                                     <td>{{ turno.servicio.nombre }}</td>
                                     <td>{{ turno.vehiculo.marca }} {{ turno.vehiculo.modelo }} ({{ turno.vehiculo.placa }})</td>
                                     <td>
@@ -187,7 +187,7 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <a href="#" class="btn btn-sm btn-outline-primary">Ver detalles</a>
+                                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#detalleModal{{ turno.id }}">Ver detalles</button>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -246,5 +246,76 @@
         {% endif %}
     </div>
     {% endif %}
+
+    <!-- Modales de Detalles de Turnos -->
+    {% if not user.is_staff and proximos_turnos %}
+        {% for turno in proximos_turnos %}
+        <!-- Modal Detalles -->
+        <div class="modal fade" id="detalleModal{{ turno.id }}" tabindex="-1" aria-labelledby="detalleModalLabel{{ turno.id }}" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="detalleModalLabel{{ turno.id }}">Detalles del Turno</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <h6>Servicio</h6>
+                            <p>{{ turno.servicio.nombre }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6>Descripción</h6>
+                            <p>{{ turno.servicio.descripcion }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6>Fecha y Hora</h6>
+                            <p>{{ turno.fecha_hora|date:"l, j \d\e F \d\e Y" }} a las {{ turno.fecha_hora|time:"H:i" }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6>Duración</h6>
+                            <p>{{ turno.servicio.duracion_minutos }} minutos</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6>Bahía</h6>
+                            <p>{% if turno.bahia %}{{ turno.bahia.nombre }}{% else %}No asignada{% endif %}</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6>Cámara</h6>
+                            <p>{% if turno.bahia and turno.bahia.tiene_camara %}
+                                <span class="badge bg-success"><i class="fas fa-video me-1"></i> Disponible</span>
+                            {% else %}
+                                <span class="badge bg-secondary"><i class="fas fa-video-slash me-1"></i> No disponible</span>
+                            {% endif %}</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6>Vehículo</h6>
+                            <p>{% if turno.vehiculo %}{{ turno.vehiculo.marca }} {{ turno.vehiculo.modelo }} ({{ turno.vehiculo.placa }}){% else %}No especificado{% endif %}</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6>Observaciones</h6>
+                            <p>{{ turno.observaciones|default:"Sin observaciones" }}</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% endif %}
 </div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar todos los tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    });
+</script>
+{% endblock %}
+
 {% endblock %}

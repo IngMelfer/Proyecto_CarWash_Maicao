@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
+from datetime import datetime, timedelta
 from .models import Servicio, Reserva, Vehiculo, HorarioDisponible, Bahia
 from clientes.models import Cliente
 from clientes.serializers import ClienteSerializer
@@ -32,7 +33,10 @@ class ReservaSerializer(serializers.ModelSerializer):
     def validate_fecha_hora(self, value):
         """Validar que la fecha y hora de la reserva sea futura"""
         # Verificar que la fecha sea futura
-        if value <= timezone.now():
+        # Convertir value a naive datetime para comparar con datetime.now()
+        if timezone.is_aware(value):
+            value = timezone.make_naive(value, timezone.get_current_timezone())
+        if value <= datetime.now():
             raise serializers.ValidationError(_('La fecha y hora de la reserva debe ser futura'))
         
         # Verificar que la fecha sea en horario de atención (8am a 6pm)

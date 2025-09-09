@@ -234,7 +234,7 @@
                                 <label class="form-label">Medio de Pago</label>
                                 
                                 <!-- Campo oculto para almacenar el medio de pago seleccionado -->
-                                <input type="hidden" id="medioPagoInput" name="medio_pago" required>
+                                <input type="hidden" id="medioPagoInput" name="medio_pago_hidden">
                                 
                                 <!-- Contenedor para las tarjetas de medios de pago -->
                                 <div id="mediosPagoContainer" class="row row-cols-1 row-cols-md-3 g-4 mt-2">
@@ -253,7 +253,7 @@
                                                 </div>
                                                 <div class="card-footer bg-transparent">
                                                     <div class="form-check">
-                                                        <input class="form-check-input medio-pago-radio" type="radio" name="medio_pago_visual" id="medio{{ medio.id }}" value="{{ medio.id }}">
+                                                        <input class="form-check-input medio-pago-radio" type="radio" name="medio_pago" id="medio{{ medio.id }}" value="{{ medio.id }}">
                                                         <label class="form-check-label" for="medio{{ medio.id }}">
                                                             Seleccionar
                                                         </label>
@@ -310,6 +310,7 @@
                                     function mostrarMedioPagoSeleccionado(medioPagoId, medioPagoText) {
                                         console.log('Seleccionando medio de pago:', medioPagoId, medioPagoText);
                                         if (medioPagoId) {
+                                            // Actualizar el campo oculto (solo para compatibilidad)
                                             medioPagoInput.value = medioPagoId;
                                             medioPagoNombre.textContent = medioPagoText;
                                             medioPagoSeleccionado.style.display = 'block';
@@ -650,9 +651,8 @@
         // Nuevo evento para el paso 5 -> 6
         const nextToStep6 = document.querySelector('#nextToStep6');
         nextToStep6.addEventListener('click', function() {
-            const medioPagoInput = document.querySelector('#medioPagoInput');
-            const medioPago = medioPagoInput.value;
-            if (!medioPago) {
+            const medioPagoSeleccionado = document.querySelector('input[name="medio_pago"]:checked');
+            if (!medioPagoSeleccionado) {
                 mostrarAlerta('Por favor selecciona un medio de pago', 'warning');
                 return;
             }
@@ -710,9 +710,7 @@
         
         // Establecer fecha mínima (hoy)
         const today = new Date();
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        fechaInput.min = formatDateValue(tomorrow);
+        fechaInput.min = formatDateValue(today);
         
         // Establecer fecha máxima (30 días después)
         const maxDate = new Date(today);
@@ -729,6 +727,12 @@
             // Mostrar indicador de carga
             horariosContainer.innerHTML = '<div class="text-center w-100"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div></div>';
             
+            // Deshabilitar el botón de continuar hasta que se seleccione un horario válido
+            const continueButton = document.querySelector('#continueToStep3');
+            if (continueButton) {
+                continueButton.disabled = true;
+            }
+            
             // Realizar petición AJAX al servidor
             fetch(`/reservas/obtener_horarios_disponibles/?fecha=${fecha}&servicio_id=${servicioId}`)
                 .then(response => response.json())
@@ -739,7 +743,18 @@
                     // Verificar si hay error
                     if (data.error) {
                         horariosContainer.innerHTML = `<div class="alert alert-danger w-100">${data.error}</div>`;
+                        // Mostrar mensaje de error en la parte superior del paso 2
+                        const errorMsgTop = document.createElement('div');
+                        errorMsgTop.className = 'alert alert-danger mb-3';
+                        errorMsgTop.textContent = data.error;
+                        document.querySelector('#step2').insertBefore(errorMsgTop, document.querySelector('#step2').firstChild);
                         return;
+                    }
+                    
+                    // Eliminar cualquier mensaje de error anterior en la parte superior
+                    const prevErrorMsg = document.querySelector('#step2 .alert-danger');
+                    if (prevErrorMsg) {
+                        prevErrorMsg.remove();
                     }
                     
                     // Mostrar horarios en una lista desplegable
@@ -764,21 +779,34 @@
                         data.horarios.forEach(horario => {
                             const option = document.createElement('option');
                             option.value = horario.hora_inicio;
-                            option.textContent = `${horario.hora_inicio} a ${horario.hora_fin} - ${horario.bahias_disponibles} bahías disponibles`;
                             option.dataset.horaFin = horario.hora_fin; // Guardar la hora de fin para usarla después
                             
-                            // Si no está disponible, deshabilitar la opción
+                            // Si no está disponible, deshabilitar la opción y mostrar como ocupado
                             if (!horario.disponible) {
+                                option.textContent = `${horario.hora_inicio} a ${horario.hora_fin} - OCUPADO (0/${horario.bahias_totales} bahías disponibles)`;
                                 option.disabled = true;
+                                option.className = 'text-danger';
+                                option.style.color = 'red';
+                            } else {
+                                option.textContent = `${horario.hora_inicio} a ${horario.hora_fin} - ${horario.bahias_disponibles}/${horario.bahias_totales} bahías disponibles`;
                             }
                             
                             select.appendChild(option);
                         });
                         
                         // Mostrar el número total de horarios disponibles
+                        const horariosDisponibles = data.horarios.filter(horario => horario.disponible).length;
                         const infoHorarios = document.createElement('div');
                         infoHorarios.className = 'mt-2 text-info';
-                        infoHorarios.textContent = `Total de horarios disponibles: ${data.horarios.length}`;
+                        infoHorarios.textContent = `Total de horarios disponibles: ${horariosDisponibles}`;
+                        
+                        // Si hay horarios no disponibles, mostrar un mensaje adicional
+                        if (data.horarios.length > horariosDisponibles) {
+                            const infoNoDisponibles = document.createElement('div');
+                            infoNoDisponibles.className = 'mt-1 text-danger';
+                            infoNoDisponibles.textContent = `Horarios ocupados: ${data.horarios.length - horariosDisponibles}`;
+                            selectContainer.appendChild(infoNoDisponibles);
+                        }
                         selectContainer.appendChild(infoHorarios);
                         
                         // Evento de cambio
@@ -806,12 +834,24 @@
                             
                             // Limpiar la selección de bahía anterior
                             selectedBahia = null;
+                            
+                            // Habilitar el botón de continuar
+                            if (continueButton) {
+                                continueButton.disabled = false;
+                            }
                         });
                         
                         selectContainer.appendChild(select);
                         horariosContainer.appendChild(selectContainer);
                     } else {
-                        horariosContainer.innerHTML = '<div class="alert alert-warning w-100">No hay horarios disponibles para la fecha seleccionada.</div>';
+                        // Mostrar mensaje de alerta más visible cuando no hay horarios disponibles
+                        horariosContainer.innerHTML = '<div class="alert alert-warning w-100"><strong>¡Atención!</strong> No hay horarios disponibles para la fecha seleccionada. Por favor, seleccione otra fecha.</div>';
+                        
+                        // Mostrar mensaje de error en la parte superior del paso 2 también
+                        const errorMsgTop = document.createElement('div');
+                        errorMsgTop.className = 'alert alert-warning mb-3';
+                        errorMsgTop.innerHTML = '<strong>¡Atención!</strong> No hay horarios disponibles para la fecha seleccionada. Por favor, seleccione otra fecha.';
+                        document.querySelector('#step2').insertBefore(errorMsgTop, document.querySelector('#step2').firstChild);
                     }
                 })
                 .catch(error => {
@@ -962,8 +1002,8 @@
             }
             
             // Verificar que se haya seleccionado un medio de pago
-            const medioPagoInput = document.getElementById('medioPagoInput');
-            if (!medioPagoInput || !medioPagoInput.value) {
+            const medioPagoRadioSeleccionado = document.querySelector('input[name="medio_pago"]:checked');
+            if (!medioPagoRadioSeleccionado) {
                 mostrarAlerta('Por favor selecciona un medio de pago', 'warning');
                 return;
             }
@@ -985,12 +1025,13 @@
             }
             
             // Depurar para ver si el campo existe
-            console.log('Campo medio_pago:', medioPagoInput);
+            const medioPagoSeleccionado = document.querySelector('input[name="medio_pago"]:checked');
+            console.log('Campo medio_pago:', medioPagoSeleccionado ? medioPagoSeleccionado.value : 'No seleccionado');
             console.log('Bahía seleccionada:', selectedBahia);
             
             // Guardar información de depuración
-            const medioPagoSeleccionado = document.querySelector('.medio-pago-radio:checked');
-            const medioPagoCard = document.querySelector(`.medio-pago-card[data-medio-id="${medioPagoInput.value}"]`);
+            const medioPagoSeleccionadoRadio = document.querySelector('.medio-pago-radio:checked');
+            const medioPagoCard = medioPagoSeleccionadoRadio ? document.querySelector(`.medio-pago-card[data-medio-id="${medioPagoSeleccionadoRadio.value}"]`) : null;
             const medioPagoText = medioPagoCard ? medioPagoCard.querySelector('.card-title').textContent.trim() : '';
             
             document.getElementById('debugInfo').value = JSON.stringify({
@@ -1006,7 +1047,7 @@
                     color: color
                 },
                 bahia: selectedBahia,
-                medioPago: medioPagoInput.value,
+                medioPago: document.querySelector('input[name="medio_pago"]:checked')?.value || '',
                 medioPagoText: medioPagoText
             });
             
@@ -1028,16 +1069,18 @@
             console.log('Términos aceptados:', document.querySelector('#terminos').checked);
             
             // Asegurarse de que todos los campos necesarios estén en el formData
-            if (!formData.has('bahia_id') && selectedBahia) {
-                formData.append('bahia_id', selectedBahia);
+            if (selectedBahia) {
+                formData.set('bahia_id', selectedBahia);
             }
             
-            if (!formData.has('medio_pago') && medioPagoInput.value) {
-                formData.append('medio_pago', medioPagoInput.value);
+            // Verificar que el medio de pago esté en el formData
+            let radioSeleccionado = document.querySelector('input[name="medio_pago"]:checked');
+            if (radioSeleccionado) {
+                formData.set('medio_pago', radioSeleccionado.value);
             }
             
-            if (!formData.has('hora') && selectedTime) {
-                formData.append('hora', selectedTime);
+            if (selectedTime) {
+                formData.set('hora', selectedTime);
             }
             
             // Asegurarse de que los campos del vehículo estén en el formData
@@ -1077,17 +1120,24 @@
             }
             
             // Asegurarse de que el campo de términos esté incluido en el formData
-            if (!formData.has('terminos')) {
-                formData.append('terminos', document.querySelector('#terminos').checked ? 'on' : '');
+            // Reutilizamos la variable terminosCheckbox que ya fue declarada anteriormente
+            formData.set('terminos', document.querySelector('#terminos').checked ? 'on' : '');
+            
+            // Verificar que los términos estén aceptados
+            if (!document.querySelector('#terminos').checked) {
+                console.error('Debe aceptar los términos y condiciones');
+                faltanCampos = true;
+            } else {
+                console.log('Términos aceptados: Sí');
             }
             
             // Verificar todos los campos requeridos antes de enviar
             console.log('Verificando campos requeridos:');
-            const camposRequeridos = ['servicio', 'fecha', 'hora', 'bahia_id', 'medio_pago'];
+            const camposRequeridos = ['servicio', 'fecha', 'hora', 'bahia_id'];
             let faltanCampos = false;
             
             // Verificar si el campo vehiculo está presente o si se están enviando los datos para un nuevo vehículo
-            if (!formData.has('vehiculo')) {
+            if (!formData.has('vehiculo') || !formData.get('vehiculo')) {
                 // Si no hay campo vehiculo, verificar si hay datos para un nuevo vehículo
                 const tieneDatosNuevoVehiculo = formData.has('marca') && formData.has('modelo') && 
                                                formData.has('anio') && formData.has('placa') && 
@@ -1098,11 +1148,22 @@
                     faltanCampos = true;
                 } else {
                     // Si hay datos para un nuevo vehículo, agregar 'nuevo' como valor para vehiculo
-                    formData.append('vehiculo', 'nuevo');
+                    formData.set('vehiculo', 'nuevo');
                     console.log('Campo vehiculo: nuevo (agregado automáticamente)');
                 }
             } else {
                 console.log(`Campo vehiculo: ${formData.get('vehiculo')}`);
+            }
+            
+            // Verificar el medio de pago
+            let medioPagoRadio = document.querySelector('input[name="medio_pago"]:checked');
+            if (!medioPagoRadio) {
+                console.error('Falta el campo requerido: medio_pago');
+                faltanCampos = true;
+            } else {
+                // Asegurarse de que el medio de pago esté en el formData
+                formData.set('medio_pago', medioPagoRadio.value);
+                console.log(`Campo medio_pago: ${formData.get('medio_pago')}`);
             }
             
             // Verificar el resto de campos requeridos
@@ -1128,11 +1189,110 @@
                 body: formData,
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
-                }
+                },
+                redirect: 'follow' // Seguir redirecciones automáticamente
             })
-            .then(response => response.json())
+            .then(response => {
+                // Registrar información de la respuesta para depuración
+                console.log('Código de estado de la respuesta:', response.status);
+                console.log('Headers de la respuesta:', [...response.headers.entries()]);
+                
+                // Verificar si la respuesta es una redirección (código 302)
+                if (response.redirected) {
+                    console.log('Redirección detectada a:', response.url);
+                    // Si la URL contiene 'procesar-pago', redirigir al usuario
+                    if (response.url.includes('procesar-pago')) {
+                        window.location.href = response.url;
+                        return null; // Detener el procesamiento adicional
+                    }
+                }
+                
+                // Verificar si la respuesta es exitosa (código 200-299)
+                if (!response.ok) {
+                    // Si es un error 401, manejar como sesión expirada
+                    if (response.status === 401) {
+                        throw new Error('SESSION_EXPIRED');
+                    }
+                    // Para otros errores HTTP, intentar obtener el mensaje de error del servidor
+                    return response.text().then(text => {
+                        console.log('Respuesta de error (texto):', text);
+                        // Intentar parsear como JSON
+                        try {
+                            const data = JSON.parse(text);
+                            console.log('Respuesta de error parseada:', data);
+                            throw new Error(data.error || `Error HTTP: ${response.status}`);
+                        } catch (e) {
+                            console.error('Error al parsear respuesta de error:', e);
+                            // Si no es JSON o no tiene campo error, lanzar error genérico
+                            throw new Error(`Error HTTP: ${response.status}`);
+                        }
+                    });
+                }
+                
+                // Siempre intentar obtener el texto de la respuesta primero
+                return response.text().then(text => {
+                    // Registrar la respuesta completa para depuración
+                    console.log('Respuesta del servidor (texto):', text);
+                    console.log('Longitud de la respuesta:', text.length);
+                    console.log('Código de estado HTTP:', response.status);
+                    console.log('Headers:', [...response.headers.entries()]);
+                    
+                    // Si el texto está vacío, devolver un objeto vacío
+                    if (!text.trim()) {
+                        console.log('Respuesta vacía, devolviendo objeto vacío');
+                        return {};
+                    }
+                    
+                    try {
+                        // Intentar parsear como JSON
+                        const jsonData = JSON.parse(text);
+                        console.log('Respuesta parseada correctamente:', jsonData);
+                        return jsonData;
+                    } catch (e) {
+                        console.error('Error al parsear JSON:', e);
+                        console.error('Texto recibido:', text);
+                        console.error('Primeros 100 caracteres:', text.substring(0, 100));
+                        console.error('Últimos 100 caracteres:', text.length > 100 ? text.substring(text.length - 100) : text);
+                        
+                        // Verificar si la respuesta contiene HTML
+                        const containsHTML = text.includes('<html') || text.includes('<!DOCTYPE') || text.includes('<body');
+                        console.error('¿Contiene HTML?', containsHTML);
+                        
+                        // Si contiene HTML y parece ser una página de procesamiento de pago
+                        if (containsHTML && text.includes('Procesando Pago')) {
+                            console.log('Detectada página de procesamiento de pago, redirigiendo...');
+                            // Crear un div temporal para extraer la URL de redirección
+                            const tempDiv = document.createElement('div');
+                            tempDiv.innerHTML = text;
+                            // Redirigir a la página de procesamiento de pago
+                            window.location.href = window.location.origin + '/reservas/procesar-pago/';
+                            return null; // Detener el procesamiento adicional
+                        }
+                        
+                        // Crear un error personalizado con información adicional
+                        const error = new Error('La respuesta del servidor no es JSON válido');
+                        error.htmlDetected = containsHTML;
+                        error.responseText = text.substring(0, 200); // Primeros 200 caracteres para diagnóstico
+                        
+                        // Si no se puede parsear, lanzar el error personalizado
+                        throw error;
+                    }
+                });
+            })
             .then(data => {
-                if (data.success) {
+                // Si la respuesta es null (ya se ha manejado la redirección), no hacer nada más
+                if (data === null) {
+                    return;
+                }
+                
+                // Verificar si hay una redirección en la respuesta JSON
+                if (data && data.success && data.redirect) {
+                    console.log('Redirección detectada en respuesta JSON:', data.redirect_url);
+                    window.location.href = data.redirect_url;
+                    return;
+                }
+                
+                if (data && data.success) {
                     // Crear modal de confirmación exitosa
                     const modalHTML = `
                     <div class="modal fade" id="confirmacionModal" tabindex="-1" aria-labelledby="confirmacionModalLabel" aria-hidden="true">
@@ -1228,7 +1388,7 @@
                     document.getElementById('confirmacionModal').addEventListener('hidden.bs.modal', function () {
                         window.location.href = '/reservas/mis-turnos/';
                     });
-                } else {
+                } else if (data) {
                     // Mostrar error
                     mostrarAlerta(data.error || 'Ha ocurrido un error al procesar la reserva', 'danger');
                     submitBtn.innerHTML = originalBtnText;
@@ -1237,7 +1397,40 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                mostrarAlerta('Ha ocurrido un error al procesar la reserva', 'danger');
+                // Registrar información detallada para depuración
+                console.error('Tipo de error:', typeof error);
+                console.error('Error completo:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+                
+                // Verificar si es un error de restricción UNIQUE
+                if (error.message && error.message.includes('UNIQUE constraint failed')) {
+                    mostrarAlerta('Ya existe una reserva para esta fecha, hora y bahía. Por favor seleccione otra hora o bahía.', 'warning');
+                } else if (error.message === 'SESSION_EXPIRED') {
+                    // Redirigir a la página de login si la sesión ha expirado
+                    mostrarAlerta('Su sesión ha expirado. Por favor inicie sesión nuevamente.', 'warning');
+                    setTimeout(() => {
+                        window.location.href = '/autenticacion/login/?next=/reservas/reservar-turno/';
+                    }, 2000);
+                } else if (error.message && error.message.includes('La respuesta del servidor no es JSON válido')) {
+                    // Registrar el error completo en la consola para depuración
+                    console.error('Error detallado:', error.message);
+                    // Intentar determinar si la respuesta es HTML
+                    if (error.htmlDetected) {
+                        console.error('Se detectó HTML en la respuesta en lugar de JSON');
+                        // Intentar reiniciar la sesión
+                        mostrarAlerta('Se detectó un problema con la sesión. Intentando recargar la página...', 'warning');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    } else {
+                        // Mostrar un mensaje más amigable al usuario
+                        mostrarAlerta('Error en la comunicación con el servidor. Por favor intente nuevamente más tarde o contacte al administrador.', 'danger');
+                    }
+                } else if (error.message && error.message.includes('Error HTTP:')) {
+                    mostrarAlerta('Error en la comunicación con el servidor: ' + error.message, 'danger');
+                } else {
+                    mostrarAlerta('Ha ocurrido un error al procesar la reserva: ' + error.message, 'danger');
+                }
+                // Siempre habilitar el botón de envío nuevamente
                 submitBtn.innerHTML = originalBtnText;
                 submitBtn.disabled = false;
             });
@@ -1246,7 +1439,14 @@
         // Funciones auxiliares
         function formatDate(dateString) {
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            return new Date(dateString).toLocaleDateString('es-ES', options);
+            // Aseguramos que se use la fecha seleccionada y no la actual
+            // El formato de dateString es YYYY-MM-DD
+            if (!dateString) return '';
+            
+            // Crear la fecha correctamente a partir del string YYYY-MM-DD
+            const [year, month, day] = dateString.split('-');
+            const date = new Date(year, month - 1, day);
+            return date.toLocaleDateString('es-ES', options);
         }
         
         function formatDateValue(date) {

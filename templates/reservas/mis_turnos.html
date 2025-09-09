@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load reservas_filters %}
 
 {% block title %}Mis Turnos - Premium Car Detailing{% endblock %}
 
@@ -55,17 +56,17 @@
                     <!-- Pestañas para filtrar turnos -->
                     <ul class="nav nav-tabs mb-4" id="turnosTabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="proximas-tab" data-bs-toggle="tab" data-bs-target="#proximas" type="button" role="tab" aria-controls="proximas" aria-selected="true">
+                            <button class="nav-link {% if not active_tab or active_tab == 'proximas' %}active{% endif %}" id="proximas-tab" data-bs-toggle="tab" data-bs-target="#proximas" type="button" role="tab" aria-controls="proximas" aria-selected="{% if not active_tab or active_tab == 'proximas' %}true{% else %}false{% endif %}">
                                 Próximas
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="pasadas-tab" data-bs-toggle="tab" data-bs-target="#pasadas" type="button" role="tab" aria-controls="pasadas" aria-selected="false">
+                            <button class="nav-link {% if active_tab == 'pasadas' %}active{% endif %}" id="pasadas-tab" data-bs-toggle="tab" data-bs-target="#pasadas" type="button" role="tab" aria-controls="pasadas" aria-selected="{% if active_tab == 'pasadas' %}true{% else %}false{% endif %}">
                                 Pasadas
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="canceladas-tab" data-bs-toggle="tab" data-bs-target="#canceladas" type="button" role="tab" aria-controls="canceladas" aria-selected="false">
+                            <button class="nav-link {% if active_tab == 'canceladas' %}active{% endif %}" id="canceladas-tab" data-bs-toggle="tab" data-bs-target="#canceladas" type="button" role="tab" aria-controls="canceladas" aria-selected="{% if active_tab == 'canceladas' %}true{% else %}false{% endif %}">
                                 Canceladas
                             </button>
                         </li>
@@ -74,7 +75,7 @@
                     <!-- Contenido de las pestañas -->
                     <div class="tab-content" id="turnosTabsContent">
                         <!-- Turnos Próximos -->
-                        <div class="tab-pane fade show active" id="proximas" role="tabpanel" aria-labelledby="proximas-tab">
+                        <div class="tab-pane fade {% if not active_tab or active_tab == 'proximas' %}show active{% endif %}" id="proximas" role="tabpanel" aria-labelledby="proximas-tab">
                             {% if proximas %}
                                 <div class="row row-cols-1 row-cols-md-2 g-4">
                                     {% for cita in proximas %}
@@ -87,15 +88,15 @@
                                                 <div class="card-body">
                                                     <div class="mb-3">
                                                         <i class="fas fa-calendar-day me-2 text-primary"></i>
-                                                        <strong>Fecha:</strong> {{ cita.fecha|date:"l, j \d\e F \d\e Y" }}
+                                                        <strong>Fecha:</strong> {{ cita.fecha_hora|date:"l, j \d\e F \d\e Y" }}
                                                     </div>
                                                     <div class="mb-3">
                                                         <i class="fas fa-clock me-2 text-primary"></i>
-                                                        <strong>Hora:</strong> {{ cita.hora_inicio|time:"H:i" }} - {{ cita.hora_fin|time:"H:i" }}
+                                                        <strong>Hora:</strong> {{ cita.fecha_hora|time:"h:i A" }}
                                                     </div>
                                                     <div class="mb-3">
                                                         <i class="fas fa-car me-2 text-primary"></i>
-                                                        <strong>Vehículo:</strong> {{ cita.vehiculo.marca }} {{ cita.vehiculo.modelo }} ({{ cita.vehiculo.placa }})
+                                                        <strong>Vehículo:</strong> {% if cita.vehiculo %}{{ cita.vehiculo.marca }} {{ cita.vehiculo.modelo }} ({{ cita.vehiculo.placa }}){% else %}No especificado{% endif %}
                                                     </div>
                                                     <div class="mb-3">
                                                         <i class="fas fa-tag me-2 text-primary"></i>
@@ -120,82 +121,7 @@
                                             </div>
                                         </div>
                                         
-                                        <!-- Modal Detalles -->
-                                        <div class="modal fade" id="detalleModal{{ cita.id }}" tabindex="-1" aria-labelledby="detalleModalLabel{{ cita.id }}" aria-hidden="true">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content">
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title" id="detalleModalLabel{{ cita.id }}">Detalles del Turno</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <div class="mb-3">
-                                                            <h6>Servicio</h6>
-                                                            <p>{{ cita.servicio.nombre }}</p>
-                                                        </div>
-                                                        <div class="mb-3">
-                                                            <h6>Descripción</h6>
-                                                            <p>{{ cita.servicio.descripcion }}</p>
-                                                        </div>
-                                                        <div class="mb-3">
-                                                            <h6>Fecha y Hora</h6>
-                                                            <p>{{ cita.fecha|date:"l, j \d\e F \d\e Y" }} a las {{ cita.hora_inicio|time:"H:i" }}</p>
-                                                        </div>
-                                                        <div class="mb-3">
-                                                            <h6>Duración</h6>
-                                                            <p>{{ cita.servicio.duracion_minutos }} minutos</p>
-                                                        </div>
-                                                        <div class="mb-3">
-                                                            <h6>Vehículo</h6>
-                                                            <p>{{ cita.vehiculo.marca }} {{ cita.vehiculo.modelo }} {{ cita.vehiculo.anio }}<br>
-                                                            Color: {{ cita.vehiculo.color }}<br>
-                                                            Placa: {{ cita.vehiculo.placa }}</p>
-                                                        </div>
-                                                        <div class="mb-3">
-                                                            <h6>Observaciones</h6>
-                                                            <p>{{ cita.observaciones|default:"Sin observaciones" }}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Modal Cancelar -->
-                                        <div class="modal fade" id="cancelarModal{{ cita.id }}" tabindex="-1" aria-labelledby="cancelarModalLabel{{ cita.id }}" aria-hidden="true">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content">
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title" id="cancelarModalLabel{{ cita.id }}">Cancelar Turno</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <p>¿Estás seguro de que deseas cancelar este turno?</p>
-                                                        <p><strong>Servicio:</strong> {{ cita.servicio.nombre }}</p>
-                                                        <p><strong>Fecha:</strong> {{ cita.fecha|date:"l, j \d\e F \d\e Y" }}</p>
-                                                        <p><strong>Hora:</strong> {{ cita.hora_inicio|time:"H:i" }}</p>
-                                                        
-                                                        <div class="alert alert-warning">
-                                                            <i class="fas fa-exclamation-triangle me-2"></i>
-                                                            <strong>Nota:</strong> Las cancelaciones con menos de 24 horas de anticipación pueden estar sujetas a un cargo del 30% del valor del servicio.
-                                                        </div>
-                                                        
-                                                        <form method="post" action="{% url 'reservas:cancelar_turno' cita.id %}">
-                                                            {% csrf_token %}
-                                                            <div class="mb-3">
-                                                                <label for="motivo_cancelacion{{ cita.id }}" class="form-label">Motivo de cancelación</label>
-                                                                <textarea class="form-control" id="motivo_cancelacion{{ cita.id }}" name="motivo_cancelacion" rows="3" required></textarea>
-                                                            </div>
-                                                            <div class="d-grid gap-2">
-                                                                <button type="submit" class="btn btn-danger">Confirmar Cancelación</button>
-                                                            </div>
-                                                        </form>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+
                                     {% endfor %}
                                 </div>
                             {% else %}
@@ -208,7 +134,7 @@
                         </div>
                         
                         <!-- Turnos Pasados -->
-                        <div class="tab-pane fade" id="pasadas" role="tabpanel" aria-labelledby="pasadas-tab">
+                        <div class="tab-pane fade {% if active_tab == 'pasadas' %}show active{% endif %}" id="pasadas" role="tabpanel" aria-labelledby="pasadas-tab">
                             {% if pasadas %}
                                 <div class="row row-cols-1 row-cols-md-2 g-4">
                                     {% for cita in pasadas %}
@@ -225,11 +151,11 @@
                                                     </div>
                                                     <div class="mb-3">
                                                         <i class="fas fa-clock me-2 text-secondary"></i>
-                                                        <strong>Hora:</strong> {{ cita.hora_inicio|time:"H:i" }} - {{ cita.hora_fin|time:"H:i" }}
+                                                        <strong>Hora:</strong> {{ cita.hora_inicio|time:"h:i A" }} - {{ cita.hora_fin|time:"h:i A" }}
                                                     </div>
                                                     <div class="mb-3">
                                                         <i class="fas fa-car me-2 text-secondary"></i>
-                                                        <strong>Vehículo:</strong> {{ cita.vehiculo.marca }} {{ cita.vehiculo.modelo }} ({{ cita.vehiculo.placa }})
+                                                        <strong>Vehículo:</strong> {% if cita.vehiculo %}{{ cita.vehiculo.marca }} {{ cita.vehiculo.modelo }} ({{ cita.vehiculo.placa }}){% else %}No especificado{% endif %}
                                                     </div>
                                                     <div class="mb-3">
                                                         <i class="fas fa-tag me-2 text-secondary"></i>
@@ -261,109 +187,10 @@
                                             </div>
                                         </div>
                                         
-                                        <!-- Modal Detalles Cita Pasada -->
-                                        <div class="modal fade" id="detalleModalPasada{{ cita.id }}" tabindex="-1" aria-labelledby="detalleModalPasadaLabel{{ cita.id }}" aria-hidden="true">
-                                            <div class="modal-dialog">
-                                                <div class="modal-content">
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title" id="detalleModalPasadaLabel{{ cita.id }}">Detalles de la Cita</h5>
-                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <div class="mb-3">
-                                                            <h6>Servicio</h6>
-                                                            <p>{{ cita.servicio.nombre }}</p>
-                                                        </div>
-                                                        <div class="mb-3">
-                                                            <h6>Descripción</h6>
-                                                            <p>{{ cita.servicio.descripcion }}</p>
-                                                        </div>
-                                                        <div class="mb-3">
-                                                            <h6>Fecha y Hora</h6>
-                                                            <p>{{ cita.fecha|date:"l, j \d\e F \d\e Y" }} a las {{ cita.hora_inicio|time:"H:i" }}</p>
-                                                        </div>
-                                                        <div class="mb-3">
-                                                            <h6>Duración</h6>
-                                                            <p>{{ cita.servicio.duracion_minutos }} minutos</p>
-                                                        </div>
-                                                        <div class="mb-3">
-                                                            <h6>Vehículo</h6>
-                                                            <p>{{ cita.vehiculo.marca }} {{ cita.vehiculo.modelo }} {{ cita.vehiculo.anio }}<br>
-                                                            Color: {{ cita.vehiculo.color }}<br>
-                                                            Placa: {{ cita.vehiculo.placa }}</p>
-                                                        </div>
-                                                        <div class="mb-3">
-                                                            <h6>Observaciones</h6>
-                                                            <p>{{ cita.observaciones|default:"Sin observaciones" }}</p>
-                                                        </div>
-                                                        {% if cita.calificacion %}
-                                                            <div class="mb-3">
-                                                                <h6>Tu Calificación</h6>
-                                                                <div class="text-warning">
-                                                                    {% for i in "12345"|make_list %}
-                                                                        {% if forloop.counter <= cita.calificacion %}
-                                                                            <i class="fas fa-star"></i>
-                                                                        {% else %}
-                                                                            <i class="far fa-star"></i>
-                                                                        {% endif %}
-                                                                    {% endfor %}
-                                                                </div>
-                                                                <p class="mt-2">{{ cita.comentario|default:"Sin comentarios" }}</p>
-                                                            </div>
-                                                        {% endif %}
-                                                    </div>
-                                                    <div class="modal-footer">
-                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+
                                         
-                                        <!-- Modal Calificar -->
-                                        {% if not cita.calificacion %}
-                                            <div class="modal fade" id="calificarModal{{ cita.id }}" tabindex="-1" aria-labelledby="calificarModalLabel{{ cita.id }}" aria-hidden="true">
-                                                <div class="modal-dialog">
-                                                    <div class="modal-content">
-                                                        <div class="modal-header">
-                                                            <h5 class="modal-title" id="calificarModalLabel{{ cita.id }}">Calificar Servicio</h5>
-                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                        </div>
-                                                        <div class="modal-body">
-                                                            <p>Tu opinión es importante para nosotros. Por favor, califica el servicio recibido:</p>
-                                                            
-                                                            <form method="post" action="{% url 'reservas:calificar_turno' cita.id %}">
-                                                                {% csrf_token %}
-                                                                <div class="mb-3">
-                                                                    <label class="form-label">Calificación</label>
-                                                                    <div class="rating-stars">
-                                                                        <div class="d-flex justify-content-center fs-2 text-warning">
-                                                                            {% for i in "12345"|make_list %}
-                                                                                <div class="mx-2">
-                                                                                    <input type="radio" id="star{{ forloop.counter }}{{ cita.id }}" name="puntuacion" value="{{ forloop.counter }}" class="d-none" required>
-                                                                                    <label for="star{{ forloop.counter }}{{ cita.id }}" class="star-label">
-                                                                                        <i class="far fa-star"></i>
-                                                                                    </label>
-                                                                                    <div class="text-center">{{ forloop.counter }}</div>
-                                                                                </div>
-                                                                            {% endfor %}
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="mb-3">
-                                                                    <label for="comentario{{ cita.id }}" class="form-label">Comentarios (opcional)</label>
-                                                                    <textarea class="form-control" id="comentario{{ cita.id }}" name="comentario" rows="3"></textarea>
-                                                                </div>
-                                                                <div class="d-grid gap-2">
-                                                                    <button type="submit" class="btn btn-primary">
-                                                                        <i class="fas fa-paper-plane me-2"></i> Enviar Calificación
-                                                                    </button>
-                                                                </div>
-                                                            </form>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        {% endif %}
+
+
                                     {% endfor %}
                                 </div>
                             {% else %}
@@ -375,37 +202,37 @@
                         </div>
                         
                         <!-- Turnos Cancelados -->
-                        <div class="tab-pane fade" id="canceladas" role="tabpanel" aria-labelledby="canceladas-tab">
+                        <div class="tab-pane fade {% if active_tab == 'canceladas' %}show active{% endif %}" id="canceladas" role="tabpanel" aria-labelledby="canceladas-tab">
                             {% if canceladas %}
                                 <div class="row row-cols-1 row-cols-md-2 g-4">
                                     {% for cita in canceladas %}
                                         <div class="col">
                                             <div class="card h-100 border-danger border-opacity-25">
-                                                <div class="card-header bg-danger bg-opacity-10 d-flex justify-content-between align-items-center">
+                                                <div class="card-header {% if cita.estado == 'IN' %}bg-warning{% else %}bg-danger{% endif %} bg-opacity-10 d-flex justify-content-between align-items-center">
                                                     <h5 class="card-title mb-0">{{ cita.servicio.nombre }}</h5>
-                                                    <span class="badge bg-danger">Cancelada</span>
+                                                    <span class="badge {% if cita.estado == 'IN' %}bg-warning{% else %}bg-danger{% endif %}">{% if cita.estado == 'IN' %}Incumplida{% else %}Cancelada{% endif %}</span>
                                                 </div>
                                                 <div class="card-body">
                                                     <div class="mb-3">
                                                         <i class="fas fa-calendar-day me-2 text-danger"></i>
-                                                        <strong>Fecha:</strong> {{ cita.fecha|date:"l, j \d\e F \d\e Y" }}
+                                                        <strong>Fecha:</strong> {{ cita.fecha_hora|date:"l, j \d\e F \d\e Y" }}
                                                     </div>
                                                     <div class="mb-3">
                                                         <i class="fas fa-clock me-2 text-danger"></i>
-                                                        <strong>Hora:</strong> {{ cita.hora_inicio|time:"H:i" }} - {{ cita.hora_fin|time:"H:i" }}
+                                                        <strong>Hora:</strong> {{ cita.fecha_hora|time:"h:i A" }}
                                                     </div>
                                                     <div class="mb-3">
                                                         <i class="fas fa-car me-2 text-danger"></i>
-                                                        <strong>Vehículo:</strong> {{ cita.vehiculo.marca }} {{ cita.vehiculo.modelo }} ({{ cita.vehiculo.placa }})
+                                                        <strong>Vehículo:</strong> {% if cita.vehiculo %}{{ cita.vehiculo.marca }} {{ cita.vehiculo.modelo }} ({{ cita.vehiculo.placa }}){% else %}No especificado{% endif %}
                                                     </div>
                                                     <div class="mb-3">
                                                         <i class="fas fa-info-circle me-2 text-danger"></i>
-                                                        <strong>Motivo:</strong> {{ cita.motivo_cancelacion }}
+                                                        <strong>Motivo:</strong> {% if cita.notas and "Motivo de cancelación:" in cita.notas %}{{ cita.notas|split:"Motivo de cancelación:"|last }}{% else %}No especificado{% endif %}
                                                     </div>
                                                 </div>
                                                 <div class="card-footer bg-transparent">
                                                     <div class="d-flex justify-content-between">
-                                                        <small class="text-muted">Cancelada el {{ cita.fecha_cancelacion|date:"j/m/Y" }}</small>
+                                                        <small class="text-muted">Cancelada el {{ cita.fecha_actualizacion|date:"j/m/Y h:i A" }}</small>
                                                         <a href="{% url 'reservas:reservar_turno' %}" class="btn btn-outline-primary btn-sm">
                                                             <i class="fas fa-redo me-1"></i> Reservar de nuevo
                                                         </a>
@@ -428,6 +255,201 @@
         </div>
     </div>
 </div>
+
+<!-- Modales independientes para Ver Detalles -->
+{% for cita in proximas %}
+    <!-- Modal Detalles -->
+    <div class="modal fade" id="detalleModal{{ cita.id }}" tabindex="-1" aria-labelledby="detalleModalLabel{{ cita.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detalleModalLabel{{ cita.id }}">Detalles del Turno</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <h6>Servicio</h6>
+                        <p>{{ cita.servicio.nombre }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Descripción</h6>
+                        <p>{{ cita.servicio.descripcion }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Fecha y Hora</h6>
+                        <p>{{ cita.fecha_hora|date:"l, j \d\e F \d\e Y" }} a las {{ cita.fecha_hora|time:"h:i A" }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Duración</h6>
+                        <p>{{ cita.servicio.duracion_minutos }} minutos</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Bahía</h6>
+                        <p>{% if cita.bahia %}{{ cita.bahia.nombre }}{% else %}No asignada{% endif %}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Cámara</h6>
+                        <p>{% if cita.bahia and cita.bahia.tiene_camara %}
+                            <span class="badge bg-success"><i class="fas fa-video me-1"></i> Disponible</span>
+                        {% else %}
+                            <span class="badge bg-secondary"><i class="fas fa-video-slash me-1"></i> No disponible</span>
+                        {% endif %}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Vehículo</h6>
+                        <p>{% if cita.vehiculo %}{{ cita.vehiculo.marca }} {{ cita.vehiculo.modelo }} ({{ cita.vehiculo.placa }}){% else %}No especificado{% endif %}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Observaciones</h6>
+                        <p>{{ cita.observaciones|default:"Sin observaciones" }}</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Cancelar -->
+    <div class="modal fade" id="cancelarModal{{ cita.id }}" tabindex="-1" aria-labelledby="cancelarModalLabel{{ cita.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cancelarModalLabel{{ cita.id }}">Cancelar Turno</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Estás seguro de que deseas cancelar este turno?</p>
+                    <p><strong>Servicio:</strong> {{ cita.servicio.nombre }}</p>
+                    <p><strong>Fecha:</strong> {{ cita.fecha_hora|date:"l, j \d\e F \d\e Y" }}</p>
+                    <p><strong>Hora:</strong> {{ cita.fecha_hora|time:"h:i A" }}</p>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Nota:</strong> Las cancelaciones con menos de 24 horas de anticipación pueden estar sujetas a un cargo del 30% del valor del servicio.
+                    </div>
+                    
+                    <form method="post" action="{% url 'reservas:cancelar_turno' cita.id %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="motivo_cancelacion{{ cita.id }}" class="form-label">Motivo de cancelación</label>
+                            <textarea class="form-control" id="motivo_cancelacion{{ cita.id }}" name="motivo_cancelacion" rows="3" required></textarea>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger">Confirmar Cancelación</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endfor %}
+
+<!-- Modales independientes para Ver Detalles de Turnos Pasados -->
+{% for cita in pasadas %}
+    <!-- Modal Detalles Cita Pasada -->
+    <div class="modal fade" id="detalleModalPasada{{ cita.id }}" tabindex="-1" aria-labelledby="detalleModalPasadaLabel{{ cita.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detalleModalPasadaLabel{{ cita.id }}">Detalles de la Cita</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <h6>Servicio</h6>
+                        <p>{{ cita.servicio.nombre }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Descripción</h6>
+                        <p>{{ cita.servicio.descripcion }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Fecha y Hora</h6>
+                        <p>{{ cita.fecha_hora|date:"l, j \d\e F \d\e Y" }} a las {{ cita.fecha_hora|time:"h:i A" }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Duración</h6>
+                        <p>{{ cita.servicio.duracion_minutos }} minutos</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Vehículo</h6>
+                        <p>{% if cita.vehiculo %}{{ cita.vehiculo.marca }} {{ cita.vehiculo.modelo }} ({{ cita.vehiculo.placa }}){% else %}No especificado{% endif %}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Observaciones</h6>
+                        <p>{{ cita.observaciones|default:"Sin observaciones" }}</p>
+                    </div>
+                    {% if cita.calificacion %}
+                        <div class="mb-3">
+                            <h6>Tu Calificación</h6>
+                            <div class="text-warning">
+                                {% for i in "12345"|make_list %}
+                                    {% if forloop.counter <= cita.calificacion %}
+                                        <i class="fas fa-star"></i>
+                                    {% else %}
+                                        <i class="far fa-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <p class="mt-2">{{ cita.comentario|default:"Sin comentarios" }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Calificar -->
+    {% if not cita.calificacion %}
+        <div class="modal fade" id="calificarModal{{ cita.id }}" tabindex="-1" aria-labelledby="calificarModalLabel{{ cita.id }}" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="calificarModalLabel{{ cita.id }}">Calificar Servicio</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Tu opinión es importante para nosotros. Por favor, califica el servicio recibido:</p>
+                        
+                        <form method="post" action="{% url 'reservas:calificar_turno' cita.id %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label">Calificación</label>
+                                <div class="rating-stars">
+                                    <div class="d-flex justify-content-center fs-2 text-warning">
+                                        {% for i in "12345"|make_list %}
+                                            <div class="mx-2">
+                                                <input type="radio" id="star{{ forloop.counter }}{{ cita.id }}" name="puntuacion" value="{{ forloop.counter }}" class="d-none" required>
+                                                <label for="star{{ forloop.counter }}{{ cita.id }}" class="star-label">
+                                                    <i class="far fa-star"></i>
+                                                </label>
+                                                <div class="text-center">{{ forloop.counter }}</div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="comentario{{ cita.id }}" class="form-label">Comentarios (opcional)</label>
+                                <textarea class="form-control" id="comentario{{ cita.id }}" name="comentario" rows="3"></textarea>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane me-2"></i> Enviar Calificación
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endfor %}
 
 {% endblock %}
 
@@ -497,6 +519,32 @@
                 });
             });
         });
+        
+        // Solucionar problema de parpadeo en tarjetas de reservas
+        const reservaCards = document.querySelectorAll('.card.h-100');
+        
+        reservaCards.forEach(card => {
+            // Deshabilitar cualquier efecto hover que pueda estar causando el parpadeo
+            card.style.transition = 'none';
+            
+            // Prevenir cualquier comportamiento de parpadeo al pasar el mouse
+            card.addEventListener('mouseenter', function(e) {
+                e.stopPropagation();
+            });
+            
+            card.addEventListener('mouseleave', function(e) {
+                e.stopPropagation();
+            });
+        });
+        
+        // Abrir modal automáticamente si hay un turno_id en la URL
+        {% if turno_id %}
+            const modal = document.getElementById('detalleModal{{ turno_id }}');
+            if (modal) {
+                const modalInstance = new bootstrap.Modal(modal);
+                modalInstance.show();
+            }
+        {% endif %}
     });
 </script>
 {% endblock %}

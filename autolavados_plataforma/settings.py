@@ -62,6 +62,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'autolavados_plataforma.middleware.CSRFDebugMiddleware',  # Middleware para diagnosticar problemas CSRF
+    'autolavados_plataforma.middleware.AJAXExceptionMiddleware',  # Middleware para manejar excepciones AJAX
     'autolavados_plataforma.middleware.LoginRequiredMiddleware',
 ]
 

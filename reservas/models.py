@@ -110,6 +110,7 @@ class Reserva(models.Model):
     EN_PROCESO = 'PR'
     COMPLETADA = 'CM'
     CANCELADA = 'CA'
+    INCUMPLIDA = 'IN'
     
     ESTADO_CHOICES = [
         (PENDIENTE, _('Pendiente')),
@@ -117,12 +118,14 @@ class Reserva(models.Model):
         (EN_PROCESO, _('En Proceso')),
         (COMPLETADA, _('Completada')),
         (CANCELADA, _('Cancelada')),
+        (INCUMPLIDA, _('Incumplida')),
     ]
     
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='reservas', verbose_name=_('Cliente'))
     servicio = models.ForeignKey(Servicio, on_delete=models.CASCADE, related_name='reservas', verbose_name=_('Servicio'))
     fecha_hora = models.DateTimeField(verbose_name=_('Fecha y Hora'))
     bahia = models.ForeignKey('Bahia', on_delete=models.SET_NULL, null=True, blank=True, related_name='reservas', verbose_name=_('Bahía'))
+    vehiculo = models.ForeignKey('Vehiculo', on_delete=models.SET_NULL, null=True, blank=True, related_name='reservas', verbose_name=_('Vehículo'))
     estado = models.CharField(max_length=2, choices=ESTADO_CHOICES, default=PENDIENTE, verbose_name=_('Estado'))
     notas = models.TextField(blank=True, verbose_name=_('Notas'))
     fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name=_('Fecha de Creación'))
@@ -353,6 +356,8 @@ class Vehiculo(models.Model):
         verbose_name = _('Vehículo')
         verbose_name_plural = _('Vehículos')
         ordering = ['cliente', 'marca', 'modelo']
+        # Agregar restricción de unicidad para placa por cliente
+        unique_together = ['cliente', 'placa']
     
     def __str__(self):
         return f"{self.marca} {self.modelo} ({self.placa})"
