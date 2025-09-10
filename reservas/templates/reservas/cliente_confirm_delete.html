@@ -1,0 +1,65 @@
+{% extends 'reservas/dashboard_admin.html' %}
+
+{% block title %}Eliminar Cliente{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Eliminar Cliente</h1>
+        <a href="{% url 'reservas:cliente_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver al listado
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Confirmar Eliminación</h6>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-danger">
+                <h5><i class="fas fa-exclamation-triangle"></i> ¿Está seguro que desea eliminar este cliente?</h5>
+                <p>Esta acción no se puede deshacer. Se eliminarán también todas las reservas asociadas a este cliente.</p>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="m-0">Detalles del Cliente</h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-3">Nombre:</dt>
+                        <dd class="col-sm-9">{{ object.nombre }} {{ object.apellido }}</dd>
+                        
+                        <dt class="col-sm-3">Email:</dt>
+                        <dd class="col-sm-9">{{ object.email }}</dd>
+                        
+                        <dt class="col-sm-3">Teléfono:</dt>
+                        <dd class="col-sm-9">{{ object.telefono }}</dd>
+                        
+                        <dt class="col-sm-3">Documento:</dt>
+                        <dd class="col-sm-9">{{ object.get_tipo_documento_display }}: {{ object.numero_documento }}</dd>
+                        
+                        <dt class="col-sm-3">Puntos:</dt>
+                        <dd class="col-sm-9">{{ object.saldo_puntos }}</dd>
+                        
+                        <dt class="col-sm-3">Fecha de registro:</dt>
+                        <dd class="col-sm-9">{{ object.fecha_registro|date:"d/m/Y" }}</dd>
+                    </dl>
+                </div>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{% url 'reservas:cliente_list' %}" class="btn btn-secondary me-md-2">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

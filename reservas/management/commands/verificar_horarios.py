@@ -30,7 +30,7 @@ class Command(BaseCommand):
             self.stdout.write(f'Bahía: {bahia.nombre}')
         
         # Fecha para la prueba (hoy)
-        fecha = timezone.now().date()
+        fecha = datetime.now().date()
         self.stdout.write(self.style.SUCCESS(f'Fecha de prueba: {fecha}'))
         
         # Obtener el día de la semana (0-6, donde 0 es lunes)

@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . import views, views_admin
 
 urlpatterns = [
     # Rutas para vistas basadas en plantillas
@@ -19,4 +19,48 @@ urlpatterns = [
     path('callback/wompi/', views.WompiCallbackView.as_view(), name='wompi_callback'),
     path('callback/payu/', views.PayUCallbackView.as_view(), name='payu_callback'),
     path('callback/epayco/', views.EpaycoCallbackView.as_view(), name='epayco_callback'),
+    
+    # Dashboard de administrador
+    path('dashboard-admin/', views_admin.DashboardAdminView.as_view(), name='dashboard_admin'),
+    
+    # CRUD de bahías
+    path('bahias/', views_admin.BahiaListView.as_view(), name='bahia_list'),
+    path('bahias/crear/', views_admin.BahiaCreateView.as_view(), name='bahia_create'),
+    path('bahias/editar/<int:pk>/', views_admin.BahiaUpdateView.as_view(), name='bahia_update'),
+    path('bahias/eliminar/<int:pk>/', views_admin.BahiaDeleteView.as_view(), name='bahia_delete'),
+    
+    # CRUD de servicios
+    path('servicios/', views_admin.ServicioListView.as_view(), name='servicio_list'),
+    path('servicios/crear/', views_admin.ServicioCreateView.as_view(), name='servicio_create'),
+    path('servicios/editar/<int:pk>/', views_admin.ServicioUpdateView.as_view(), name='servicio_update'),
+    path('servicios/eliminar/<int:pk>/', views_admin.ServicioDeleteView.as_view(), name='servicio_delete'),
+    
+    # CRUD de medios de pago
+    path('medios-pago/', views_admin.MedioPagoListView.as_view(), name='medio_pago_list'),
+    path('medios-pago/crear/', views_admin.MedioPagoCreateView.as_view(), name='medio_pago_create'),
+    path('medios-pago/editar/<int:pk>/', views_admin.MedioPagoUpdateView.as_view(), name='medio_pago_update'),
+    path('medios-pago/eliminar/<int:pk>/', views_admin.MedioPagoDeleteView.as_view(), name='medio_pago_delete'),
+    
+    # CRUD de disponibilidad horaria
+    path('horarios/', views_admin.DisponibilidadHorariaListView.as_view(), name='disponibilidad_horaria_list'),
+    path('horarios/crear/', views_admin.DisponibilidadHorariaCreateView.as_view(), name='disponibilidad_horaria_create'),
+    path('horarios/editar/<int:pk>/', views_admin.DisponibilidadHorariaUpdateView.as_view(), name='disponibilidad_horaria_update'),
+    path('horarios/eliminar/<int:pk>/', views_admin.DisponibilidadHorariaDeleteView.as_view(), name='disponibilidad_horaria_delete'),
+    
+    # CRUD de reservas
+      path('reservas/', views_admin.ReservaListView.as_view(), name='reserva_list'),
+      path('reservas/crear/', views_admin.ReservaCreateView.as_view(), name='reserva_create'),
+      path('reservas/editar/<int:pk>/', views_admin.ReservaUpdateView.as_view(), name='reserva_update'),
+      path('reservas/eliminar/<int:pk>/', views_admin.ReservaDeleteView.as_view(), name='reserva_delete'),
+      path('reservas/detalle/<int:pk>/', views_admin.ReservaDetailView.as_view(), name='reserva_detail'),
+      path('reservas/cambiar-estado/<int:pk>/', views_admin.CambiarEstadoReservaView.as_view(), name='cambiar_estado_reserva'),
+    
+    # CRUD de clientes
+      path('clientes/', views_admin.ClienteListView.as_view(), name='cliente_list'),
+      path('clientes/crear/', views_admin.ClienteCreateView.as_view(), name='cliente_create'),
+      path('clientes/editar/<int:pk>/', views_admin.ClienteUpdateView.as_view(), name='cliente_update'),
+      path('clientes/eliminar/<int:pk>/', views_admin.ClienteDeleteView.as_view(), name='cliente_delete'),
+      path('clientes/detalle/<int:pk>/', views_admin.ClienteDetailView.as_view(), name='cliente_detail'),
+      
+      # Las rutas de bahías ya están definidas arriba
 ]

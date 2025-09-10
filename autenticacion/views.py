@@ -6,8 +6,13 @@ from django.conf import settings
 from django.contrib import messages
 from django.views.generic import View, TemplateView
 from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
+from django.utils.decorators import method_decorator
+import logging
 from rest_framework import status, permissions
 from rest_framework.views import APIView
+
+logger = logging.getLogger(__name__)
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -323,6 +328,13 @@ class VerificarEmailView(View):
 class LoginView(View):
     """Vista para el inicio de sesión"""
     
+    @method_decorator(csrf_exempt)
+    def dispatch(self, request, *args, **kwargs):
+        # Asegurarse de que estamos trabajando con un objeto request válido
+        if not hasattr(request, 'COOKIES') or not hasattr(request, 'META'):
+            logger.warning(f"LoginView: request no tiene atributos COOKIES o META: {type(request).__name__}")
+        return super().dispatch(request, *args, **kwargs)
+    
     def get(self, request):
         # Si el usuario ya está autenticado, redirigir al inicio
         if request.user.is_authenticated:
@@ -347,6 +359,12 @@ class LoginView(View):
             # Configurar la sesión para que expire según remember_me
             if not remember_me:
                 request.session.set_expiry(0)  # Expira al cerrar el navegador
+            else:
+                # Si remember_me está activado, establecer una duración más larga (2 semanas)
+                request.session.set_expiry(1209600)  # 14 días en segundos
+                
+            # Forzar guardar la sesión
+            request.session.save()
             
             # Crear o obtener token para API
             token, created = Token.objects.get_or_create(user=usuario)

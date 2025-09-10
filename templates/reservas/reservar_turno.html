@@ -238,10 +238,6 @@
                                 
                                 <!-- Contenedor para las tarjetas de medios de pago -->
                                 <div id="mediosPagoContainer" class="row row-cols-1 row-cols-md-3 g-4 mt-2">
-                                    <!-- Nequi -->
-                                    <div class="col-12 mb-2">
-                                        <h6 class="text-muted">Nequi</h6>
-                                    </div>
                                     {% for medio in medios_pago %}
                                         <div class="col">
                                             <div class="card h-100 medio-pago-card" data-medio-id="{{ medio.id }}">

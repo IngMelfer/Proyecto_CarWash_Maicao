@@ -160,6 +160,8 @@ class ProcesarPagoView(LoginRequiredMixin, View):
         
         return render(request, 'reservas/pasarelas/nequi_checkout.html', context)
     
+
+    
     def _procesar_pse(self, request, reserva, medio_pago, monto, referencia, descripcion):
         """
         Procesa el pago con PSE (a través de PayU).
@@ -519,13 +521,13 @@ class VerCamaraView(View):
             return redirect('reservas:mis_turnos')
         
         # Verificar que la fecha y hora actual esté dentro del rango de la reserva
-        ahora = timezone.now()
+        ahora = datetime.now()
         duracion_minutos = reserva.servicio.duracion_minutos
-        fin_servicio = reserva.fecha_hora + timezone.timedelta(minutes=duracion_minutos)
+        fin_servicio = reserva.fecha_hora + timedelta(minutes=duracion_minutos)
         
         # Permitir ver la cámara 15 minutos antes y 15 minutos después del servicio
-        inicio_permitido = reserva.fecha_hora - timezone.timedelta(minutes=15)
-        fin_permitido = fin_servicio + timezone.timedelta(minutes=15)
+        inicio_permitido = reserva.fecha_hora - timedelta(minutes=15)
+        fin_permitido = fin_servicio + timedelta(minutes=15)
         
         if ahora < inicio_permitido or ahora > fin_permitido:
             messages.error(request, 'La cámara solo está disponible 15 minutos antes, durante y hasta 15 minutos después de tu reserva.')
@@ -553,13 +555,33 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['servicios'] = Servicio.objects.filter(activo=True)
-        context['vehiculos'] = Vehiculo.objects.filter(cliente=self.request.user.cliente)
-        # Solo enviar el medio de pago Nequi que está en la base de datos
-        context['medios_pago'] = MedioPago.objects.filter(activo=True, tipo=MedioPago.NEQUI)
+        
+        # Verificar si el usuario tiene un cliente asociado
+        try:
+            cliente = self.request.user.cliente
+            context['vehiculos'] = Vehiculo.objects.filter(cliente=cliente)
+        except AttributeError:
+            # Si el usuario no tiene cliente, mostrar lista vacía de vehículos
+            context['vehiculos'] = []
+            
+        # Filtrar solo medios de pago electrónicos
+        medios_pago = MedioPago.objects.filter(activo=True)
+        context['medios_pago'] = [mp for mp in medios_pago if mp.es_electronico()]
+        # Añadir información sobre el tiempo límite para pago
+        context['tiempo_limite_pago'] = 15  # minutos
         return context
     
     def post(self, request, *args, **kwargs):
         try:
+            # Verificar si el usuario tiene un cliente asociado
+            try:
+                cliente = request.user.cliente
+            except AttributeError:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'error': 'Debe registrarse como cliente para realizar reservas.'}, status=200)
+                messages.error(request, 'Debe registrarse como cliente para realizar reservas.')
+                return redirect('reservas:reservar_turno')
+                
             # Obtener datos del formulario
             servicio_id = request.POST.get('servicio')
             fecha_str = request.POST.get('fecha')
@@ -590,7 +612,7 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
             if vehiculo_id == 'nuevo':
                 # Verificar si ya existe un vehículo con la misma placa para este cliente
                 placa = request.POST.get('placa')
-                vehiculo_existente = Vehiculo.objects.filter(cliente=request.user.cliente, placa=placa).first()
+                vehiculo_existente = Vehiculo.objects.filter(cliente=cliente, placa=placa).first()
                 
                 if vehiculo_existente:
                     # Si ya existe, usar ese vehículo
@@ -598,7 +620,7 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
                 else:
                     # Si no existe, crear uno nuevo
                     vehiculo = Vehiculo.objects.create(
-                        cliente=request.user.cliente,
+                        cliente=cliente,
                         marca=request.POST.get('marca'),
                         modelo=request.POST.get('modelo'),
                         anio=request.POST.get('anio'),
@@ -608,17 +630,17 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
                     )
             else:
                 # Obtener el vehículo existente
-                vehiculo = get_object_or_404(Vehiculo, id=vehiculo_id, cliente=request.user.cliente)
+                vehiculo = get_object_or_404(Vehiculo, id=vehiculo_id, cliente=cliente)
                 
             bahia = get_object_or_404(Bahia, id=bahia_id, activo=True)
             medio_pago = get_object_or_404(MedioPago, id=medio_pago_id, activo=True)
             
             # Convertir fecha y hora
             fecha_hora = datetime.strptime(f'{fecha_str} {hora_str}', '%Y-%m-%d %H:%M')
-            fecha_hora = timezone.make_aware(fecha_hora)
+            # Ya no necesitamos hacer aware la fecha porque USE_TZ está deshabilitado
             
             # Verificar que la fecha no sea en el pasado
-            if fecha_hora < timezone.now():
+            if fecha_hora < datetime.now():
                 if is_ajax:
                     return JsonResponse({'success': False, 'error': 'No se pueden hacer reservas para fechas pasadas.'})
                 messages.error(request, 'No se pueden hacer reservas para fechas pasadas.')
@@ -845,7 +867,7 @@ class MisTurnosView(LoginRequiredMixin, TemplateView):
         # Obtener reservas del cliente
         proximas = Reserva.objects.filter(
             cliente=cliente,
-            fecha_hora__gte=timezone.now(),
+            fecha_hora__gte=datetime.now(),
             estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA]
         ).order_by('fecha_hora')
         
@@ -893,9 +915,9 @@ class CancelarTurnoView(LoginRequiredMixin, View):
             messages.error(request, 'No se puede cancelar una reserva en proceso o completada.')
             return redirect('reservas:mis_turnos')
         
-        # Verificar si la cancelación es con menos de 24 horas de anticipación
-        horas_anticipacion = (reserva.fecha_hora - timezone.now()).total_seconds() / 3600
-        cargo_cancelacion = horas_anticipacion < 24
+        # Verificar si la cancelación es con menos de 12 horas de anticipación
+        horas_anticipacion = (reserva.fecha_hora - datetime.now()).total_seconds() / 3600
+        cargo_cancelacion = horas_anticipacion < 12
         
         # Guardar la bahía antes de cancelar para poder liberarla
         bahia = reserva.bahia
@@ -904,7 +926,7 @@ class CancelarTurnoView(LoginRequiredMixin, View):
         reserva.estado = Reserva.CANCELADA
         reserva.notas = f"{reserva.notas}\n\nMotivo de cancelación: {motivo}"
         # Actualizar explícitamente la fecha_actualizacion con la zona horaria correcta
-        reserva.fecha_actualizacion = timezone.now()
+        reserva.fecha_actualizacion = datetime.now()
         reserva.save(update_fields=['estado', 'notas', 'fecha_actualizacion'])
         
         # Decrementar contador de reservas en el horario si existe
@@ -1046,7 +1068,7 @@ class ObtenerHorariosDisponiblesView(LoginRequiredMixin, View):
                 return JsonResponse({'error': 'Formato de fecha inválido'}, status=400)
             
             # Verificar que la fecha no sea en el pasado
-            if fecha < timezone.now().date():
+            if fecha < datetime.now().date():
                 return JsonResponse({'error': 'No se pueden hacer reservas para fechas pasadas'}, status=400)
             
             # Obtener servicio
@@ -1073,10 +1095,8 @@ class ObtenerHorariosDisponiblesView(LoginRequiredMixin, View):
                 # Verificar si existen registros para esta fecha en la base de datos
                 existe_registro = HorarioDisponible.objects.filter(fecha=fecha).exists()
                 
-                # Si no existen registros para esta fecha, no generar horarios automáticos
-                if not existe_registro:
-                    # No hay horarios disponibles para esta fecha
-                    return JsonResponse({'horarios': []})
+                # Si no existen registros para esta fecha, usar la disponibilidad general
+                # Esto asegura que siempre se muestren horarios, incluso si no hay registros específicos
                 
                 # Si hay registros pero no hay disponibles, usar la disponibilidad general
                 # Obtener el día de la semana (0-6, donde 0 es lunes)
@@ -1088,13 +1108,43 @@ class ObtenerHorariosDisponiblesView(LoginRequiredMixin, View):
                     activo=True
                 ).order_by('hora_inicio')
                 
+                # Si no hay disponibilidad general para este día, crear una disponibilidad ficticia
+                # para mostrar al menos algunos horarios
+                if not disponibilidad_general.exists():
+                    # Crear una disponibilidad ficticia para el día actual
+                    # desde las 8:00 hasta las 18:00 con intervalos de 1 hora
+                    horarios = []
+                    for hora in range(8, 18):
+                        hora_inicio = time(hour=hora, minute=0)
+                        hora_fin = time(hour=hora+1, minute=0)
+                        
+                        # Verificar si el horario ya ha pasado para el día actual
+                        now_local = datetime.now()
+                        horario_ya_paso = False
+                        # Mostramos todos los horarios del día, incluso los pasados
+                        # pero los marcamos como no disponibles
+                        if fecha == now_local.date() and hora_inicio < now_local.time():
+                            horario_ya_paso = True
+                            
+                        horarios.append({
+                            'hora_inicio': hora_inicio.strftime('%H:%M'),
+                            'hora_fin': hora_fin.strftime('%H:%M'),
+                            'disponible': not horario_ya_paso,  # Solo disponible si no ha pasado
+                            'bahias_disponibles': 0 if horario_ya_paso else 1,
+                            'bahias_totales': 1
+                        })
+                    
+                    response = JsonResponse({'horarios': horarios}, status=200)
+                    response['Content-Type'] = 'application/json'
+                    return response
+                
                 # Crear horarios disponibles basados en la disponibilidad general y la duración del servicio
                 horarios = []
                 for disp in disponibilidad_general:
                     # Crear intervalos exactos según la duración del servicio seleccionado
                     # Si es el día actual, empezamos desde la hora actual
-                    # Usar timezone.now() y convertirlo a hora local para comparaciones correctas
-                    now_local = timezone.localtime(timezone.now())
+                    # Como USE_TZ está deshabilitado, usamos datetime.now() directamente
+                    now_local = datetime.now()
                     if fecha == now_local.date():
                         # Usar la hora actual si estamos dentro del horario de atención, o la hora de inicio si aún no ha comenzado
                         hora_actual_sistema = now_local.time()
@@ -1105,7 +1155,10 @@ class ObtenerHorariosDisponiblesView(LoginRequiredMixin, View):
                             continue
                             
                         if hora_actual_sistema >= disp.hora_inicio:
-                            hora_actual = hora_actual_sistema
+                            # Usamos la hora de inicio del horario disponible
+                            # Esto mostrará todos los horarios, incluso los que ya han pasado
+                            # pero los marcaremos como no disponibles
+                            hora_actual = disp.hora_inicio
                         else:
                             hora_actual = disp.hora_inicio
                     else:
@@ -1127,9 +1180,8 @@ class ObtenerHorariosDisponiblesView(LoginRequiredMixin, View):
                             hora_inicio_dt = datetime.combine(fecha, hora_actual)
                             hora_fin_dt = datetime.combine(fecha, hora_fin)
                             
-                            # Asegurar que las fechas sean aware para consistencia con el resto del código
-                            hora_inicio_dt = timezone.make_aware(hora_inicio_dt)
-                            hora_fin_dt = timezone.make_aware(hora_fin_dt)
+                            # Ya no necesitamos hacer aware las fechas porque USE_TZ está deshabilitado
+                            # hora_inicio_dt y hora_fin_dt ya son naive
                             
                             # Obtenemos todas las bahías activas
                             bahias_activas = Bahia.objects.filter(activo=True)
@@ -1151,8 +1203,8 @@ class ObtenerHorariosDisponiblesView(LoginRequiredMixin, View):
                             for reserva in otras_reservas:
                                 # Calcular la hora de fin de la reserva según la duración del servicio
                                 fin_reserva = reserva.fecha_hora + timedelta(minutes=reserva.servicio.duracion_minutos)
-                                # Asegurar que ambas fechas sean aware o naive para la comparación
-                                hora_inicio_dt_aware = timezone.make_aware(hora_inicio_dt) if timezone.is_naive(hora_inicio_dt) else hora_inicio_dt
+                                # Ya no necesitamos hacer aware las fechas porque USE_TZ está deshabilitado
+                                hora_inicio_dt_aware = hora_inicio_dt
                                 # Si la reserva termina después de nuestra hora de inicio, hay solapamiento
                                 if fin_reserva > hora_inicio_dt_aware:
                                     reservas_solapadas = reservas_solapadas | Reserva.objects.filter(id=reserva.id)
@@ -1163,12 +1215,20 @@ class ObtenerHorariosDisponiblesView(LoginRequiredMixin, View):
                             # Calcular bahías disponibles
                             bahias_disponibles = bahias_activas.exclude(id__in=bahias_ocupadas).count()
                             
+                            # Verificar si el horario ya ha pasado para el día actual
+                            now_local = datetime.now()
+                            horario_ya_paso = False
+                            # Eliminamos la restricción de horarios pasados para mostrar todos los horarios del día
+                            # incluso si ya han pasado (pero los marcaremos como no disponibles)
+                            if fecha == now_local.date() and hora_actual < now_local.time():
+                                horario_ya_paso = True
+                                
                             # Agregamos el horario siempre, pero marcamos si está disponible o no
                             horarios.append({
                                 'hora_inicio': hora_actual.strftime('%H:%M'),
                                 'hora_fin': hora_fin.strftime('%H:%M'),
-                                'disponible': bahias_disponibles > 0,
-                                'bahias_disponibles': bahias_disponibles,
+                                'disponible': bahias_disponibles > 0 and not horario_ya_paso,
+                                'bahias_disponibles': 0 if horario_ya_paso else bahias_disponibles,
                                 'bahias_totales': bahias_activas.count()
                             })
                         
@@ -1184,17 +1244,17 @@ class ObtenerHorariosDisponiblesView(LoginRequiredMixin, View):
                     # Para cada horario, verificar si hay bahías disponibles y si el servicio cabe en el horario
                     
                     # Si es el día actual, verificar que la hora de inicio sea posterior a la hora actual
-                    # Usar timezone.now() y convertirlo a hora local para comparaciones correctas
-                    now_local = timezone.localtime(timezone.now())
+                    # Como USE_TZ está deshabilitado, usamos datetime.now() directamente
+                    now_local = datetime.now()
                     if fecha == now_local.date():
                         hora_actual = now_local.time()
-                        # Si la hora de inicio ya pasó o estamos fuera del horario de atención, saltamos este horario
-                        if h.hora_inicio < hora_actual or hora_actual >= h.hora_fin:
+                        # Ya no saltamos los horarios pasados, los mostraremos todos
+                        # Si estamos fuera del horario de atención, saltamos este horario
+                        if hora_actual >= h.hora_fin:
                             continue
                         
                     hora_inicio = datetime.combine(fecha, h.hora_inicio)
-                    # Asegurar que la fecha sea aware para consistencia
-                    hora_inicio = timezone.make_aware(hora_inicio)
+                    # Ya no necesitamos hacer aware la fecha porque USE_TZ está deshabilitado
                     # Calcular hora fin según la duración del servicio
                     hora_fin_servicio = hora_inicio + timedelta(minutes=duracion_servicio)
                     hora_fin = datetime.combine(fecha, h.hora_fin)
@@ -1225,8 +1285,8 @@ class ObtenerHorariosDisponiblesView(LoginRequiredMixin, View):
                     for reserva in otras_reservas:
                         # Calcular la hora de fin de la reserva según la duración del servicio
                         fin_reserva = reserva.fecha_hora + timedelta(minutes=reserva.servicio.duracion_minutos)
-                        # Asegurar que ambas fechas sean aware o naive para la comparación
-                        hora_inicio_aware = timezone.make_aware(hora_inicio) if timezone.is_naive(hora_inicio) else hora_inicio
+                        # Ya no necesitamos hacer aware las fechas porque USE_TZ está deshabilitado
+                        hora_inicio_aware = hora_inicio
                         # Si la reserva termina después de nuestra hora de inicio, hay solapamiento
                         if fin_reserva > hora_inicio_aware:
                             reservas_solapadas = reservas_solapadas | Reserva.objects.filter(id=reserva.id)
@@ -1241,7 +1301,7 @@ class ObtenerHorariosDisponiblesView(LoginRequiredMixin, View):
                     # Ya no filtramos por bahías disponibles
                     # Crear intervalos de 30 minutos dentro del horario disponible
                     # Si es el día actual, empezamos desde la hora actual
-                    now_local = timezone.localtime(timezone.now())
+                    now_local = datetime.now()
                     if fecha == now_local.date():
                         hora_actual_sistema = now_local.time()
                         # Si ya pasó la hora de cierre, no hay horarios disponibles
@@ -1264,9 +1324,8 @@ class ObtenerHorariosDisponiblesView(LoginRequiredMixin, View):
                         hora_inicio_dt = datetime.combine(fecha, hora_actual)
                         hora_fin_dt = datetime.combine(fecha, hora_fin_intervalo)
                         
-                        # Asegurar que las fechas sean aware para consistencia
-                        hora_inicio_dt = timezone.make_aware(hora_inicio_dt)
-                        hora_fin_dt = timezone.make_aware(hora_fin_dt)
+                        # Ya no necesitamos hacer aware las fechas porque USE_TZ está deshabilitado
+                        # hora_inicio_dt y hora_fin_dt ya son naive
                         
                         # Obtener todas las bahías activas para este intervalo
                         bahias_activas_intervalo = Bahia.objects.filter(activo=True)
@@ -1281,12 +1340,20 @@ class ObtenerHorariosDisponiblesView(LoginRequiredMixin, View):
                         # Calculamos las bahías disponibles para este intervalo
                         bahias_disponibles_intervalo = bahias_activas.count() - reservas_intervalo
                         
+                        # Verificar si el horario ya ha pasado para el día actual
+                        now_local = datetime.now()
+                        horario_ya_paso = False
+                        # Eliminamos la restricción de horarios pasados para mostrar todos los horarios del día
+                        # incluso si ya han pasado (pero los marcaremos como no disponibles)
+                        if fecha == now_local.date() and hora_actual < now_local.time():
+                            horario_ya_paso = True
+                            
                         # Agregamos el horario siempre, pero marcamos si está disponible o no
                         horarios.append({
                             'hora_inicio': hora_actual.strftime('%H:%M'),
                             'hora_fin': hora_fin_intervalo.strftime('%H:%M'),
-                            'disponible': bahias_disponibles_intervalo > 0,
-                            'bahias_disponibles': bahias_disponibles_intervalo,
+                            'disponible': bahias_disponibles_intervalo > 0 and not horario_ya_paso,
+                            'bahias_disponibles': 0 if horario_ya_paso else bahias_disponibles_intervalo,
                             'bahias_totales': bahias_activas_intervalo.count()
                         })
                         
@@ -1430,12 +1497,12 @@ class ObtenerBahiasDisponiblesView(LoginRequiredMixin, View):
             # Convertir fecha y hora
             try:
                 fecha_hora = datetime.strptime(f'{fecha_str} {hora_str}', '%Y-%m-%d %H:%M')
-                fecha_hora = timezone.make_aware(fecha_hora)
+                # Ya no necesitamos hacer aware la fecha porque USE_TZ está deshabilitado
             except ValueError:
                 return JsonResponse({'error': 'Formato de fecha u hora inválido'}, status=400)
             
             # Verificar que la fecha no sea en el pasado
-            if fecha_hora < timezone.now():
+            if fecha_hora < datetime.now():
                 return JsonResponse({'error': 'No se pueden consultar bahías para fechas pasadas'}, status=400)
             
             # Obtener servicio y su duración
@@ -1542,12 +1609,12 @@ class BahiaViewSet(viewsets.ModelViewSet):
             # Convertir fecha y hora
             try:
                 fecha_hora = datetime.strptime(f'{fecha_str} {hora_str}', '%Y-%m-%d %H:%M')
-                fecha_hora = timezone.make_aware(fecha_hora)
+                # Ya no necesitamos hacer aware la fecha porque USE_TZ está deshabilitado
             except ValueError:
                 return Response({'error': 'Formato de fecha u hora inválido'}, status=status.HTTP_400_BAD_REQUEST)
             
             # Verificar que la fecha no sea en el pasado
-            if fecha_hora < timezone.now():
+            if fecha_hora < datetime.now():
                 return Response({'error': 'No se pueden consultar bahías para fechas pasadas'}, status=status.HTTP_400_BAD_REQUEST)
             
             # Obtener servicio y su duración
@@ -1702,7 +1769,7 @@ class BahiaViewSet(viewsets.ModelViewSet):
                     cliente=reserva.cliente,
                     servicio=reserva.servicio.nombre,
                     descripcion=reserva.servicio.descripcion,
-                    fecha_servicio=timezone.now(),
+                    fecha_servicio=datetime.now(),
                     monto=reserva.servicio.precio,
                     puntos_ganados=reserva.servicio.puntos_otorgados,
                     comentarios=reserva.notas

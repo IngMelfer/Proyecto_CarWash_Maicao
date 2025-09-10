@@ -57,7 +57,7 @@ class ReservaSerializer(serializers.ModelSerializer):
         # Verificar disponibilidad
         if servicio and fecha_hora:
             # Calcular la hora de finalización basada en la duración del servicio
-            duracion = timezone.timedelta(minutes=servicio.duracion_minutos)
+            duracion = timedelta(minutes=servicio.duracion_minutos)
             hora_fin = fecha_hora + duracion
             
             # Verificar que no haya otra reserva para el mismo servicio y hora

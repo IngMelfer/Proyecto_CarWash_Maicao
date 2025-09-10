@@ -20,8 +20,10 @@
                         {% endfor %}
                     {% endif %}
                     
-                    <form method="post" id="loginForm">
+                    <form method="post" id="loginForm" action="{% url 'autenticacion:login' %}" class="needs-validation" novalidate>
                         {% csrf_token %}
+                        <!-- Asegurar que el token CSRF se envía correctamente -->
+                        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" />
                         <div class="mb-3">
                             <label for="email" class="form-label">Correo Electrónico</label>
                             <div class="input-group">
@@ -75,18 +77,19 @@
         // Form validation
         const loginForm = document.querySelector('#loginForm');
         loginForm.addEventListener('submit', function(e) {
-            e.preventDefault();
+            // No prevenir el envío por defecto para evitar problemas con CSRF
             
             const email = document.querySelector('#email').value;
             const password = document.querySelector('#password').value;
             
             if (!email || !password) {
-                showAlert('Por favor completa todos los campos', 'danger');
-                return;
+                e.preventDefault();
+                alert('Por favor completa todos los campos');
+                return false;
             }
             
-            // Submit the form if validation passes
-            this.submit();
+            // Permitir que el formulario se envíe normalmente
+            return true;
         });
     });
 </script>

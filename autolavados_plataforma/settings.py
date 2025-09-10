@@ -11,6 +11,11 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+# Cargar variables de entorno desde .env
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,13 +25,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-k03^2#n1=kuog)$x+9n6#+i)yz^&w=!vvwlios7!yu+r*rp$jx'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-k03^2#n1=kuog)$x+9n6#+i)yz^&w=!vvwlios7!yu+r*rp$jx')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
 # Permitir acceso desde localhost, IP local y cualquier host a través de port forwarding
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '*']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0,*').split(',')
 
 
 # Application definition
@@ -90,24 +95,35 @@ WSGI_APPLICATION = 'autolavados_plataforma.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# Importar dotenv para variables de entorno
-import os
-from dotenv import load_dotenv
-
-# Cargar variables de entorno desde .env
-load_dotenv()
-
 # Configuración de la base de datos
-# Usar SQLite
-USE_MYSQL = False
+# Usar MySQL según variable de entorno
+USE_MYSQL = os.getenv('USE_MYSQL', 'False').lower() == 'true'
 
-# Usar SQLite por defecto
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Configuración de la base de datos según el entorno
+if USE_MYSQL:
+    # Configuración para MySQL
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': os.getenv('DB_NAME', 'autolavados_db'),
+            'USER': os.getenv('DB_USER', 'autolavados_user'),
+            'PASSWORD': os.getenv('DB_PASSWORD', 'autolavados_password'),
+            'HOST': os.getenv('DB_HOST', 'localhost'),
+            'PORT': os.getenv('DB_PORT', '3306'),
+            'OPTIONS': {
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+                'charset': 'utf8mb4',
+            },
+        }
     }
-}
+else:
+    # Usar SQLite por defecto
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 
 # Password validation
@@ -132,25 +148,25 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'es-co'  # Español de Colombia
+LANGUAGE_CODE = os.getenv('LANGUAGE_CODE', 'es-co')  # Idioma predeterminado
 
-TIME_ZONE = 'America/Bogota'  # Zona horaria de Colombia
+TIME_ZONE = os.getenv('TIME_ZONE', 'America/Bogota')  # Zona horaria predeterminada
 
-USE_I18N = True
+USE_I18N = os.getenv('USE_I18N', 'True').lower() == 'true'
 
-USE_TZ = True
+USE_TZ = True  # Habilitado para manejar correctamente las zonas horarias
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+STATIC_URL = os.getenv('STATIC_URL', 'static/')
+STATIC_ROOT = os.path.join(BASE_DIR, os.getenv('STATIC_ROOT', 'staticfiles'))
+STATICFILES_DIRS = [os.path.join(BASE_DIR, os.getenv('STATIC_DIR', 'static'))]
 
 # Media files (uploads)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = os.getenv('MEDIA_URL', '/media/')
+MEDIA_ROOT = os.path.join(BASE_DIR, os.getenv('MEDIA_ROOT', 'media'))
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -160,11 +176,17 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Configuración del modelo de usuario personalizado
 AUTH_USER_MODEL = 'autenticacion.Usuario'
 
+# Configuración de backends de autenticación
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 # Configuración de REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
@@ -179,19 +201,20 @@ LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/autenticacion/login/'
 
 # Configuración de sesión
-SESSION_COOKIE_AGE = 1209600  # 2 semanas en segundos
-SESSION_COOKIE_SAMESITE = None  # Permitir solicitudes cross-site
-SESSION_COOKIE_SECURE = False  # No requerir HTTPS para cookies de sesión en desarrollo
-# SESSION_COOKIE_DOMAIN = None  # Comentado para permitir cualquier dominio
-SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # La sesión no expira al cerrar el navegador
-SESSION_COOKIE_HTTPONLY = True  # Prevenir acceso desde JavaScript para mayor seguridad
+SESSION_COOKIE_AGE = int(os.getenv('SESSION_COOKIE_AGE', '1209600'))  # 2 semanas en segundos por defecto
+SESSION_COOKIE_SAMESITE = 'Lax'  # Valor más compatible con navegadores modernos
+SESSION_COOKIE_SECURE = False  # No requerir HTTPS para cookies en desarrollo
+# SESSION_COOKIE_DOMAIN = os.getenv('SESSION_COOKIE_DOMAIN')  # Dominio para cookies
+SESSION_EXPIRE_AT_BROWSER_CLOSE = os.getenv('SESSION_EXPIRE_AT_BROWSER_CLOSE', 'False').lower() == 'true'
+SESSION_COOKIE_HTTPONLY = os.getenv('SESSION_COOKIE_HTTPONLY', 'True').lower() == 'true'  # Seguridad JavaScript
 
 # Configuración de cookies CSRF
-CSRF_COOKIE_HTTPONLY = False  # Permitir acceso desde JavaScript
-CSRF_COOKIE_SAMESITE = None  # Permitir solicitudes cross-site
-CSRF_USE_SESSIONS = True  # Usar sesiones en lugar de cookies para mayor seguridad
+CSRF_COOKIE_HTTPONLY = False  # Permitir acceso JavaScript al token CSRF
+CSRF_COOKIE_SAMESITE = 'Lax'  # Cross-site requests (Lax para desarrollo)
+CSRF_USE_SESSIONS = False  # No usar sesiones para CSRF
 CSRF_COOKIE_SECURE = False  # No requerir HTTPS para cookies CSRF en desarrollo
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']  # Orígenes confiables
+CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'  # Vista para errores CSRF
+CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000,http://127.0.0.1:8000').split(',')  # Orígenes confiables
 
 # Configuración de logging
 LOGGING = {
@@ -205,7 +228,7 @@ LOGGING = {
     },
     'handlers': {
         'console': {
-            'level': 'DEBUG',
+            'level': os.getenv('LOG_LEVEL', 'DEBUG'),
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
         },
@@ -213,46 +236,24 @@ LOGGING = {
     'loggers': {
         'django.request': {
             'handlers': ['console'],
-            'level': 'DEBUG',
+            'level': os.getenv('DJANGO_LOG_LEVEL', 'DEBUG'),
             'propagate': True,
         },
         'autolavados_plataforma.middleware': {
             'handlers': ['console'],
-            'level': 'DEBUG',
+            'level': os.getenv('APP_LOG_LEVEL', 'DEBUG'),
             'propagate': True,
         },
     },
 }
 
 # Configuración de CORS
-CORS_ALLOW_ALL_ORIGINS = True  # En desarrollo permitir todos los orígenes
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'http://localhost:8000',
-    'http://127.0.0.1:8000',
-]
+CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'True').lower() == 'true'  # Control de orígenes
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000,http://localhost:8000,http://127.0.0.1:8000').split(',')
 # Configuración adicional de CORS para permitir credenciales
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
-]
-CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
-]
+CORS_ALLOW_CREDENTIALS = os.getenv('CORS_ALLOW_CREDENTIALS', 'True').lower() == 'true'
+CORS_ALLOW_METHODS = os.getenv('CORS_ALLOW_METHODS', 'DELETE,GET,OPTIONS,PATCH,POST,PUT').split(',')
+CORS_ALLOW_HEADERS = os.getenv('CORS_ALLOW_HEADERS', 'accept,accept-encoding,authorization,content-type,dnt,origin,user-agent,x-csrftoken,x-requested-with').split(',')
 
 
 # Configuración de correo electrónico
@@ -269,13 +270,13 @@ EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')  # Directorio donde se g
 # EMAIL_USE_TLS = True
 
 # URL del sitio para enlaces en correos electrónicos
-SITE_URL = 'http://localhost:8000'
-DEFAULT_FROM_EMAIL = 'noreply@premiumcardetailing.com'
+SITE_URL = os.getenv('SITE_URL', 'http://localhost:8000')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@premiumcardetailing.com')
 
-# Configuración de correo electrónico para producción (cuando sea necesario)
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
-# EMAIL_PORT = os.environ.get('EMAIL_PORT', 587)
-# EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
-# EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
-# EMAIL_USE_TLS = True
+# Configuración de correo electrónico
+EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'

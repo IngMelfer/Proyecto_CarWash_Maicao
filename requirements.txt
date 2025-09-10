@@ -19,3 +19,6 @@ requests==2.31.0
 # Para AWS S3 (opcional)
 django-storages==1.14.2
 boto3==1.34.49
+pymysql>=1.1
+dj-database-url>=2
+

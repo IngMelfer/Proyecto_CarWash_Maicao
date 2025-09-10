@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ titulo }} - Premium Car Detailing{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-header {
+        background-color: #343a40;
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+    }
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-check {
+        padding-left: 2rem;
+    }
+    .camera-options {
+        padding: 15px;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="container">
+        <h1>{{ titulo }}</h1>
+    </div>
+</div>
+
+<div class="container">
+    <div class="form-container">
+        <form method="post">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+                <div class="alert alert-danger">
+                    <strong>Error:</strong> Por favor corrija los errores indicados a continuación.
+                </div>
+            {% endif %}
+            
+            <div class="form-group">
+                <label for="{{ form.nombre.id_for_label }}" class="form-label">Nombre:</label>
+                {{ form.nombre }}
+                {% if form.nombre.errors %}
+                    <div class="text-danger">{{ form.nombre.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ form.descripcion.id_for_label }}" class="form-label">Descripción:</label>
+                {{ form.descripcion }}
+                {% if form.descripcion.errors %}
+                    <div class="text-danger">{{ form.descripcion.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group form-check">
+                {{ form.activo }}
+                <label for="{{ form.activo.id_for_label }}" class="form-check-label">Activo</label>
+                {% if form.activo.errors %}
+                    <div class="text-danger">{{ form.activo.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="form-group form-check">
+                {{ form.tiene_camara }}
+                <label for="{{ form.tiene_camara.id_for_label }}" class="form-check-label">Tiene Cámara Web</label>
+                {% if form.tiene_camara.errors %}
+                    <div class="text-danger">{{ form.tiene_camara.errors }}</div>
+                {% endif %}
+            </div>
+            
+            <div class="camera-options" id="camera-options">
+                <div class="form-group">
+                    <label for="{{ form.ip_camara.id_for_label }}" class="form-label">IP de la Cámara:</label>
+                    {{ form.ip_camara }}
+                    <small class="form-text text-muted">Ejemplo: 192.168.1.100 o rtsp://usuario:contraseña@192.168.1.100/stream</small>
+                    {% if form.ip_camara.errors %}
+                        <div class="text-danger">{{ form.ip_camara.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="mt-4 d-flex justify-content-between">
+                <a href="{% url 'reservas:bahia_list' %}" class="btn btn-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tieneCamaraCheckbox = document.getElementById('{{ form.tiene_camara.id_for_label }}');
+        const cameraOptions = document.getElementById('camera-options');
+        
+        // Función para mostrar/ocultar opciones de cámara
+        function toggleCameraOptions() {
+            if (tieneCamaraCheckbox.checked) {
+                cameraOptions.style.display = 'block';
+            } else {
+                cameraOptions.style.display = 'none';
+            }
+        }
+        
+        // Inicializar estado
+        toggleCameraOptions();
+        
+        // Escuchar cambios en el checkbox
+        tieneCamaraCheckbox.addEventListener('change', toggleCameraOptions);
+    });
+</script>
+{% endblock %}

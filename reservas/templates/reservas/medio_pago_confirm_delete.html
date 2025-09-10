@@ -1,0 +1,62 @@
+{% extends 'reservas/dashboard_admin.html' %}
+{% load static %}
+
+{% block dashboard_content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Eliminar Medio de Pago</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'reservas:dashboard_admin' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'reservas:medio_pago_list' %}">Medios de Pago</a></li>
+        <li class="breadcrumb-item active">Eliminar</li>
+    </ol>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-exclamation-triangle me-1"></i>
+            Confirmar Eliminación
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warning">
+                <h5 class="alert-heading">¡Advertencia!</h5>
+                <p>Está a punto de eliminar el siguiente medio de pago:</p>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">{{ medio_pago.nombre }}</h5>
+                    <p class="card-text"><strong>Tipo:</strong> {{ medio_pago.tipo }}</p>
+                    <p class="card-text">
+                        <strong>Estado:</strong> 
+                        {% if medio_pago.activo %}
+                            <span class="badge bg-success">Activo</span>
+                        {% else %}
+                            <span class="badge bg-danger">Inactivo</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            
+            <div class="alert alert-danger">
+                <p><strong>¡Esta acción no se puede deshacer!</strong></p>
+                <p>Si elimina este medio de pago, podría afectar a las reservas que lo utilizan.</p>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <a href="{% url 'reservas:medio_pago_list' %}" class="btn btn-secondary btn-block w-100">
+                            <i class="fas fa-arrow-left"></i> Cancelar
+                        </a>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="submit" class="btn btn-danger btn-block w-100">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

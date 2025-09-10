@@ -1,0 +1,75 @@
+{% extends 'reservas/dashboard_admin.html' %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Eliminar Bahía</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'reservas:dashboard_admin' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'reservas:bahia_list' %}">Bahías</a></li>
+        <li class="breadcrumb-item active">Eliminar</li>
+    </ol>
+    
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card mb-4 border-danger">
+                <div class="card-header bg-danger text-white">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    Confirmar Eliminación
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h5 class="alert-heading">¡Atención!</h5>
+                        <p>Estás a punto de eliminar la siguiente bahía:</p>
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ bahia.nombre }}</h5>
+                            <p class="card-text">{{ bahia.descripcion }}</p>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">
+                                    <strong>Estado:</strong> 
+                                    {% if bahia.activo %}
+                                        <span class="badge bg-success">Activo</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inactivo</span>
+                                    {% endif %}
+                                </li>
+                                <li class="list-group-item">
+                                    <strong>Tiene Cámara:</strong> 
+                                    {% if bahia.tiene_camara %}
+                                        <span class="badge bg-info">Sí</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">No</span>
+                                    {% endif %}
+                                </li>
+                                {% if bahia.tiene_camara and bahia.ip_camara %}
+                                <li class="list-group-item">
+                                    <strong>IP Cámara:</strong> {{ bahia.ip_camara }}
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-danger">
+                        <p class="mb-0">Esta acción no se puede deshacer. Si hay reservas asociadas a esta bahía, podrían verse afectadas.</p>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{% url 'reservas:bahia_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

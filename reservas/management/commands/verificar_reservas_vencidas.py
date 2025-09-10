@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
+from datetime import datetime, timedelta
 from reservas.models import Reserva
 
 class Command(BaseCommand):
@@ -14,7 +15,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         dry_run = options.get('dry_run', False)
-        now = timezone.now()
+        now = datetime.now()
         
         # Buscar reservas pendientes o confirmadas cuya fecha y hora + duración del servicio ya haya pasado
         reservas_vencidas = Reserva.objects.filter(
@@ -33,7 +34,7 @@ class Command(BaseCommand):
         # Procesar cada reserva vencida
         for reserva in reservas_vencidas:
             # Calcular si el tiempo del servicio ya pasó
-            tiempo_servicio = reserva.fecha_hora + timezone.timedelta(minutes=reserva.servicio.duracion_minutos)
+            tiempo_servicio = reserva.fecha_hora + timedelta(minutes=reserva.servicio.duracion_minutos)
             
             if tiempo_servicio < now:
                 # La reserva está vencida y el tiempo del servicio ya pasó

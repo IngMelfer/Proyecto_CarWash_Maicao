@@ -1,0 +1,80 @@
+{% extends 'reservas/dashboard_admin.html' %}
+{% load static %}
+
+{% block dashboard_content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Eliminar Servicio</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'reservas:dashboard_admin' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'reservas:servicio_list' %}">Servicios</a></li>
+        <li class="breadcrumb-item active">Eliminar</li>
+    </ol>
+    
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow-lg border-0 rounded-lg mt-2 mb-4">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="text-center font-weight-light my-2">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Confirmar Eliminación
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <p class="mb-0">¿Está seguro que desea eliminar el servicio <strong>{{ servicio.nombre }}</strong>?</p>
+                        <p class="mb-0">Esta acción no se puede deshacer.</p>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <tr>
+                                <th>Nombre:</th>
+                                <td>{{ servicio.nombre }}</td>
+                            </tr>
+                            <tr>
+                                <th>Descripción:</th>
+                                <td>{{ servicio.descripcion }}</td>
+                            </tr>
+                            <tr>
+                                <th>Precio:</th>
+                                <td>${{ servicio.precio|floatformat:0 }}</td>
+                            </tr>
+                            <tr>
+                                <th>Duración:</th>
+                                <td>{{ servicio.duracion_minutos }} minutos</td>
+                            </tr>
+                            <tr>
+                                <th>Puntos:</th>
+                                <td>{{ servicio.puntos_otorgados }}</td>
+                            </tr>
+                            <tr>
+                                <th>Estado:</th>
+                                <td>
+                                    {% if servicio.activo %}
+                                        <span class="badge bg-success">Activo</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inactivo</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mt-4 mb-0">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'reservas:servicio_list' %}" class="btn btn-secondary">
+                                    <i class="fas fa-times me-2"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash me-2"></i>Eliminar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

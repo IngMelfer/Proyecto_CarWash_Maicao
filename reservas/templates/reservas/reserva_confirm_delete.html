@@ -1,0 +1,66 @@
+{% extends 'reservas/dashboard_admin.html' %}
+
+{% block title %}Eliminar Reserva{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Eliminar Reserva</h1>
+        <a href="{% url 'reservas:reserva_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver al listado
+        </a>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Confirmar Eliminación</h6>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-danger">
+                <h5><i class="fas fa-exclamation-triangle"></i> ¿Está seguro que desea eliminar esta reserva?</h5>
+                <p>Esta acción no se puede deshacer.</p>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="m-0">Detalles de la Reserva</h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-3">Cliente:</dt>
+                        <dd class="col-sm-9">{{ object.cliente.nombre }} {{ object.cliente.apellido }}</dd>
+                        
+                        <dt class="col-sm-3">Servicio:</dt>
+                        <dd class="col-sm-9">{{ object.servicio.nombre }}</dd>
+                        
+                        <dt class="col-sm-3">Fecha y Hora:</dt>
+                        <dd class="col-sm-9">{{ object.fecha_hora|date:"d/m/Y H:i" }}</dd>
+                        
+                        <dt class="col-sm-3">Bahía:</dt>
+                        <dd class="col-sm-9">{% if object.bahia %}{{ object.bahia.nombre }}{% else %}No asignada{% endif %}</dd>
+                        
+                        <dt class="col-sm-3">Estado:</dt>
+                        <dd class="col-sm-9">
+                            <span class="badge {% if object.estado == 'PE' %}bg-warning{% elif object.estado == 'CO' %}bg-info{% elif object.estado == 'PR' %}bg-primary{% elif object.estado == 'CM' %}bg-success{% elif object.estado == 'CA' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                {{ object.get_estado_display }}
+                            </span>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <a href="{% url 'reservas:reserva_list' %}" class="btn btn-secondary me-md-2">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Eliminar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

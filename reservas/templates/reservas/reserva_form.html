@@ -1,0 +1,191 @@
+{% extends 'reservas/dashboard_admin.html' %}
+{% load static %}
+
+{% block title %}{% if form.instance.id %}Editar{% else %}Nueva{% endif %} Reserva{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">{% if form.instance.id %}Editar{% else %}Nueva{% endif %} Reserva</h1>
+        <a href="{% url 'reservas:reserva_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver al listado
+        </a>
+    </div>
+
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{% if form.instance.id %}Editar{% else %}Crear{% endif %} Reserva</h6>
+        </div>
+        <div class="card-body">
+            <form method="post" novalidate>
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.cliente.id_for_label }}" class="form-label">Cliente</label>
+                        {{ form.cliente }}
+                        {% if form.cliente.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.cliente.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.servicio.id_for_label }}" class="form-label">Servicio</label>
+                        {{ form.servicio }}
+                        {% if form.servicio.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.servicio.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.fecha_hora.id_for_label }}" class="form-label">Fecha y Hora</label>
+                        {{ form.fecha_hora }}
+                        {% if form.fecha_hora.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.fecha_hora.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.bahia.id_for_label }}" class="form-label">Bahía</label>
+                        {{ form.bahia }}
+                        {% if form.bahia.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.bahia.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.vehiculo.id_for_label }}" class="form-label">Vehículo</label>
+                        {{ form.vehiculo }}
+                        {% if form.vehiculo.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.vehiculo.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.estado.id_for_label }}" class="form-label">Estado</label>
+                        {{ form.estado }}
+                        {% if form.estado.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.estado.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.medio_pago.id_for_label }}" class="form-label">Medio de Pago</label>
+                        {{ form.medio_pago }}
+                        {% if form.medio_pago.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.medio_pago.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.referencia_pago.id_for_label }}" class="form-label">Referencia de Pago</label>
+                        {{ form.referencia_pago }}
+                        {% if form.referencia_pago.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.referencia_pago.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.notas.id_for_label }}" class="form-label">Notas</label>
+                    {{ form.notas }}
+                    {% if form.notas.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.notas.errors }}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Inicializar select2 para los campos de selección
+        $('#id_cliente').select2({
+            placeholder: 'Seleccione un cliente',
+            allowClear: true
+        });
+        
+        $('#id_servicio').select2({
+            placeholder: 'Seleccione un servicio',
+            allowClear: true
+        });
+        
+        $('#id_bahia').select2({
+            placeholder: 'Seleccione una bahía',
+            allowClear: true
+        });
+        
+        $('#id_vehiculo').select2({
+            placeholder: 'Seleccione un vehículo',
+            allowClear: true
+        });
+        
+        $('#id_medio_pago').select2({
+            placeholder: 'Seleccione un medio de pago',
+            allowClear: true
+        });
+        
+        // Inicializar datetimepicker para el campo de fecha y hora
+        $('#id_fecha_hora').datetimepicker({
+            format: 'YYYY-MM-DD HH:mm',
+            stepping: 15,
+            sideBySide: true,
+            icons: {
+                time: 'fas fa-clock',
+                date: 'fas fa-calendar',
+                up: 'fas fa-chevron-up',
+                down: 'fas fa-chevron-down',
+                previous: 'fas fa-chevron-left',
+                next: 'fas fa-chevron-right',
+                today: 'fas fa-calendar-check',
+                clear: 'fas fa-trash',
+                close: 'fas fa-times'
+            }
+        });
+    });
+</script>
+{% endblock %}

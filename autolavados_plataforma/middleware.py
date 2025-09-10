@@ -3,6 +3,7 @@ from django.conf import settings
 from django.urls import resolve
 from django.utils.deprecation import MiddlewareMixin
 from django.http import JsonResponse
+from django.middleware.csrf import get_token
 import re
 import logging
 import traceback
@@ -10,18 +11,39 @@ import sys
 
 logger = logging.getLogger(__name__)
 
-class CSRFDebugMiddleware(MiddlewareMixin):
+class CSRFDebugMiddleware:
     """Middleware para diagnosticar problemas con CSRF"""
     
-    def process_request(self, request):
-        # Registrar información sobre cookies y tokens CSRF
-        logger.debug(f"CSRF Cookie: {request.COOKIES.get('csrftoken')}, CSRF Token: {request.META.get('CSRF_COOKIE')}")
-        return None
-    
-    def process_response(self, request, response):
-        # Asegurar que la cookie CSRF esté configurada correctamente
-        if 'csrftoken' not in request.COOKIES and 'Set-Cookie' in response:
-            logger.debug(f"Setting CSRF cookie in response: {response['Set-Cookie']}")
+    def __init__(self, get_response):
+        self.get_response = get_response
+        
+    def __call__(self, request):
+        # Verificar que estamos trabajando con un objeto request válido
+        # y no con una instancia de View u otro objeto
+        if not isinstance(request, type) and hasattr(request, '__class__'):
+            try:
+                # Verificar si hay cookie CSRF solo si el request tiene los atributos necesarios
+                if hasattr(request, 'COOKIES') and hasattr(request, 'META') and hasattr(request, 'path'):
+                    # Verificar si hay cookie CSRF
+                    csrf_cookie = request.COOKIES.get('csrftoken')
+                    csrf_token = request.META.get('CSRF_COOKIE')
+                    
+                    # Registrar información sobre cookies y tokens CSRF
+                    logger.debug(f"CSRF Cookie: {csrf_cookie}")
+                    logger.debug(f"CSRF Token: {csrf_token}")
+                    logger.debug(f"Request Path: {request.path}")
+                    
+                    # Asegurar que la cookie CSRF esté configurada para todas las solicitudes
+                    if not csrf_cookie and '/autenticacion/login/' not in request.path:
+                        # Forzar la configuración de la cookie CSRF excepto para la página de login
+                        get_token(request)
+                        logger.debug("CSRF token generado forzosamente")
+            except Exception as e:
+                logger.error(f"Error en CSRFDebugMiddleware: {str(e)}")
+        else:
+            logger.warning(f"Objeto no es un request válido para CSRF: {type(request).__name__ if hasattr(request, '__name__') else str(type(request))}")
+        
+        response = self.get_response(request)
         return response
 
 
@@ -64,6 +86,7 @@ class LoginRequiredMiddleware:
             r'^/autenticacion/api/registro/$',
             r'^/admin/.*$',  # Permitir acceso a todo el panel de administración
             r'^/static/.*$',  # Permitir acceso a archivos estáticos
+            r'^/media/.*$',  # Permitir acceso a archivos media
         ]
         self.exempt_url_patterns = [re.compile(url) for url in self.exempt_urls]
 

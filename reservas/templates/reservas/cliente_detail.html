@@ -1,0 +1,120 @@
+{% extends 'reservas/dashboard_admin.html' %}
+
+{% block title %}Detalles del Cliente{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Detalles del Cliente</h1>
+        <a href="{% url 'reservas:cliente_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver al listado
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Información Personal</h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Nombre completo:</dt>
+                        <dd class="col-sm-8">{{ cliente.nombre }} {{ cliente.apellido }}</dd>
+                        
+                        <dt class="col-sm-4">Email:</dt>
+                        <dd class="col-sm-8">{{ cliente.email }}</dd>
+                        
+                        <dt class="col-sm-4">Teléfono:</dt>
+                        <dd class="col-sm-8">{{ cliente.telefono }}</dd>
+                        
+                        <dt class="col-sm-4">Documento:</dt>
+                        <dd class="col-sm-8">{{ cliente.get_tipo_documento_display }}: {{ cliente.numero_documento }}</dd>
+                        
+                        <dt class="col-sm-4">Dirección:</dt>
+                        <dd class="col-sm-8">{{ cliente.direccion }}</dd>
+                        
+                        <dt class="col-sm-4">Ciudad:</dt>
+                        <dd class="col-sm-8">{{ cliente.ciudad }}</dd>
+                        
+                        <dt class="col-sm-4">Fecha de nacimiento:</dt>
+                        <dd class="col-sm-8">{{ cliente.fecha_nacimiento|date:"d/m/Y" }}</dd>
+                        
+                        <dt class="col-sm-4">Saldo de puntos:</dt>
+                        <dd class="col-sm-8">{{ cliente.saldo_puntos }}</dd>
+                        
+                        <dt class="col-sm-4">Recibe notificaciones:</dt>
+                        <dd class="col-sm-8">{% if cliente.recibir_notificaciones %}Sí{% else %}No{% endif %}</dd>
+                        
+                        <dt class="col-sm-4">Fecha de registro:</dt>
+                        <dd class="col-sm-8">{{ cliente.fecha_registro|date:"d/m/Y H:i" }}</dd>
+                        
+                        <dt class="col-sm-4">Última actualización:</dt>
+                        <dd class="col-sm-8">{{ cliente.fecha_actualizacion|date:"d/m/Y H:i" }}</dd>
+                    </dl>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+                        <a href="{% url 'reservas:cliente_update' cliente.id %}" class="btn btn-primary me-md-2">
+                            <i class="fas fa-edit"></i> Editar
+                        </a>
+                        <a href="{% url 'reservas:cliente_delete' cliente.id %}" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Historial de Reservas</h6>
+                    <a href="{% url 'reservas:reserva_create' %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus"></i> Nueva Reserva
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Servicio</th>
+                                    <th>Fecha</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reserva in reservas %}
+                                <tr>
+                                    <td>{{ reserva.id }}</td>
+                                    <td>{{ reserva.servicio.nombre }}</td>
+                                    <td>{{ reserva.fecha_hora|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <span class="badge {% if reserva.estado == 'PE' %}bg-warning{% elif reserva.estado == 'CO' %}bg-info{% elif reserva.estado == 'PR' %}bg-primary{% elif reserva.estado == 'CM' %}bg-success{% elif reserva.estado == 'CA' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                            {{ reserva.get_estado_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'reservas:reserva_update' reserva.id %}" class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No hay reservas registradas para este cliente</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
+from datetime import datetime, timedelta
 from clientes.models import Cliente
 from django.core.validators import MinValueValidator, MaxValueValidator
 
@@ -22,6 +23,9 @@ class MedioPago(models.Model):
     EPAYCO = 'EP'
     NEQUI = 'NQ'
     PSE = 'PS'
+    
+    # Lista de medios de pago electrónicos
+    MEDIOS_ELECTRONICOS = ['TA', 'WO', 'PY', 'EP', 'NQ', 'PS']
     
     TIPO_CHOICES = [
         (EFECTIVO, _('Efectivo')),
@@ -57,6 +61,12 @@ class MedioPago(models.Model):
         Determina si el medio de pago es una pasarela de pago en línea.
         """
         return self.tipo in [self.WOMPI, self.PAYU, self.EPAYCO, self.NEQUI, self.PSE]
+        
+    def es_electronico(self):
+        """
+        Determina si el medio de pago es electrónico (tarjeta o pasarela)
+        """
+        return self.tipo in MedioPago.MEDIOS_ELECTRONICOS
         
     def get_config(self):
         """
@@ -308,7 +318,7 @@ class DisponibilidadHoraria(models.Model):
         duracion_servicio = servicio.duracion_minutos
         
         # Calcular la hora de finalización del servicio
-        hora_fin_servicio = (fecha_hora + timezone.timedelta(minutes=duracion_servicio)).time()
+        hora_fin_servicio = (fecha_hora + timedelta(minutes=duracion_servicio)).time()
         
         # Verificar que la hora de finalización esté dentro del horario disponible
         if hora_fin_servicio > disponibilidad.hora_fin:

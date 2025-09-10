@@ -8,11 +8,19 @@ from django.utils.decorators import method_decorator
 def home_view(request):
     """Vista para la página principal"""
     
-    # Si el usuario es un cliente, redirigir al dashboard
+    # Verificar que el usuario esté autenticado
+    if not request.user.is_authenticated:
+        return redirect('autenticacion:login')
+        
+    # Si el usuario es un cliente, redirigir al dashboard de clientes
     if hasattr(request.user, 'cliente'):
         return redirect('clientes:dashboard')
     
-    # Si es administrador u otro tipo de usuario, mostrar la vista normal
+    # Si es administrador, redirigir al dashboard de administrador
+    if request.user.is_staff:
+        return redirect('reservas:dashboard_admin')
+    
+    # Si es otro tipo de usuario, mostrar la vista normal
     context = {
         'title': 'Plataforma de Autolavados',
         'api_endpoints': [

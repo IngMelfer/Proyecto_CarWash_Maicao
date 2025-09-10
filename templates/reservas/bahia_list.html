@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de Bahías - Premium Car Detailing{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-header {
+        background-color: #343a40;
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+    }
+    .table-responsive {
+        margin-top: 20px;
+    }
+    .btn-action {
+        margin-right: 5px;
+    }
+    .badge-status {
+        font-size: 0.9rem;
+        padding: 0.4rem 0.6rem;
+    }
+    .btn-add {
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="container">
+        <h1>Gestión de Bahías</h1>
+        <p class="lead">Administre las bahías del autolavado</p>
+    </div>
+</div>
+
+<div class="container">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <div class="d-flex justify-content-between align-items-center">
+        <h2>Listado de Bahías</h2>
+        <a href="{% url 'reservas:dashboard_admin' %}" class="btn btn-secondary">Volver al Dashboard</a>
+    </div>
+    
+    <a href="{% url 'reservas:bahia_create' %}" class="btn btn-primary btn-add">
+        <i class="fas fa-plus"></i> Crear Nueva Bahía
+    </a>
+    
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Descripción</th>
+                    <th>Estado</th>
+                    <th>Cámara</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for bahia in bahias %}
+                <tr>
+                    <td>{{ bahia.id }}</td>
+                    <td>{{ bahia.nombre }}</td>
+                    <td>{{ bahia.descripcion|truncatechars:50 }}</td>
+                    <td>
+                        {% if bahia.activo %}
+                            <span class="badge bg-success badge-status">Activo</span>
+                        {% else %}
+                            <span class="badge bg-danger badge-status">Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if bahia.tiene_camara %}
+                            <span class="badge bg-info badge-status">Sí</span>
+                            {% if bahia.ip_camara %}
+                                <small class="text-muted d-block">IP: {{ bahia.ip_camara }}</small>
+                            {% endif %}
+                        {% else %}
+                            <span class="badge bg-secondary badge-status">No</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{% url 'reservas:bahia_update' bahia.id %}" class="btn btn-sm btn-warning btn-action">
+                            <i class="fas fa-edit"></i> Editar
+                        </a>
+                        <a href="{% url 'reservas:bahia_delete' bahia.id %}" class="btn btn-sm btn-danger btn-action">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">No hay bahías registradas</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

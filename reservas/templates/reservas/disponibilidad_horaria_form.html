@@ -1,0 +1,127 @@
+{% extends 'reservas/dashboard_admin.html' %}
+{% load static %}
+
+{% block dashboard_content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">{{ titulo }}</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'reservas:dashboard_admin' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'reservas:disponibilidad_horaria_list' %}">Horarios Disponibles</a></li>
+        <li class="breadcrumb-item active">{{ titulo }}</li>
+    </ol>
+    
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0 rounded-lg mt-2 mb-4">
+                <div class="card-header">
+                    <h3 class="text-center font-weight-light my-2">
+                        <i class="fas fa-clock me-2"></i>{{ titulo }}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    {{ form.dia_semana }}
+                                    <label for="{{ form.dia_semana.id_for_label }}">Día de la semana</label>
+                                    {% if form.dia_semana.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.dia_semana.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    {{ form.capacidad_maxima }}
+                                    <label for="{{ form.capacidad_maxima.id_for_label }}">Capacidad máxima</label>
+                                    {% if form.capacidad_maxima.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.capacidad_maxima.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    {{ form.hora_inicio }}
+                                    <label for="{{ form.hora_inicio.id_for_label }}">Hora de inicio</label>
+                                    {% if form.hora_inicio.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.hora_inicio.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    {{ form.hora_fin }}
+                                    <label for="{{ form.hora_fin.id_for_label }}">Hora de fin</label>
+                                    {% if form.hora_fin.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.hora_fin.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="form-check form-switch">
+                                    {{ form.activo }}
+                                    <label class="form-check-label" for="{{ form.activo.id_for_label }}">Activo</label>
+                                    {% if form.activo.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.activo.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 mb-0">
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-block">
+                                    <i class="fas fa-save me-2"></i>Guardar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center py-3">
+                    <div class="small">
+                        <a href="{% url 'reservas:disponibilidad_horaria_list' %}">
+                            <i class="fas fa-arrow-left me-2"></i>Volver a la lista
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
