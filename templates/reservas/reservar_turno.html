@@ -229,6 +229,29 @@
                         <div class="reservation-step" id="step5" style="display: none;">
                             <h5 class="border-bottom pb-2 mb-4">Paso 5: Seleccionar Medio de Pago</h5>
                             
+                            <!-- Sección de puntos disponibles -->
+                            {% if request.user.is_authenticated and request.user.cliente %}
+                            <div class="card mb-4">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h5 class="mb-1">Puntos disponibles: <span class="badge bg-success">{{ request.user.cliente.saldo_puntos }}</span></h5>
+                                            <p class="text-muted mb-0">Puedes usar tus puntos para obtener descuentos o servicios gratuitos</p>
+                                        </div>
+                                        <div class="d-grid gap-2">
+                                            <button type="button" class="btn btn-outline-primary" id="btnRedimirPuntos" data-bs-toggle="modal" data-bs-target="#redimirPuntosModal">
+                                                <i class="fas fa-gift me-2"></i> Redimir puntos
+                                            </button>
+                                            <input type="hidden" id="usarPuntos" name="usar_puntos" value="false">
+                                            <input type="hidden" id="puntosARedimir" name="puntos_a_redimir" value="0">
+                                            <input type="hidden" id="descuentoAplicado" name="descuento_aplicado" value="0">
+                                            <input type="hidden" id="recompensaSeleccionada" name="recompensa_seleccionada" value="">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
                             <div class="form-group mb-4">
                                 <label class="form-label">Medio de Pago</label>
                                 
@@ -493,6 +516,45 @@
         </div>
     </div>
 </div>
+
+<!-- Modal para redimir puntos -->
+<div class="modal fade" id="redimirPuntosModal" tabindex="-1" aria-labelledby="redimirPuntosModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="redimirPuntosModalLabel">Redimir Puntos</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="recompensaSelect" class="form-label">Selecciona una recompensa</label>
+                    <select class="form-select" id="recompensaSelect" name="recompensa" required>
+                        <option value="" selected disabled>Selecciona una opción</option>
+                        <option value="descuento_10" data-puntos="100">Descuento 10% (100 puntos)</option>
+                        <option value="lavado_basico" data-puntos="200">Lavado Básico Gratis (200 puntos)</option>
+                        <option value="detailing_interior" data-puntos="350">Detailing Interior (350 puntos)</option>
+                        <option value="lavado_premium" data-puntos="500">Lavado Premium (500 puntos)</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="puntosRedimir" class="form-label">Puntos a redimir</label>
+                    <input type="number" class="form-control" id="puntosRedimir" name="puntos" readonly>
+                </div>
+                <div class="mb-3">
+                    <label for="puntosDisponibles" class="form-label">Puntos disponibles</label>
+                    <input type="text" class="form-control" id="puntosDisponibles" value="{% if request.user.is_authenticated and request.user.cliente %}{{ request.user.cliente.saldo_puntos }}{% else %}0{% endif %}" readonly>
+                </div>
+                <div class="alert alert-warning" id="alertaPuntos" style="display: none;">
+                    No tienes suficientes puntos para esta recompensa.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnConfirmarRecompensa">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -643,6 +705,67 @@
             document.querySelector('#step4').style.display = 'block';
         });
         
+        // Manejar el switch de redimir puntos
+        const usarPuntosSwitch = document.querySelector('#usarPuntos');
+        const puntosARedimirInput = document.querySelector('#puntosARedimir');
+        const descuentoAplicadoInput = document.querySelector('#descuentoAplicado');
+        let puntosCliente = 0;
+        
+        // Obtener los puntos del cliente si está autenticado
+        {% if request.user.is_authenticated and request.user.cliente %}
+            puntosCliente = {{ request.user.cliente.saldo_puntos }};
+        {% endif %}
+        
+        // Variable para almacenar el descuento aplicado
+        let descuentoAplicado = 0;
+        let puntosUsados = 0;
+        let precioFinalConDescuento = 0;
+        
+        if (usarPuntosSwitch) {
+            usarPuntosSwitch.addEventListener('change', function() {
+                if (this.checked && selectedService) {
+                    const precioServicio = servicePrices[selectedService];
+                    const resultado = calcularDescuentoPorPuntos(puntosCliente, precioServicio);
+                    
+                    descuentoAplicado = resultado.descuento;
+                    puntosUsados = resultado.puntosUsados;
+                    precioFinalConDescuento = resultado.precioFinal;
+                    
+                    // Actualizar los campos ocultos
+                    puntosARedimirInput.value = puntosUsados;
+                    descuentoAplicadoInput.value = descuentoAplicado;
+                    
+                    // Mostrar mensaje con el descuento aplicado
+                    const medioPagoSeleccionadoDiv = document.querySelector('#medioPagoSeleccionado');
+                    if (medioPagoSeleccionadoDiv) {
+                        medioPagoSeleccionadoDiv.style.display = 'block';
+                        medioPagoSeleccionadoDiv.innerHTML = `
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2"></i> 
+                                <strong>¡Descuento aplicado!</strong> Se redimirán ${puntosUsados} puntos por un valor de $${descuentoAplicado}.
+                                ${precioFinalConDescuento === 0 ? '<br><strong>¡Tu servicio será completamente gratis!</strong>' : `<br>Precio final: $${precioFinalConDescuento}`}
+                            </div>
+                        `;
+                    }
+                } else {
+                    // Resetear los valores si se desmarca el switch
+                    descuentoAplicado = 0;
+                    puntosUsados = 0;
+                    precioFinalConDescuento = selectedService ? servicePrices[selectedService] : 0;
+                    
+                    // Actualizar los campos ocultos
+                    puntosARedimirInput.value = 0;
+                    descuentoAplicadoInput.value = 0;
+                    
+                    // Ocultar mensaje de descuento
+                    const medioPagoSeleccionadoDiv = document.querySelector('#medioPagoSeleccionado');
+                    if (medioPagoSeleccionadoDiv) {
+                        medioPagoSeleccionadoDiv.style.display = 'none';
+                    }
+                }
+            });
+        }
+        
         // Nuevo evento para el paso 5 -> 6
         const nextToStep6 = document.querySelector('#nextToStep6');
         nextToStep6.addEventListener('click', function() {
@@ -668,7 +791,21 @@
             
             document.querySelector('#resumen-vehiculo').textContent = `${marca} ${modelo} ${anio}`;
             document.querySelector('#resumen-placa').textContent = placa;
-            document.querySelector('#resumen-precio').textContent = `$${servicePrices[selectedService]}`;
+            
+            // Mostrar precio con descuento si se aplica
+            const precioOriginal = servicePrices[selectedService];
+            const usarPuntosValue = document.getElementById('usarPuntos').value;
+            const descuentoAplicadoValue = parseFloat(document.getElementById('descuentoAplicado').value) || 0;
+            
+            if (usarPuntosValue === 'true' && descuentoAplicadoValue > 0) {
+                document.querySelector('#resumen-precio').innerHTML = `
+                    <span class="text-decoration-line-through text-muted">$${precioOriginal.toLocaleString()}</span> 
+                    <span class="text-success">$${precioFinalConDescuento.toLocaleString()}</span> 
+                    <span class="badge bg-success">Descuento: $${descuentoAplicadoValue.toLocaleString()}</span>
+                `;
+            } else {
+                document.querySelector('#resumen-precio').textContent = `$${precioOriginal.toLocaleString()}`;
+            }
             
             const observaciones = document.querySelector('#observaciones').value;
             document.querySelector('#resumen-observaciones').textContent = observaciones || '-';
@@ -684,7 +821,31 @@
             // Añadir información del medio de pago al resumen
             const medioPagoCard = document.querySelector(`.medio-pago-card.selected`);
             const medioPagoText = medioPagoCard ? medioPagoCard.querySelector('.card-title').textContent : 'No seleccionado';
-            document.querySelector('#resumen-medio-pago').textContent = medioPagoText;
+            let medioPagoDisplay = medioPagoText;
+            
+            // Obtener información de la recompensa seleccionada
+            // Ya tenemos usarPuntosValue declarado arriba
+            const puntosARedimirValue = parseInt(document.getElementById('puntosARedimir').value) || 0;
+            const recompensaSeleccionadaValue = document.getElementById('recompensaSeleccionada').value;
+            
+            // Si se están usando puntos y el precio final es 0, mostrar que se paga con puntos
+            if (usarPuntosValue === 'true' && precioFinalConDescuento === 0) {
+                medioPagoDisplay = `Puntos (${puntosARedimirValue} puntos)`;
+            } else if (usarPuntosValue === 'true' && precioFinalConDescuento > 0) {
+                // Obtener el nombre de la recompensa seleccionada
+                const recompensaSelect = document.getElementById('recompensaSelect');
+                let recompensaNombre = '';
+                for (let i = 0; i < recompensaSelect.options.length; i++) {
+                    if (recompensaSelect.options[i].value === recompensaSeleccionadaValue) {
+                        recompensaNombre = recompensaSelect.options[i].textContent;
+                        break;
+                    }
+                }
+                
+                medioPagoDisplay = `${medioPagoText} + ${recompensaNombre} (${puntosARedimirValue} puntos)`;
+            }
+            
+            document.querySelector('#resumen-medio-pago').textContent = medioPagoDisplay;
             
             // Marcar automáticamente el checkbox de términos y condiciones
             document.querySelector('#terminos').checked = true;
@@ -716,6 +877,69 @@
             selectedDate = this.value;
             cargarHorariosDisponibles(selectedDate, selectedService);
         });
+        
+        // Función para calcular el descuento por puntos según la recompensa seleccionada
+        function calcularDescuentoPorPuntos(puntosCliente, precioServicio, recompensaSeleccionada = null) {
+            console.log('Calculando descuento - Puntos cliente:', puntosCliente, 'Precio servicio:', precioServicio, 'Recompensa:', recompensaSeleccionada);
+            
+            // Si no hay recompensa seleccionada, no se aplica descuento
+            if (!recompensaSeleccionada) {
+                return {
+                    descuento: 0,
+                    puntosUsados: 0,
+                    precioFinal: precioServicio
+                };
+            }
+            
+            // Obtener los puntos necesarios y el descuento según la recompensa seleccionada
+            let puntosNecesarios = 0;
+            let descuento = 0;
+            
+            switch (recompensaSeleccionada) {
+                case 'descuento_10':
+                    puntosNecesarios = 100;
+                    descuento = precioServicio * 0.10; // 10% de descuento
+                    break;
+                case 'lavado_basico':
+                    puntosNecesarios = 200;
+                    descuento = precioServicio; // 100% de descuento para lavado básico
+                    break;
+                case 'detailing_interior':
+                    puntosNecesarios = 350;
+                    descuento = precioServicio; // 100% de descuento para detailing interior
+                    break;
+                case 'lavado_premium':
+                    puntosNecesarios = 500;
+                    descuento = precioServicio; // 100% de descuento para lavado premium
+                    break;
+                default:
+                    // Si no se reconoce la recompensa, no se aplica descuento
+                    console.log('Recompensa no reconocida');
+                    return {
+                        descuento: 0,
+                        puntosUsados: 0,
+                        precioFinal: precioServicio
+                    };
+            }
+            
+            // Verificar si el cliente tiene suficientes puntos
+            console.log('Verificando puntos - Disponibles:', puntosCliente, 'Necesarios:', puntosNecesarios);
+            if (puntosCliente < puntosNecesarios) {
+                console.log('Puntos insuficientes');
+                return {
+                    descuento: 0,
+                    puntosUsados: 0,
+                    precioFinal: precioServicio
+                };
+            }
+            
+            // El cliente tiene suficientes puntos, aplicar descuento
+            return {
+                descuento: descuento,
+                puntosUsados: puntosNecesarios,
+                precioFinal: Math.max(0, precioServicio - descuento)
+            };
+        }
         
         // Función para cargar horarios disponibles
         function cargarHorariosDisponibles(fecha, servicioId) {
@@ -1472,6 +1696,97 @@
         
         // Alias para compatibilidad
         const showAlert = mostrarAlerta;
+        
+        // Inicializar el modal de redención de puntos
+        const redimirPuntosModal = document.getElementById('redimirPuntosModal');
+        if (redimirPuntosModal) {
+            const recompensaSelect = document.getElementById('recompensaSelect');
+            const puntosRedimir = document.getElementById('puntosRedimir');
+            const puntosDisponibles = document.getElementById('puntosDisponibles');
+            const alertaPuntos = document.getElementById('alertaPuntos');
+            const btnConfirmarRecompensa = document.getElementById('btnConfirmarRecompensa');
+            
+            // Cargar los puntos disponibles del cliente cuando se abre el modal
+            redimirPuntosModal.addEventListener('show.bs.modal', function() {
+                // Obtener los puntos disponibles del cliente desde el valor ya establecido en el input
+                const puntosClienteDisponibles = parseInt(puntosDisponibles.value) || 0;
+                
+                // Mostrar en consola para depuración
+                console.log('Puntos disponibles:', puntosClienteDisponibles);
+                
+                // Resetear la selección
+                recompensaSelect.selectedIndex = 0;
+                puntosRedimir.value = '';
+                alertaPuntos.style.display = 'none';
+                btnConfirmarRecompensa.disabled = true;
+            });
+            
+            recompensaSelect.addEventListener('change', function() {
+                const selectedOption = recompensaSelect.options[recompensaSelect.selectedIndex];
+                const puntos = selectedOption.dataset.puntos;
+                puntosRedimir.value = puntos;
+                
+                // Mostrar en consola para depuración
+                console.log('Recompensa seleccionada:', selectedOption.textContent);
+                console.log('Puntos necesarios:', puntos);
+                console.log('Puntos disponibles:', puntosDisponibles.value);
+                
+                // Verificar si tiene suficientes puntos
+                if (parseInt(puntos) > parseInt(puntosDisponibles.value)) {
+                    console.log('No tiene suficientes puntos');
+                    alertaPuntos.style.display = 'block';
+                    btnConfirmarRecompensa.disabled = true;
+                } else {
+                    console.log('Tiene suficientes puntos');
+                    alertaPuntos.style.display = 'none';
+                    btnConfirmarRecompensa.disabled = false;
+                }
+            });
+            
+            // Manejar la confirmación de recompensa
+            btnConfirmarRecompensa.addEventListener('click', function() {
+                const selectedOption = recompensaSelect.options[recompensaSelect.selectedIndex];
+                const puntos = parseInt(selectedOption.dataset.puntos);
+                const recompensaValor = selectedOption.value;
+                const recompensaNombre = selectedOption.textContent;
+                
+                // Actualizar campos ocultos
+                document.getElementById('usarPuntos').value = 'true';
+                document.getElementById('puntosARedimir').value = puntos;
+                document.getElementById('recompensaSeleccionada').value = recompensaValor;
+                
+                // Calcular descuento según la recompensa seleccionada
+                let descuento = 0;
+                if (selectedService) {
+                    const precioServicio = servicePrices[selectedService];
+                    const puntosDisponiblesCliente = parseInt(puntosDisponibles.value);
+                    const resultado = calcularDescuentoPorPuntos(puntosDisponiblesCliente, precioServicio, recompensaValor);
+                    
+                    descuento = resultado.descuento;
+                    puntosUsados = resultado.puntosUsados;
+                    document.getElementById('descuentoAplicado').value = descuento;
+                    document.getElementById('puntosARedimir').value = puntosUsados;
+                    precioFinalConDescuento = resultado.precioFinal;
+                    
+                    // Mostrar mensaje con el descuento aplicado
+                    const medioPagoSeleccionadoDiv = document.querySelector('#medioPagoSeleccionado');
+                    if (medioPagoSeleccionadoDiv) {
+                        medioPagoSeleccionadoDiv.style.display = 'block';
+                        medioPagoSeleccionadoDiv.innerHTML = `
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2"></i> 
+                                <strong>¡Recompensa seleccionada!</strong> ${recompensaNombre} por ${puntosUsados} puntos.
+                                ${precioFinalConDescuento === 0 ? '<br><strong>¡Tu servicio será completamente gratis!</strong>' : `<br>Descuento: $${descuento.toLocaleString()}<br>Precio final: $${precioFinalConDescuento.toLocaleString()}`}
+                            </div>
+                        `;
+                    }
+                }
+                
+                // Cerrar el modal
+                const modalInstance = bootstrap.Modal.getInstance(redimirPuntosModal);
+                modalInstance.hide();
+            });
+        }
     });
 </script>
 {% endblock %}
