@@ -41,7 +41,25 @@
                             <h5>Detalles del Pago:</h5>
                             <ul class="list-group list-group-flush">
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    Monto:
+                                    Precio Original:
+                                    <span class="fw-bold">${{ reserva.servicio.precio|floatformat:0 }}</span>
+                                </li>
+                                {% if descuento_aplicado > 0 %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Recompensa Aplicada:
+                                    <span class="fw-bold text-success">{{ recompensa_seleccionada }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Descuento por Puntos:
+                                    <span class="fw-bold text-success">-${{ descuento_aplicado|floatformat:0 }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Puntos Redimidos:
+                                    <span class="fw-bold text-primary">{{ puntos_a_redimir }} puntos</span>
+                                </li>
+                                {% endif %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Monto a Pagar:
                                     <span class="fw-bold">${{ monto|floatformat:0 }}</span>
                                 </li>
                                 <li class="list-group-item d-flex justify-content-between align-items-center">

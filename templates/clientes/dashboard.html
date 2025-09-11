@@ -225,7 +225,9 @@
                             <thead>
                                 <tr>
                                     <th>Fecha</th>
+                                    <th>Hora</th>
                                     <th>Servicio</th>
+                                    <th>Vehículo</th>
                                     <th>Monto</th>
                                     <th>Puntos</th>
                                 </tr>
@@ -233,9 +235,11 @@
                             <tbody>
                                 {% for servicio in ultimos_servicios %}
                                 <tr>
-                                    <td>{{ servicio.fecha_servicio|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ servicio.fecha_servicio|date:"l, j \d\e F \d\e Y" }}</td>
+                                    <td>{{ servicio.fecha_servicio|time:"h:i A" }}</td>
                                     <td>{{ servicio.servicio }}</td>
-                                    <td>${{ servicio.monto }}</td>
+                                    <td>{% if servicio.vehiculo %}{{ servicio.vehiculo.marca }} {{ servicio.vehiculo.modelo }} ({{ servicio.vehiculo.placa }}){% else %}No especificado{% endif %}</td>
+                                    <td>${{ servicio.monto|floatformat:2 }}</td>
                                     <td>
                                         <span class="badge bg-success">+{{ servicio.puntos_ganados }}</span>
                                     </td>

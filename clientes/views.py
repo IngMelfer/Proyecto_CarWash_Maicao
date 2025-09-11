@@ -142,6 +142,19 @@ class HistorialServiciosView(LoginRequiredMixin, View):
         # Obtener el historial de servicios del cliente
         historial = HistorialServicio.objects.filter(cliente=request.user.cliente).order_by('-fecha_servicio')
         
+        # Añadir información de vehículo a cada servicio del historial
+        from reservas.models import Reserva
+        for servicio in historial:
+            servicio.vehiculo = None
+            # Intentar encontrar la reserva asociada a este servicio por fecha y servicio
+            reserva = Reserva.objects.filter(
+                cliente=request.user.cliente,
+                fecha_hora=servicio.fecha_servicio,
+                servicio__nombre=servicio.servicio
+            ).first()
+            if reserva and reserva.vehiculo:
+                servicio.vehiculo = reserva.vehiculo
+        
         return render(request, 'clientes/historial_servicios.html', {
             'historial': historial,
             'cliente': request.user.cliente
@@ -188,6 +201,21 @@ class DashboardClienteView(LoginRequiredMixin, View):
         
         # Servicios completados
         historial_servicios = HistorialServicio.objects.filter(cliente=cliente).order_by('-fecha_servicio')
+        
+        # Añadir información de vehículo a cada servicio del historial
+        # Esto es necesario porque el modelo HistorialServicio no tiene un campo vehiculo
+        # pero la plantilla dashboard.html intenta acceder a servicio.vehiculo
+        for servicio in historial_servicios:
+            servicio.vehiculo = None
+            # Intentar encontrar la reserva asociada a este servicio por fecha y servicio
+            reserva = Reserva.objects.filter(
+                cliente=cliente,
+                fecha_hora=servicio.fecha_servicio,
+                servicio__nombre=servicio.servicio
+            ).first()
+            if reserva and reserva.vehiculo:
+                servicio.vehiculo = reserva.vehiculo
+        
         servicios_completados = historial_servicios.count()
         
         # Puntos disponibles

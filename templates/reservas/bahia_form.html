@@ -84,6 +84,15 @@
             </div>
             
             <div class="camera-options" id="camera-options">
+                <div class="form-group mb-3" id="tipo_camara_container">
+                    <label for="{{ form.tipo_camara.id_for_label }}" class="form-label">{{ form.tipo_camara.label }}</label>
+                    {{ form.tipo_camara }}
+                    <div class="form-text text-muted">Seleccione el tipo de aplicación de cámara que utilizará.</div>
+                    {% if form.tipo_camara.errors %}
+                        <div class="text-danger">{{ form.tipo_camara.errors }}</div>
+                    {% endif %}
+                </div>
+                
                 <div class="form-group">
                     <label for="{{ form.ip_camara.id_for_label }}" class="form-label">IP de la Cámara:</label>
                     {{ form.ip_camara }}
@@ -91,6 +100,77 @@
                     {% if form.ip_camara.errors %}
                         <div class="text-danger">{{ form.ip_camara.errors }}</div>
                     {% endif %}
+                </div>
+                
+                <div class="alert alert-info mt-3">
+                    <h6><i class="fas fa-info-circle"></i> Opciones de configuración de cámaras</h6>
+                    
+                    <ul class="nav nav-tabs" id="cameraTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="ip-webcam-tab" data-bs-toggle="tab" data-bs-target="#ip-webcam" type="button" role="tab" aria-controls="ip-webcam" aria-selected="true">IP Webcam</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="droidcam-tab" data-bs-toggle="tab" data-bs-target="#droidcam" type="button" role="tab" aria-controls="droidcam" aria-selected="false">DroidCam</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="iriun-tab" data-bs-toggle="tab" data-bs-target="#iriun" type="button" role="tab" aria-controls="iriun" aria-selected="false">Iriun Webcam</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="other-tab" data-bs-toggle="tab" data-bs-target="#other" type="button" role="tab" aria-controls="other" aria-selected="false">Otras cámaras</button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content pt-3" id="cameraTabsContent">
+                        <!-- IP Webcam (Android) -->
+                        <div class="tab-pane fade show active" id="ip-webcam" role="tabpanel" aria-labelledby="ip-webcam-tab">
+                            <p>Para usar <strong>IP Webcam</strong> (recomendado para Android):</p>
+                            <ol>
+                                <li>Instale la aplicación <strong>IP Webcam</strong> desde Google Play Store.</li>
+                                <li>Asegúrese de que su dispositivo y este servidor estén en la misma red WiFi.</li>
+                                <li>Abra la aplicación y toque "Iniciar servidor".</li>
+                                <li>Anote la dirección IP que muestra la aplicación (ejemplo: 192.168.1.100:8080).</li>
+                                <li>En este formulario, ingrese la dirección IP y puerto en el formato: <code>192.168.1.100:8080/video</code></li>
+                            </ol>
+                            <p class="mb-0"><strong>Ventajas:</strong> Más estable que DroidCam, opciones avanzadas de configuración, compatible con la mayoría de navegadores.</p>
+                        </div>
+                        
+                        <!-- DroidCam -->
+                        <div class="tab-pane fade" id="droidcam" role="tabpanel" aria-labelledby="droidcam-tab">
+                            <p>Para usar <strong>DroidCam</strong>:</p>
+                            <ol>
+                                <li>Instale la aplicación <strong>DroidCam</strong> en su dispositivo Android.</li>
+                                <li>Asegúrese de que su dispositivo y este servidor estén en la misma red WiFi.</li>
+                                <li>Abra la aplicación DroidCam en su dispositivo.</li>
+                                <li>Anote la dirección IP y el puerto (ejemplo: 192.168.1.100:4747).</li>
+                                <li>En este formulario, ingrese la dirección IP y puerto en el formato: <code>192.168.1.100:4747</code></li>
+                            </ol>
+                            <p class="mb-0"><strong>Nota:</strong> Si experimenta problemas de conexión con DroidCam, considere usar IP Webcam como alternativa.</p>
+                        </div>
+                        
+                        <!-- Iriun Webcam -->
+                        <div class="tab-pane fade" id="iriun" role="tabpanel" aria-labelledby="iriun-tab">
+                            <p>Para usar <strong>Iriun Webcam</strong> (compatible con Android e iOS):</p>
+                            <ol>
+                                <li>Instale la aplicación <strong>Iriun Webcam</strong> en su dispositivo móvil.</li>
+                                <li>Instale el cliente <a href="https://iriun.com" target="_blank">Iriun Webcam</a> en su computadora.</li>
+                                <li>Asegúrese de que su dispositivo y este servidor estén en la misma red WiFi.</li>
+                                <li>Abra la aplicación en su dispositivo y el cliente en su computadora.</li>
+                                <li>En este formulario, ingrese la dirección IP del servidor donde se ejecuta el cliente Iriun.</li>
+                            </ol>
+                            <p class="mb-0"><strong>Ventajas:</strong> Compatible con iOS y Android, alta calidad de video, baja latencia.</p>
+                        </div>
+                        
+                        <!-- Otras cámaras -->
+                        <div class="tab-pane fade" id="other" role="tabpanel" aria-labelledby="other-tab">
+                            <p>Para usar <strong>otras cámaras IP</strong>:</p>
+                            <ul>
+                                <li><strong>Cámaras IP estándar:</strong> Ingrese la dirección IP completa, incluyendo protocolo (http:// o rtsp://).</li>
+                                <li><strong>Cámaras RTSP:</strong> Use el formato <code>rtsp://usuario:contraseña@192.168.1.100/stream</code></li>
+                                <li><strong>Cámaras HTTP:</strong> Use el formato <code>http://192.168.1.100/video</code></li>
+                            </ul>
+                            <p class="mb-0"><strong>Nota:</strong> Consulte la documentación de su cámara para obtener la URL exacta.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -108,13 +188,16 @@
     document.addEventListener('DOMContentLoaded', function() {
         const tieneCamaraCheckbox = document.getElementById('{{ form.tiene_camara.id_for_label }}');
         const cameraOptions = document.getElementById('camera-options');
+        const tipoCamaraContainer = document.getElementById('tipo_camara_container');
         
         // Función para mostrar/ocultar opciones de cámara
         function toggleCameraOptions() {
             if (tieneCamaraCheckbox.checked) {
                 cameraOptions.style.display = 'block';
+                tipoCamaraContainer.style.display = 'block';
             } else {
                 cameraOptions.style.display = 'none';
+                tipoCamaraContainer.style.display = 'none';
             }
         }
         
@@ -123,6 +206,42 @@
         
         // Escuchar cambios en el checkbox
         tieneCamaraCheckbox.addEventListener('change', toggleCameraOptions);
+        
+        // Actualizar el placeholder del campo IP según el tipo de cámara seleccionado
+        const tipoCamaraSelect = document.getElementById('{{ form.tipo_camara.id_for_label }}');
+        const ipCamaraInput = document.getElementById('{{ form.ip_camara.id_for_label }}');
+        
+        function updateIpCamaraPlaceholder() {
+            const selectedType = tipoCamaraSelect.value;
+            
+            switch(selectedType) {
+                case 'droidcam':
+                    ipCamaraInput.placeholder = 'Ejemplo: 192.168.1.100:4747';
+                    break;
+                case 'ipwebcam':
+                    ipCamaraInput.placeholder = 'Ejemplo: 192.168.1.100:8080/video';
+                    break;
+                case 'iriun':
+                    ipCamaraInput.placeholder = 'Ejemplo: 192.168.1.100:8080';
+                    break;
+                case 'rtsp':
+                    ipCamaraInput.placeholder = 'Ejemplo: rtsp://usuario:contraseña@192.168.1.100/stream';
+                    break;
+                case 'http':
+                    ipCamaraInput.placeholder = 'Ejemplo: http://192.168.1.100/video.mjpg';
+                    break;
+                default:
+                    ipCamaraInput.placeholder = 'Dirección IP o URL de la cámara';
+            }
+        }
+        
+        // Inicializar el placeholder
+        if (tipoCamaraSelect) {
+            updateIpCamaraPlaceholder();
+            
+            // Escuchar cambios en el tipo de cámara
+            tipoCamaraSelect.addEventListener('change', updateIpCamaraPlaceholder);
+        }
     });
 </script>
 {% endblock %}

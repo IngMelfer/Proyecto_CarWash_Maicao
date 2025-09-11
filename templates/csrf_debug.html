@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block title %}Diagnóstico CSRF{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Diagnóstico de Problemas CSRF</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <p><strong>Instrucciones:</strong></p>
+                        <p>Esta página ayuda a diagnosticar problemas con la verificación CSRF en la aplicación.</p>
+                        <p>1. Abre la consola del navegador (F12 o Ctrl+Shift+J) para ver los resultados del diagnóstico.</p>
+                        <p>2. Prueba los formularios a continuación para verificar el comportamiento CSRF.</p>
+                    </div>
+                    
+                    <h4 class="mt-4">Información del Navegador</h4>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <tr>
+                                <th>User Agent</th>
+                                <td id="user-agent">Cargando...</td>
+                            </tr>
+                            <tr>
+                                <th>Cookies Habilitadas</th>
+                                <td id="cookies-enabled">Verificando...</td>
+                            </tr>
+                            <tr>
+                                <th>Cookie CSRF</th>
+                                <td id="csrf-cookie-status">Verificando...</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <h4 class="mt-4">Prueba de Formulario POST</h4>
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">Formulario con {% verbatim %}{% csrf_token %}{% endverbatim %}</div>
+                        <div class="card-body">
+                            <form id="test-form-with-csrf" method="post" action="#">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="test-input" class="form-label">Campo de prueba</label>
+                                    <input type="text" class="form-control" id="test-input" name="test_input" value="Valor de prueba">
+                                </div>
+                                <button type="submit" class="btn btn-primary">Enviar (con CSRF)</button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <h4 class="mt-4">Prueba de AJAX</h4>
+                    <div class="card">
+                        <div class="card-header bg-light">Solicitud AJAX POST</div>
+                        <div class="card-body">
+                            <button id="test-ajax" class="btn btn-info">Probar solicitud AJAX</button>
+                            <div id="ajax-result" class="mt-3"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/csrf_debug.js"></script>
+<script>
+    // Mostrar información del navegador
+    document.getElementById('user-agent').textContent = navigator.userAgent;
+    document.getElementById('cookies-enabled').textContent = navigator.cookieEnabled ? 'Sí' : 'No';
+    
+    // Verificar cookie CSRF
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    const csrfCookie = getCookie('csrftoken');
+    if (csrfCookie) {
+        document.getElementById('csrf-cookie-status').textContent = `Presente (${csrfCookie.substring(0, 10)}...)`;
+        document.getElementById('csrf-cookie-status').classList.add('text-success');
+    } else {
+        document.getElementById('csrf-cookie-status').textContent = 'NO ENCONTRADA - Esto puede causar errores CSRF';
+        document.getElementById('csrf-cookie-status').classList.add('text-danger');
+    }
+    
+    // Prevenir envío real del formulario de prueba
+    document.getElementById('test-form-with-csrf').addEventListener('submit', function(e) {
+        e.preventDefault();
+        console.log('Formulario enviado (simulado)');
+        console.log('Token CSRF en el formulario:', this.querySelector('input[name="csrfmiddlewaretoken"]').value);
+        alert('Formulario enviado correctamente (simulado)');
+    });
+    
+    // Prueba de AJAX
+    document.getElementById('test-ajax').addEventListener('click', function() {
+        const resultDiv = document.getElementById('ajax-result');
+        resultDiv.innerHTML = '<div class="alert alert-secondary">Enviando solicitud AJAX...</div>';
+        
+        // Realizar solicitud AJAX
+        fetch('/autenticacion/csrf-test/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ test: 'data' })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            resultDiv.innerHTML = `<div class="alert alert-success">Éxito: ${JSON.stringify(data)}</div>`;
+        })
+        .catch(error => {
+            resultDiv.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            console.error('Error AJAX:', error);
+        });
+    });
+</script>
+{% endblock %}

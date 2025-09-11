@@ -56,7 +56,9 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th>Fecha</th>
+                                        <th>Hora</th>
                                         <th>Servicio</th>
+                                        <th>Vehículo</th>
                                         <th>Monto</th>
                                         <th>Puntos</th>
                                         <th>Detalles</th>
@@ -65,11 +67,17 @@
                                 <tbody>
                                     {% for servicio in historial %}
                                         <tr>
-                                            <td>{{ servicio.fecha_servicio|date:"d/m/Y H:i" }}</td>
+                                            <td>{{ servicio.fecha_servicio|date:"l, j \d\e F \d\e Y" }}</td>
+                                            <td>{{ servicio.fecha_servicio|time:"h:i A" }}</td>
                                             <td>{{ servicio.servicio }}</td>
-                                            <td>${{ servicio.monto }}</td>
+                                            <td>{% if servicio.vehiculo %}{{ servicio.vehiculo.marca }} {{ servicio.vehiculo.modelo }} ({{ servicio.vehiculo.placa }}){% else %}No especificado{% endif %}</td>
+                                            <td>${{ servicio.monto|floatformat:2 }}</td>
                                             <td>
+                                                {% if "Redención de puntos" in servicio.servicio %}
+                                                <span class="badge bg-danger">-{{ servicio.descripcion|slice:"12:15" }}</span>
+                                                {% else %}
                                                 <span class="badge bg-success">+{{ servicio.puntos_ganados }}</span>
+                                                {% endif %}
                                             </td>
                                             <td>
                                                 <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#detalleServicio{{ servicio.id }}">
@@ -88,8 +96,12 @@
                                                     </div>
                                                     <div class="modal-body">
                                                         <h5 class="mb-3">{{ servicio.servicio }}</h5>
-                                                        <p><strong>Fecha:</strong> {{ servicio.fecha_servicio|date:"d/m/Y H:i" }}</p>
-                                                        <p><strong>Monto:</strong> ${{ servicio.monto }}</p>
+                                                        <p><strong>Fecha:</strong> {{ servicio.fecha_servicio|date:"l, j \d\e F \d\e Y" }}</p>
+                                                        <p><strong>Hora:</strong> {{ servicio.fecha_servicio|time:"h:i A" }}</p>
+                                                        {% if servicio.vehiculo %}
+                                                        <p><strong>Vehículo:</strong> {{ servicio.vehiculo.marca }} {{ servicio.vehiculo.modelo }} ({{ servicio.vehiculo.placa }})</p>
+                                                        {% endif %}
+                                                        <p><strong>Monto:</strong> ${{ servicio.monto|floatformat:2 }}</p>
                                                         <p><strong>Puntos ganados:</strong> {{ servicio.puntos_ganados }}</p>
                                                         
                                                         {% if servicio.descripcion %}

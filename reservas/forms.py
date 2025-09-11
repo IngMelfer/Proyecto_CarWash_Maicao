@@ -5,12 +5,13 @@ from clientes.models import Cliente
 class BahiaForm(forms.ModelForm):
     class Meta:
         model = Bahia
-        fields = ['nombre', 'descripcion', 'activo', 'tiene_camara', 'ip_camara']
+        fields = ['nombre', 'descripcion', 'activo', 'tiene_camara', 'tipo_camara', 'ip_camara']
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
             'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'activo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'tiene_camara': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'tipo_camara': forms.Select(attrs={'class': 'form-select'}),
             'ip_camara': forms.TextInput(attrs={'class': 'form-control'}),
         }
 

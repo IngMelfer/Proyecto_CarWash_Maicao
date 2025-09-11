@@ -14,6 +14,7 @@ from .views import (
     ResetPasswordView,
     CambiarPasswordView
 )
+from .views_csrf import csrf_debug_view, csrf_test_ajax
 
 app_name = 'autenticacion'
 
@@ -40,6 +41,10 @@ urlpatterns = [
     path('cambiar-password/', CambiarPasswordView.as_view(), name='cambiar_password'),
     path('recuperar-password/', RecuperarPasswordView.as_view(), name='recuperar_password'),
     path('reset-password/<uuid:token>/', ResetPasswordView.as_view(), name='reset_password'),
+    
+    # Vistas de diagnóstico CSRF
+    path('csrf-debug/', csrf_debug_view, name='csrf_debug'),
+    path('csrf-test/', csrf_test_ajax, name='csrf_test'),
     
     # Vistas API
     path('api/registro/', RegistroUsuarioAPIView.as_view(), name='api_registro'),

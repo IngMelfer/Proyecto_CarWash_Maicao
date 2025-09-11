@@ -62,6 +62,12 @@ class MedioPago(models.Model):
         """
         return self.tipo in [self.WOMPI, self.PAYU, self.EPAYCO, self.NEQUI, self.PSE]
         
+    def es_puntos(self):
+        """
+        Determina si el medio de pago es con puntos.
+        """
+        return self.tipo == self.PUNTOS
+        
     def es_electronico(self):
         """
         Determina si el medio de pago es electrónico (tarjeta o pasarela)
@@ -142,8 +148,15 @@ class Reserva(models.Model):
     fecha_actualizacion = models.DateTimeField(auto_now=True, verbose_name=_('Última Actualización'))
     fecha_inicio_servicio = models.DateTimeField(null=True, blank=True, verbose_name=_('Fecha de Inicio del Servicio'))
     medio_pago = models.ForeignKey(MedioPago, on_delete=models.PROTECT, null=True, blank=True, related_name='reservas', verbose_name=_('Medio de Pago'))
+    precio_final = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name=_('Precio Final'))
+    descuento_aplicado = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name=_('Descuento Aplicado'))
+    puntos_redimidos = models.PositiveIntegerField(default=0, verbose_name=_('Puntos Redimidos'))
+    recompensa_aplicada = models.CharField(max_length=100, blank=True, verbose_name=_('Recompensa Aplicada'))
     stream_token = models.CharField(max_length=50, blank=True, null=True, verbose_name=_('Token de Transmisión'))
     referencia_pago = models.CharField(max_length=100, blank=True, null=True, verbose_name=_('Referencia de Pago'), help_text=_('Referencia única para el pago en pasarelas'))
+    puntos_redimidos = models.PositiveIntegerField(default=0, verbose_name=_('Puntos Redimidos'), help_text=_('Cantidad de puntos redimidos para esta reserva'))
+    descuento_aplicado = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name=_('Descuento Aplicado'), help_text=_('Monto de descuento aplicado por redención de puntos'))
+    fecha_confirmacion = models.DateTimeField(null=True, blank=True, verbose_name=_('Fecha de Confirmación'))
     
     class Meta:
         verbose_name = _('Reserva')
@@ -226,6 +239,7 @@ class Reserva(models.Model):
         Libera la bahía ocupada.
         Elimina el código QR si existe.
         Busca la siguiente reserva pendiente para esa bahía y la asigna automáticamente.
+        Crea un registro en el historial de servicios del cliente.
         """
         if self.estado == self.EN_PROCESO:
             self.estado = self.COMPLETADA
@@ -244,6 +258,20 @@ class Reserva(models.Model):
                 # la bahía ya no se considera ocupada para ese horario
             
             self.save(update_fields=['estado'])
+            
+            # Crear registro en historial de servicios
+            from clientes.models import HistorialServicio
+            from django.utils import timezone
+            
+            HistorialServicio.objects.create(
+                cliente=self.cliente,
+                servicio=self.servicio.nombre,
+                descripcion=self.servicio.descripcion,
+                fecha_servicio=timezone.now(),
+                monto=self.servicio.precio,
+                puntos_ganados=self.servicio.puntos_otorgados,
+                comentarios=self.notas
+            )
             
             # Acumular puntos al cliente
             self.cliente.acumular_puntos(self.servicio.puntos_otorgados)
@@ -411,11 +439,22 @@ class Bahia(models.Model):
     """
     Modelo para representar las bahías (lugares físicos) donde se realizan los servicios.
     """
+    # Opciones para el tipo de cámara
+    TIPO_CAMARA_CHOICES = [
+        ('droidcam', 'DroidCam'),
+        ('ipwebcam', 'IP Webcam'),
+        ('iriun', 'Iriun Webcam'),
+        ('rtsp', 'Cámara RTSP'),
+        ('http', 'Cámara HTTP'),
+        ('otro', 'Otro tipo de cámara'),
+    ]
+    
     nombre = models.CharField(max_length=50, verbose_name=_('Nombre'))
     descripcion = models.TextField(blank=True, verbose_name=_('Descripción'))
     activo = models.BooleanField(default=True, verbose_name=_('Activo'))
     tiene_camara = models.BooleanField(default=False, verbose_name=_('Tiene Cámara Web'))
-    ip_camara = models.CharField(max_length=100, blank=True, null=True, verbose_name=_('IP de la Cámara'))
+    tipo_camara = models.CharField(max_length=20, choices=TIPO_CAMARA_CHOICES, default='ipwebcam', blank=True, null=True, verbose_name=_('Tipo de Cámara'))
+    ip_camara = models.CharField(max_length=200, blank=True, null=True, verbose_name=_('URL/IP de la Cámara'))
     codigo_qr = models.ImageField(upload_to='bahias/qr/', blank=True, null=True, verbose_name=_('Código QR'))
     
     class Meta:
@@ -426,6 +465,42 @@ class Bahia(models.Model):
     def __str__(self):
         return self.nombre
         
+    def get_camera_url(self):
+        """Obtiene la URL completa de la cámara según su tipo"""
+        if not self.tiene_camara or not self.ip_camara:
+            return None
+            
+        # Si la URL ya incluye http:// o rtsp://, usarla directamente
+        if self.ip_camara.startswith(('http://', 'https://', 'rtsp://')): 
+            return self.ip_camara
+            
+        # Generar URL según el tipo de cámara
+        if self.tipo_camara == 'droidcam':
+            # DroidCam usa el formato http://IP:PUERTO/video
+            if '/video' in self.ip_camara:
+                return f"http://{self.ip_camara}"
+            else:
+                return f"http://{self.ip_camara}/video"
+                
+        elif self.tipo_camara == 'ipwebcam':
+            # IP Webcam usa el formato http://IP:PUERTO/video
+            if '/video' in self.ip_camara:
+                return f"http://{self.ip_camara}"
+            else:
+                return f"http://{self.ip_camara}/video"
+                
+        elif self.tipo_camara == 'iriun':
+            # Iriun Webcam - usar la URL proporcionada
+            return f"http://{self.ip_camara}"
+            
+        elif self.tipo_camara == 'rtsp':
+            # Cámaras RTSP
+            return f"rtsp://{self.ip_camara}"
+            
+        else:  # http y otros tipos
+            # Para cámaras HTTP genéricas
+            return f"http://{self.ip_camara}"
+    
     def save(self, *args, **kwargs):
         """Sobrescribir el método save para generar el código QR si tiene cámara y una IP asignada"""
         # Primero guardamos el objeto para asegurar que tenga un ID
@@ -446,7 +521,11 @@ class Bahia(models.Model):
                 box_size=10,
                 border=4,
             )
-            qr.add_data(f"http://{self.ip_camara}")
+            
+            # Obtener la URL completa de la cámara
+            camera_url = self.get_camera_url()
+            qr.add_data(camera_url)
+                
             qr.make(fit=True)
             img = qr.make_image(fill_color="black", back_color="white")
             

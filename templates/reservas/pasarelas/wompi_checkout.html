@@ -15,6 +15,11 @@
                     <div class="alert alert-info">
                         <p><strong>Reserva:</strong> {{ reserva.servicio.nombre }}</p>
                         <p><strong>Fecha y hora:</strong> {{ reserva.fecha_hora|date:"d/m/Y H:i" }}</p>
+                        <p><strong>Precio Original:</strong> ${{ reserva.servicio.precio|floatformat:0 }}</p>
+                        {% if descuento_aplicado > 0 %}
+                        <p><strong>Descuento por Puntos:</strong> <span class="text-success">-${{ descuento_aplicado|floatformat:0 }}</span></p>
+                        <p><strong>Puntos Redimidos:</strong> <span class="text-primary">{{ puntos_a_redimir }} puntos</span></p>
+                        {% endif %}
                         <p><strong>Monto a pagar:</strong> ${{ monto|floatformat:0 }}</p>
                         <p><strong>Referencia:</strong> {{ referencia }}</p>
                     </div>

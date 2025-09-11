@@ -147,11 +147,11 @@
                                                 <div class="card-body">
                                                     <div class="mb-3">
                                                         <i class="fas fa-calendar-day me-2 text-secondary"></i>
-                                                        <strong>Fecha:</strong> {{ cita.fecha|date:"l, j \d\e F \d\e Y" }}
+                                                        <strong>Fecha:</strong> {{ cita.fecha_hora|date:"l, j \d\e F \d\e Y" }}
                                                     </div>
                                                     <div class="mb-3">
                                                         <i class="fas fa-clock me-2 text-secondary"></i>
-                                                        <strong>Hora:</strong> {{ cita.hora_inicio|time:"h:i A" }} - {{ cita.hora_fin|time:"h:i A" }}
+                                                        <strong>Hora:</strong> {{ cita.fecha_hora|time:"h:i A" }}
                                                     </div>
                                                     <div class="mb-3">
                                                         <i class="fas fa-car me-2 text-secondary"></i>
@@ -159,7 +159,11 @@
                                                     </div>
                                                     <div class="mb-3">
                                                         <i class="fas fa-tag me-2 text-secondary"></i>
-                                                        <strong>Precio:</strong> ${{ cita.servicio.precio }}
+                                                        <strong>Precio:</strong> ${{ cita.servicio.precio|floatformat:2 }}
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <i class="fas fa-award me-2 text-secondary"></i>
+                                                        <strong>Puntos ganados:</strong> {{ cita.servicio.puntos_otorgados }}
                                                     </div>
                                                 </div>
                                                 <div class="card-footer bg-transparent">

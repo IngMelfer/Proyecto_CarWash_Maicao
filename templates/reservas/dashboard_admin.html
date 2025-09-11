@@ -314,6 +314,20 @@
                 </div>
             </div>
         </div>
+        <div class="col-md-3">
+            <div class="card text-center dashboard-card">
+                <div class="card-body">
+                    <div class="dashboard-icon">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <h5 class="card-title">Herramientas</h5>
+                    <p class="card-text">Herramientas de diagnóstico y solución de problemas</p>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'reservas:csrf_diagnostico' %}" class="btn btn-warning">Diagnóstico CSRF</a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock dashboard_content %}

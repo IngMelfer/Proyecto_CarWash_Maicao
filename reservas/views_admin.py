@@ -170,10 +170,20 @@ class ObtenerBahiasInfoView(LoginRequiredMixin, AdminRequiredMixin, View):
         })
 
 
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_protect
+from django.utils.decorators import method_decorator
+
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+@method_decorator(csrf_protect, name='post')
 class IniciarServicioView(LoginRequiredMixin, AdminRequiredMixin, View):
     """Vista para iniciar un servicio cuando el vehículo está en la bahía"""
     
     def post(self, request, pk):
+        # Verificar token CSRF
+        csrf_token = request.META.get('CSRF_COOKIE', None)
+        header_token = request.META.get('HTTP_X_CSRFTOKEN', None)
+        print(f"DEBUG CSRF - Cookie: {csrf_token}, Header: {header_token}")
+        
         reserva = get_object_or_404(Reserva, pk=pk)
         
         # Verificar que la reserva esté confirmada

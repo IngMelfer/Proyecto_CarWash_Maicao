@@ -8,8 +8,12 @@
         <div class="col-12">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'inicio' %}">Inicio</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Inicio</a></li>
+                    {% if user.is_staff %}
+                    <li class="breadcrumb-item"><a href="{% url 'reservas:dashboard_admin' %}">Dashboard</a></li>
+                    {% else %}
                     <li class="breadcrumb-item"><a href="{% url 'reservas:mis_turnos' %}">Mis Turnos</a></li>
+                    {% endif %}
                     <li class="breadcrumb-item active" aria-current="page">Ver Cámara</li>
                 </ol>
             </nav>
@@ -27,10 +31,23 @@
                     {% if bahia.tiene_camara and bahia.ip_camara %}
                         <div class="text-center mb-4">
                             <div class="ratio ratio-16x9 mb-3">
-                                <iframe src="http://{{ bahia.ip_camara }}" allowfullscreen id="camara-iframe"></iframe>
+                                <iframe src="{{ camera_url }}" allowfullscreen id="camara-iframe" onerror="handleCameraError()"></iframe>
+                                <div id="camera-error" class="d-none position-absolute top-0 start-0 w-100 h-100 bg-dark d-flex align-items-center justify-content-center text-white">
+                                    <div class="text-center p-4">
+                                        <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                                        <h5>Error de conexión</h5>
+                                        <p>No se puede conectar con la cámara en este momento.</p>
+                                        <p class="small text-warning">Tipo de cámara: {{ bahia.get_tipo_camara_display }}</p>
+                                        {% if user.is_staff %}
+                                        <p class="small">Como administrador, puede seguir viendo esta página aunque el servicio haya finalizado.</p>
+                                        <button class="btn btn-sm btn-outline-light" onclick="intentarReconectar()">Intentar reconectar</button>
+                                        {% endif %}
+                                    </div>
+                                </div>
                             </div>
                             <div class="alert alert-info" id="mensaje-camara">
                                 <i class="fas fa-info-circle me-2"></i> Visualizando el servicio en tiempo real
+                                <span class="badge bg-secondary ms-2">{{ bahia.get_tipo_camara_display }}</span>
                             </div>
                         </div>
                         
@@ -73,9 +90,15 @@
                     {% endif %}
                 </div>
                 <div class="card-footer">
+                    {% if user.is_staff %}
+                    <a href="{% url 'reservas:dashboard_admin' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i> Volver al Dashboard
+                    </a>
+                    {% else %}
                     <a href="{% url 'reservas:mis_turnos' %}" class="btn btn-secondary">
                         <i class="fas fa-arrow-left me-2"></i> Volver a Mis Turnos
                     </a>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -85,10 +108,88 @@
 
 {% block extra_js %}
 <script>
+    // Función para manejar errores de conexión con la cámara
+    function handleCameraError() {
+        const cameraError = document.getElementById('camera-error');
+        if (cameraError) {
+            cameraError.classList.remove('d-none');
+        }
+        
+        const estadoCamara = document.getElementById('estado-camara');
+        if (estadoCamara) {
+            estadoCamara.textContent = 'Error de conexión';
+            estadoCamara.classList.remove('bg-success');
+            estadoCamara.classList.add('bg-danger');
+        }
+        
+        const mensajeCamara = document.getElementById('mensaje-camara');
+        if (mensajeCamara) {
+            let mensaje = '<i class="fas fa-exclamation-triangle me-2"></i> ';
+            mensaje += 'No se puede conectar con la cámara. ';
+            
+            // Agregar sugerencias específicas para DroidCam
+            if (window.location.href.includes('droidcam') || '{{ bahia.ip_camara }}'.includes(':4747')) {
+                mensaje += '<br><strong>Sugerencias para DroidCam:</strong><ul>';
+                mensaje += '<li>Verifique que la aplicación DroidCam esté abierta en su dispositivo</li>';
+                mensaje += '<li>Asegúrese de que el dispositivo y este servidor estén en la misma red WiFi</li>';
+                mensaje += '<li>Compruebe que la dirección IP y puerto sean correctos</li>';
+                mensaje += '</ul>';
+                mensaje += '<button class="btn btn-sm btn-primary mt-2" onclick="intentarReconectar()">Intentar reconectar</button>';
+            } else {
+                mensaje += 'Por favor, intente más tarde o contacte al administrador.';
+            }
+            
+            mensajeCamara.innerHTML = mensaje;
+            mensajeCamara.classList.remove('alert-info');
+            mensajeCamara.classList.add('alert-danger');
+        }
+    }
+    
+    // Función para intentar reconectar con la cámara
+    function intentarReconectar() {
+        const camaraIframe = document.getElementById('camara-iframe');
+        const estadoCamara = document.getElementById('estado-camara');
+        const mensajeCamara = document.getElementById('mensaje-camara');
+        const cameraError = document.getElementById('camera-error');
+        
+        if (camaraIframe) {
+            // Mostrar mensaje de reconexión
+            if (mensajeCamara) {
+                mensajeCamara.innerHTML = '<i class="fas fa-sync fa-spin me-2"></i> Intentando reconectar...';
+                mensajeCamara.classList.remove('alert-danger');
+                mensajeCamara.classList.add('alert-warning');
+            }
+            
+            // Ocultar mensaje de error
+            if (cameraError) {
+                cameraError.classList.add('d-none');
+            }
+            
+            // Cambiar estado
+            if (estadoCamara) {
+                estadoCamara.textContent = 'Reconectando...';
+                estadoCamara.classList.remove('bg-danger');
+                estadoCamara.classList.add('bg-warning');
+            }
+            
+            // Recargar el iframe con un timestamp para evitar caché
+            setTimeout(function() {
+                let src = camaraIframe.src.split('?')[0]; // Eliminar parámetros anteriores
+                camaraIframe.src = src + '?t=' + new Date().getTime();
+            }, 1000);
+        }
+    }
+    
     document.addEventListener('DOMContentLoaded', function() {
         const camaraIframe = document.getElementById('camara-iframe');
         const estadoCamara = document.getElementById('estado-camara');
         const mensajeCamara = document.getElementById('mensaje-camara');
+        
+        // Verificar si los elementos existen antes de continuar
+        if (!camaraIframe || !estadoCamara || !mensajeCamara) {
+            console.log('No se encontraron los elementos necesarios para la cámara');
+            return; // Salir si alguno de los elementos no existe
+        }
         
         // Verificar el estado de la cámara periódicamente
         function verificarEstadoCamara() {
@@ -98,35 +199,63 @@
                 
                 // Si no podemos acceder, la cámara podría estar desconectada
                 if (!iframeContent) {
-                    estadoCamara.textContent = 'Desconectada';
-                    estadoCamara.classList.remove('bg-success');
-                    estadoCamara.classList.add('bg-danger');
-                    mensajeCamara.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i> La cámara parece estar desconectada. Intente recargar la página.';
-                    mensajeCamara.classList.remove('alert-info');
-                    mensajeCamara.classList.add('alert-danger');
+                    handleCameraError();
                 }
             } catch (error) {
                 console.error('Error al verificar el estado de la cámara:', error);
+                handleCameraError();
             }
         }
         
-        // Verificar cada 30 segundos
-        setInterval(verificarEstadoCamara, 30000);
+        // Verificar cada 15 segundos (más frecuente para DroidCam)
+        const intervalId = setInterval(verificarEstadoCamara, 15000);
+        
+        // Guardar el ID del intervalo para poder limpiarlo si es necesario
+        window.camaraIntervalId = intervalId;
         
         // Verificar después de cargar la página
         camaraIframe.onload = function() {
-            verificarEstadoCamara();
+            // Restaurar estado normal si la carga es exitosa
+            if (estadoCamara) {
+                estadoCamara.textContent = 'En línea';
+                estadoCamara.classList.remove('bg-danger', 'bg-warning');
+                estadoCamara.classList.add('bg-success');
+            }
+            
+            if (mensajeCamara) {
+                mensajeCamara.innerHTML = '<i class="fas fa-info-circle me-2"></i> Visualizando el servicio en tiempo real';
+                mensajeCamara.classList.remove('alert-danger', 'alert-warning');
+                mensajeCamara.classList.add('alert-info');
+            }
+            
+            const cameraError = document.getElementById('camera-error');
+            if (cameraError) {
+                cameraError.classList.add('d-none');
+            }
+            
+            // Verificar estado después de cargar
+            setTimeout(verificarEstadoCamara, 2000);
         };
         
         // Si hay error al cargar el iframe
         camaraIframe.onerror = function() {
-            estadoCamara.textContent = 'Error';
-            estadoCamara.classList.remove('bg-success');
-            estadoCamara.classList.add('bg-danger');
-            mensajeCamara.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i> Error al conectar con la cámara. Por favor, intente más tarde.';
-            mensajeCamara.classList.remove('alert-info');
-            mensajeCamara.classList.add('alert-danger');
+            handleCameraError();
         };
+        
+        // Intentar reconectar la cámara si falla
+        window.addEventListener('online', function() {
+            intentarReconectar();
+        });
+        
+        // Agregar botón de reconexión manual
+        const cardFooter = document.querySelector('.card-footer');
+        if (cardFooter) {
+            const reconectarBtn = document.createElement('button');
+            reconectarBtn.className = 'btn btn-info ms-2';
+            reconectarBtn.innerHTML = '<i class="fas fa-sync me-2"></i> Reconectar cámara';
+            reconectarBtn.onclick = intentarReconectar;
+            cardFooter.appendChild(reconectarBtn);
+        }
     });
 </script>
 {% endblock %}

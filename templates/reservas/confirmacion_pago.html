@@ -44,6 +44,12 @@
                                     Monto:
                                     <span class="fw-bold">${{ reserva.servicio.precio|floatformat:0 }}</span>
                                 </li>
+                                {% if reserva.recompensa_aplicada %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Recompensa Aplicada:
+                                    <span class="fw-bold">{{ reserva.recompensa_aplicada }}</span>
+                                </li>
+                                {% endif %}
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                     Referencia:
                                     <span class="fw-bold">{{ reserva.referencia_pago }}</span>

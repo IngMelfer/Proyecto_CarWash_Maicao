@@ -29,7 +29,7 @@ from datetime import datetime, timedelta
 
 class ProcesarPagoView(LoginRequiredMixin, View):
     """
-    Vista para procesar pagos con pasarelas colombianas.
+    Vista para procesar pagos con pasarelas colombianas o puntos.
     """
     def get(self, request, reserva_id, *args, **kwargs):
         # Obtener la reserva
@@ -43,13 +43,33 @@ class ProcesarPagoView(LoginRequiredMixin, View):
         # Obtener el medio de pago
         medio_pago = reserva.medio_pago
         
-        # Verificar que el medio de pago sea una pasarela
+        # Verificar si se están usando puntos (desde la sesión)
+        usar_puntos = request.session.get('usar_puntos', False)
+        puntos_a_redimir = request.session.get('puntos_a_redimir', 0)
+        descuento_aplicado = request.session.get('descuento_aplicado', 0)
+        
+        # Si el medio de pago es PUNTOS o se están usando puntos para un descuento completo
+        if medio_pago.es_puntos() or (usar_puntos and puntos_a_redimir > 0 and descuento_aplicado >= reserva.servicio.precio):
+            # Procesar pago con puntos
+            return self._procesar_pago_con_puntos(request, reserva, puntos_a_redimir)
+        
+        # Si se están usando puntos para un descuento parcial
+        monto_original = reserva.servicio.precio
+        monto = monto_original
+        
+        if usar_puntos and puntos_a_redimir > 0 and descuento_aplicado > 0:
+            # Aplicar descuento al monto
+            monto = monto_original - descuento_aplicado
+            if monto <= 0:
+                # Si el descuento cubre todo el monto, procesar como pago con puntos
+                return self._procesar_pago_con_puntos(request, reserva, puntos_a_redimir)
+        
+        # Verificar que el medio de pago sea una pasarela para pagos con dinero
         if not medio_pago.es_pasarela():
             messages.error(request, 'El medio de pago seleccionado no es una pasarela de pago en línea.')
             return redirect('reservas:mis_turnos')
         
         # Preparar datos para la pasarela
-        monto = reserva.servicio.precio
         referencia = f"RESERVA-{reserva.id}-{uuid.uuid4().hex[:8]}"
         descripcion = f"Reserva de {reserva.servicio.nombre} - {reserva.fecha_hora.strftime('%Y-%m-%d %H:%M')}"
         
@@ -71,6 +91,60 @@ class ProcesarPagoView(LoginRequiredMixin, View):
         else:
             messages.error(request, 'Pasarela de pago no soportada.')
             return redirect('reservas:mis_turnos')
+            
+    def _procesar_pago_con_puntos(self, request, reserva, puntos_a_redimir):
+        """
+        Procesa el pago utilizando puntos del cliente.
+        """
+        cliente = request.user.cliente
+        descuento_aplicado = request.session.get('descuento_aplicado', 0)
+        
+        # Verificar que el cliente tenga suficientes puntos
+        if cliente.saldo_puntos < puntos_a_redimir:
+            messages.error(request, 'No tienes suficientes puntos para realizar esta operación.')
+            return redirect('reservas:mis_turnos')
+        
+        # Redimir los puntos
+        if cliente.redimir_puntos(puntos_a_redimir):
+            # Registrar la redención en el historial
+            HistorialServicio.objects.create(
+                cliente=cliente,
+                servicio=f"Redención de puntos - {reserva.servicio.nombre}",
+                descripcion=f"Redención de {puntos_a_redimir} puntos para reserva #{reserva.id}",
+                fecha_servicio=timezone.now(),
+                monto=reserva.servicio.precio,
+                puntos_ganados=0,  # No se ganan puntos al redimir
+                comentarios="Puntos redimidos para pago de servicio"
+            )
+            
+            # Actualizar la reserva con los puntos redimidos y el descuento aplicado
+            reserva.estado = Reserva.CONFIRMADA
+            reserva.fecha_confirmacion = timezone.now()
+            reserva.puntos_redimidos = puntos_a_redimir
+            reserva.descuento_aplicado = descuento_aplicado
+            reserva.save(update_fields=['estado', 'fecha_confirmacion', 'puntos_redimidos', 'descuento_aplicado'])
+            
+            # Crear notificación para el cliente
+            Notificacion.objects.create(
+                usuario=request.user,
+                titulo="Reserva confirmada con puntos",
+                mensaje=f"Tu reserva de {reserva.servicio.nombre} ha sido confirmada utilizando {puntos_a_redimir} puntos.",
+                tipo=Notificacion.INFORMACION
+            )
+            
+            # Limpiar datos de la sesión
+            if 'usar_puntos' in request.session:
+                del request.session['usar_puntos']
+            if 'puntos_a_redimir' in request.session:
+                del request.session['puntos_a_redimir']
+            if 'descuento_aplicado' in request.session:
+                del request.session['descuento_aplicado']
+            
+            messages.success(request, f'¡Reserva confirmada! Se han redimido {puntos_a_redimir} puntos.')
+            return redirect('reservas:detalle_reserva', reserva_id=reserva.id)
+        else:
+            messages.error(request, 'Error al redimir los puntos. Por favor, intenta nuevamente.')
+            return redirect('reservas:mis_turnos')
     
     def _procesar_wompi(self, request, reserva, medio_pago, monto, referencia, descripcion):
         """
@@ -82,6 +156,12 @@ class ProcesarPagoView(LoginRequiredMixin, View):
         # URL de retorno después del pago
         redirect_url = request.build_absolute_uri(reverse('reservas:confirmar_pago', args=[reserva.id]))
         
+        # Obtener información de puntos y descuento de la sesión
+        usar_puntos = request.session.get('usar_puntos', False)
+        puntos_a_redimir = request.session.get('puntos_a_redimir', 0)
+        descuento_aplicado = request.session.get('descuento_aplicado', 0)
+        recompensa_seleccionada = request.session.get('recompensa_seleccionada', '')
+        
         # Datos para el formulario de pago
         context = {
             'reserva': reserva,
@@ -92,6 +172,9 @@ class ProcesarPagoView(LoginRequiredMixin, View):
             'base_url': base_url,
             'redirect_url': redirect_url,
             'public_key': medio_pago.api_key,
+            'usar_puntos': usar_puntos,
+            'puntos_a_redimir': puntos_a_redimir,
+            'descuento_aplicado': descuento_aplicado,
         }
         
         return render(request, 'reservas/pasarelas/wompi_checkout.html', context)
@@ -106,6 +189,11 @@ class ProcesarPagoView(LoginRequiredMixin, View):
         # URL de retorno después del pago
         redirect_url = request.build_absolute_uri(reverse('reservas:confirmar_pago', args=[reserva.id]))
         
+        # Obtener información de puntos y descuento de la sesión
+        usar_puntos = request.session.get('usar_puntos', False)
+        puntos_a_redimir = request.session.get('puntos_a_redimir', 0)
+        descuento_aplicado = request.session.get('descuento_aplicado', 0)
+        
         # Datos para el formulario de pago
         context = {
             'reserva': reserva,
@@ -116,6 +204,10 @@ class ProcesarPagoView(LoginRequiredMixin, View):
             'base_url': base_url,
             'redirect_url': redirect_url,
             'merchant_id': medio_pago.merchant_id,
+            'usar_puntos': usar_puntos,
+            'puntos_a_redimir': puntos_a_redimir,
+            'descuento_aplicado': descuento_aplicado,
+            'recompensa_seleccionada': recompensa_seleccionada,
             'api_key': medio_pago.api_key,
         }
         
@@ -131,6 +223,12 @@ class ProcesarPagoView(LoginRequiredMixin, View):
         # URL de retorno después del pago
         redirect_url = request.build_absolute_uri(reverse('reservas:confirmar_pago', args=[reserva.id]))
         
+        # Obtener información de puntos y descuento de la sesión
+        usar_puntos = request.session.get('usar_puntos', False)
+        puntos_a_redimir = request.session.get('puntos_a_redimir', 0)
+        descuento_aplicado = request.session.get('descuento_aplicado', 0)
+        recompensa_seleccionada = request.session.get('recompensa_seleccionada', '')
+        
         # Datos para el formulario de pago
         context = {
             'reserva': reserva,
@@ -138,6 +236,10 @@ class ProcesarPagoView(LoginRequiredMixin, View):
             'monto': monto,
             'referencia': referencia,
             'descripcion': descripcion,
+            'usar_puntos': usar_puntos,
+            'puntos_a_redimir': puntos_a_redimir,
+            'descuento_aplicado': descuento_aplicado,
+            'recompensa_seleccionada': recompensa_seleccionada,
             'base_url': base_url,
             'redirect_url': redirect_url,
             'public_key': medio_pago.api_key,
@@ -149,6 +251,12 @@ class ProcesarPagoView(LoginRequiredMixin, View):
         """
         Procesa el pago con Nequi (simulación).
         """
+        # Obtener información de puntos y descuento de la sesión
+        usar_puntos = request.session.get('usar_puntos', False)
+        puntos_a_redimir = request.session.get('puntos_a_redimir', 0)
+        descuento_aplicado = request.session.get('descuento_aplicado', 0)
+        recompensa_seleccionada = request.session.get('recompensa_seleccionada', '')
+        
         # Datos para la plantilla de simulación de pago
         context = {
             'reserva': reserva,
@@ -156,6 +264,10 @@ class ProcesarPagoView(LoginRequiredMixin, View):
             'monto': monto,
             'referencia': referencia,
             'descripcion': descripcion,
+            'usar_puntos': usar_puntos,
+            'puntos_a_redimir': puntos_a_redimir,
+            'descuento_aplicado': descuento_aplicado,
+            'recompensa_seleccionada': recompensa_seleccionada,
         }
         
         return render(request, 'reservas/pasarelas/nequi_checkout.html', context)
@@ -171,7 +283,7 @@ class ProcesarPagoView(LoginRequiredMixin, View):
 
 class ConfirmarPagoView(LoginRequiredMixin, View):
     """
-    Vista para confirmar el pago después de redirigir desde la pasarela.
+    Vista para confirmar el pago después de redirigir desde la pasarela o confirmar pagos con puntos.
     """
     def get(self, request, reserva_id, *args, **kwargs):
         # Obtener la reserva
@@ -180,7 +292,15 @@ class ConfirmarPagoView(LoginRequiredMixin, View):
         # Verificar el estado de la transacción según la pasarela
         medio_pago = reserva.medio_pago
         
-        if medio_pago.tipo == MedioPago.WOMPI:
+        # Si la reserva ya está confirmada y tiene puntos redimidos, mostrar mensaje de éxito
+        if reserva.estado == Reserva.CONFIRMADA and reserva.puntos_redimidos > 0:
+            messages.success(request, f'Reserva confirmada exitosamente con {reserva.puntos_redimidos} puntos redimidos.')
+            return redirect('reservas:detalle_reserva', reserva_id=reserva.id)
+        
+        if medio_pago.es_puntos():
+            # Si el medio de pago es puntos, confirmar directamente
+            return self._confirmar_puntos(request, reserva)
+        elif medio_pago.tipo == MedioPago.WOMPI:
             return self._confirmar_wompi(request, reserva)
         elif medio_pago.tipo == MedioPago.PAYU:
             return self._confirmar_payu(request, reserva)
@@ -193,6 +313,43 @@ class ConfirmarPagoView(LoginRequiredMixin, View):
         else:
             messages.error(request, 'Pasarela de pago no soportada.')
             return redirect('reservas:mis_turnos')
+            
+    def _confirmar_puntos(self, request, reserva):
+        """
+        Confirma el pago con puntos.
+        """
+        # Obtener la recompensa seleccionada de la sesión
+        recompensa_seleccionada = request.session.get('recompensa_seleccionada', '')
+        if recompensa_seleccionada:
+            reserva.recompensa_aplicada = recompensa_seleccionada
+            reserva.save(update_fields=['recompensa_aplicada'])
+            
+        # Verificar si la reserva ya está confirmada
+        if reserva.estado == Reserva.CONFIRMADA:
+            # Verificar si ya existe un registro en el historial de servicios
+            historial_existente = HistorialServicio.objects.filter(
+                cliente=request.user.cliente,
+                descripcion__contains=f"Redención de {reserva.puntos_redimidos} puntos para reserva #{reserva.id}"
+            ).exists()
+            
+            # Si no existe registro en el historial, crearlo
+            if not historial_existente and reserva.puntos_redimidos > 0:
+                HistorialServicio.objects.create(
+                    cliente=request.user.cliente,
+                    servicio=f"Redención de puntos - {reserva.servicio.nombre}",
+                    descripcion=f"Redención de {reserva.puntos_redimidos} puntos para reserva #{reserva.id}",
+                    fecha_servicio=timezone.now(),
+                    monto=reserva.servicio.precio,
+                    puntos_ganados=0,  # No se ganan puntos al redimir
+                    comentarios="Puntos redimidos para pago de servicio"
+                )
+                
+            messages.success(request, f'Reserva confirmada exitosamente con {reserva.puntos_redimidos} puntos redimidos.')
+            return redirect('reservas:detalle_reserva', reserva_id=reserva.id)
+            
+        # Si no está confirmada, mostrar error
+        messages.error(request, 'La reserva no ha sido confirmada correctamente con puntos.')
+        return redirect('reservas:mis_turnos')
     
     def _confirmar_wompi(self, request, reserva):
         """
@@ -219,6 +376,12 @@ class ConfirmarPagoView(LoginRequiredMixin, View):
                 data = response.json()
                 
                 if data['data']['status'] == 'APPROVED':
+                    # Obtener la recompensa seleccionada de la sesión
+                    recompensa_seleccionada = request.session.get('recompensa_seleccionada', '')
+                    if recompensa_seleccionada:
+                        reserva.recompensa_aplicada = recompensa_seleccionada
+                        reserva.save(update_fields=['recompensa_aplicada'])
+                    
                     # Confirmar la reserva
                     reserva.confirmar()
                     messages.success(request, 'Pago confirmado y reserva confirmada exitosamente.')
@@ -249,6 +412,12 @@ class ConfirmarPagoView(LoginRequiredMixin, View):
             messages.error(request, 'La referencia de pago no coincide.')
             return redirect('reservas:mis_turnos')
         
+        # Obtener la recompensa seleccionada de la sesión
+        recompensa_seleccionada = request.session.get('recompensa_seleccionada', '')
+        if recompensa_seleccionada:
+            reserva.recompensa_aplicada = recompensa_seleccionada
+            reserva.save(update_fields=['recompensa_aplicada'])
+            
         # Verificar el estado de la transacción
         if state_pol == '4':  # Aprobada
             # Confirmar la reserva
@@ -263,6 +432,12 @@ class ConfirmarPagoView(LoginRequiredMixin, View):
         """
         Confirma el pago con Nequi (simulación).
         """
+        # Obtener la recompensa seleccionada de la sesión
+        recompensa_seleccionada = request.session.get('recompensa_seleccionada', '')
+        if recompensa_seleccionada:
+            reserva.recompensa_aplicada = recompensa_seleccionada
+            reserva.save(update_fields=['recompensa_aplicada'])
+            
         # Simular una confirmación exitosa
         # Confirmar la reserva
         reserva.confirmar()
@@ -349,6 +524,12 @@ class ConfirmarPagoView(LoginRequiredMixin, View):
                 data = response.json()
                 
                 if data['success'] and data['data']['x_response'] == 'Aceptada':
+                    # Obtener la recompensa seleccionada de la sesión
+                    recompensa_seleccionada = request.session.get('recompensa_seleccionada', '')
+                    if recompensa_seleccionada:
+                        reserva.recompensa_aplicada = recompensa_seleccionada
+                        reserva.save(update_fields=['recompensa_aplicada'])
+                    
                     # Confirmar la reserva
                     reserva.confirmar()
                     messages.success(request, 'Pago confirmado y reserva confirmada exitosamente.')
@@ -391,6 +572,8 @@ class WompiCallbackView(View):
             
             # Verificar el estado de la transacción
             if status == 'APPROVED' and reserva.estado == Reserva.PENDIENTE:
+                # Buscar la recompensa seleccionada en la sesión del usuario asociado a la reserva
+                # Como no tenemos acceso a la sesión en el callback, usamos el valor guardado en el procesamiento inicial
                 # Confirmar la reserva
                 reserva.confirmar()
             
@@ -439,6 +622,8 @@ class PayUCallbackView(View):
             
             # Verificar el estado de la transacción
             if state_pol == '4' and reserva.estado == Reserva.PENDIENTE:  # Aprobada
+                # Buscar la recompensa seleccionada en la sesión del usuario asociado a la reserva
+                # Como no tenemos acceso a la sesión en el callback, usamos el valor guardado en el procesamiento inicial
                 # Confirmar la reserva
                 reserva.confirmar()
             
@@ -492,6 +677,8 @@ class EpaycoCallbackView(View):
             
             # Verificar el estado de la transacción
             if x_transaction_state == '1' and reserva.estado == Reserva.PENDIENTE:  # Aceptada
+                # Buscar la recompensa seleccionada en la sesión del usuario asociado a la reserva
+                # Como no tenemos acceso a la sesión en el callback, usamos el valor guardado en el procesamiento inicial
                 # Confirmar la reserva
                 reserva.confirmar()
             
@@ -509,16 +696,22 @@ class VerCamaraView(View):
         # Obtener la reserva por el token de transmisión
         reserva = get_object_or_404(Reserva, stream_token=token)
         
+        # Determinar la URL de redirección según el tipo de usuario
+        if request.user.is_staff:
+            redirect_url = 'reservas:dashboard_admin'
+        else:
+            redirect_url = 'reservas:mis_turnos'
+        
         # Verificar que la reserva esté confirmada o en proceso
         if reserva.estado not in [Reserva.CONFIRMADA, Reserva.EN_PROCESO]:
             messages.error(request, 'Solo puedes ver la cámara de reservas confirmadas o en proceso.')
-            return redirect('reservas:mis_turnos')
+            return redirect(redirect_url)
         
         # Verificar que la bahía tenga cámara y código QR
         bahia = reserva.bahia
         if not bahia or not bahia.tiene_camara or not bahia.ip_camara:
             messages.error(request, 'Esta bahía no tiene cámara configurada.')
-            return redirect('reservas:mis_turnos')
+            return redirect(redirect_url)
         
         # Verificar que la fecha y hora actual esté dentro del rango de la reserva
         ahora = datetime.now()
@@ -529,9 +722,10 @@ class VerCamaraView(View):
         inicio_permitido = reserva.fecha_hora - timedelta(minutes=15)
         fin_permitido = fin_servicio + timedelta(minutes=15)
         
-        if ahora < inicio_permitido or ahora > fin_permitido:
+        # Los administradores pueden ver la cámara en cualquier momento
+        if not request.user.is_staff and (ahora < inicio_permitido or ahora > fin_permitido):
             messages.error(request, 'La cámara solo está disponible 15 minutos antes, durante y hasta 15 minutos después de tu reserva.')
-            return redirect('reservas:mis_turnos')
+            return redirect(redirect_url)
         
         # Obtener el vehículo asociado a la reserva si existe
         vehiculo = None
@@ -540,10 +734,14 @@ class VerCamaraView(View):
         except:
             pass
         
+        # Obtener la URL de la cámara usando el método del modelo
+        camera_url = bahia.get_camera_url()
+        
         context = {
             'reserva': reserva,
             'bahia': bahia,
-            'vehiculo': vehiculo
+            'vehiculo': vehiculo,
+            'camera_url': camera_url
         }
         
         return render(request, self.template_name, context)
@@ -590,6 +788,18 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
             bahia_id = request.POST.get('bahia_id')
             medio_pago_id = request.POST.get('medio_pago')
             notas = request.POST.get('notas', '')
+            
+            # Obtener datos de redención de puntos
+            usar_puntos = request.POST.get('usar_puntos') == 'true'
+            puntos_a_redimir = int(request.POST.get('puntos_a_redimir', 0) or 0)
+            descuento_aplicado = float(request.POST.get('descuento_aplicado', 0) or 0)
+            recompensa_seleccionada = request.POST.get('recompensa_seleccionada', '')
+            
+            # Guardar en la sesión para usar en el proceso de pago
+            request.session['usar_puntos'] = usar_puntos
+            request.session['puntos_a_redimir'] = puntos_a_redimir
+            request.session['descuento_aplicado'] = descuento_aplicado
+            request.session['recompensa_seleccionada'] = recompensa_seleccionada
             
             # Verificar si es una solicitud AJAX
             is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
@@ -710,6 +920,34 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
             bahia_seleccionada = bahias_disponibles.first()
             
             # Crear la reserva
+            precio_final = servicio.precio
+            
+            # Aplicar descuento si se están usando puntos
+            if usar_puntos and puntos_a_redimir > 0 and descuento_aplicado > 0:
+                # Verificar que el cliente tenga suficientes puntos
+                if cliente.saldo_puntos >= puntos_a_redimir:
+                    # Redimir los puntos
+                    if cliente.redimir_puntos(puntos_a_redimir):
+                        # Aplicar el descuento al precio
+                        precio_final = max(0, servicio.precio - descuento_aplicado)
+                    else:
+                        # Si no se pudieron redimir los puntos, mostrar error
+                        if is_ajax:
+                            response = JsonResponse({'success': False, 'error': 'No se pudieron redimir los puntos. Por favor intente nuevamente.'}, status=200)
+                            response['Content-Type'] = 'application/json'
+                            return response
+                        messages.error(request, 'No se pudieron redimir los puntos. Por favor intente nuevamente.')
+                        return redirect('reservas:reservar_turno')
+                else:
+                    # Si no tiene suficientes puntos, mostrar error
+                    if is_ajax:
+                        response = JsonResponse({'success': False, 'error': 'No tiene suficientes puntos para aplicar esta recompensa.'}, status=200)
+                        response['Content-Type'] = 'application/json'
+                        return response
+                    messages.error(request, 'No tiene suficientes puntos para aplicar esta recompensa.')
+                    return redirect('reservas:reservar_turno')
+            
+            # Crear la reserva con el precio final
             reserva = Reserva.objects.create(
                 cliente=request.user.cliente,
                 servicio=servicio,
@@ -718,7 +956,11 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
                 vehiculo=vehiculo,  # Asociar el vehículo a la reserva
                 notas=notas,
                 estado=Reserva.PENDIENTE,
-                medio_pago=medio_pago
+                medio_pago=medio_pago,
+                precio_final=precio_final,  # Guardar el precio con descuento
+                descuento_aplicado=descuento_aplicado if usar_puntos else 0,
+                puntos_redimidos=puntos_a_redimir if usar_puntos else 0,
+                recompensa_aplicada=recompensa_seleccionada if usar_puntos else ''
             )
             
             # Si el medio de pago es una pasarela, redirigir al proceso de pago
