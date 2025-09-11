@@ -1,0 +1,43 @@
+# Instrucciones para configurar la tarea programada silenciosa
+
+Para configurar la cancelación automática de reservas sin pago de forma completamente silenciosa (sin mostrar ventanas de terminal), siga estos pasos:
+
+## Opción 1: Usar el Programador de tareas de Windows
+
+1. Abra el Programador de tareas de Windows (busque "Programador de tareas" en el menú Inicio)
+2. Haga clic en "Crear tarea básica" en el panel derecho
+3. Nombre: "CancelarReservasSinPago"
+4. Descripción: "Cancela automáticamente las reservas pendientes sin pago después de 15 minutos"
+5. Desencadenador: Seleccione "Diariamente" y configure para que se repita cada 5 minutos
+   - Para repetir cada 5 minutos: En la pantalla de programación avanzada, marque "Repetir tarea cada:" y seleccione 5 minutos
+   - Duración: "Indefinidamente"
+6. Acción: Seleccione "Iniciar un programa"
+7. Programa/script: Navegue y seleccione el archivo:
+   `C:\Proyectos_2025\autolavados-plataforma\scripts\cancelar_reservas_sin_pago_silencioso.vbs`
+8. Marque la opción "Ejecutar con privilegios más altos"
+9. En la pestaña "Condiciones", desmarque "Iniciar la tarea solo si el equipo está conectado a la alimentación de CA"
+10. En la pestaña "Configuración", marque "Ejecutar la tarea lo antes posible después de no iniciarse en la programación"
+
+## Opción 2: Usar el archivo VBS directamente
+
+Si prefiere no usar el Programador de tareas, puede crear un acceso directo al archivo VBS en la carpeta de inicio de Windows:
+
+1. Navegue a: `C:\Usuarios\[su_usuario]\AppData\Roaming\Microsoft\Windows\Menú Inicio\Programas\Inicio`
+2. Cree un acceso directo al archivo:
+   `C:\Proyectos_2025\autolavados-plataforma\scripts\cancelar_reservas_sin_pago_silencioso.vbs`
+
+Esto ejecutará el script cada vez que inicie sesión en Windows.
+
+## Verificación
+
+Para verificar que la tarea se está ejecutando correctamente:
+
+1. Revise la base de datos para confirmar que las reservas sin pago están siendo canceladas
+2. Puede habilitar temporalmente un registro agregando esta línea al archivo VBS:
+   `objShell.Run "cmd /c echo Ejecutado en " & Now & " >> C:\Proyectos_2025\autolavados-plataforma\scripts\log_cancelaciones.txt", 0, True`
+
+## Notas importantes
+
+- El script está configurado para ejecutarse de forma completamente silenciosa, sin mostrar ninguna ventana
+- Si necesita ver los mensajes de salida para depuración, use el archivo batch original
+- Asegúrese de que Python esté en la variable PATH del sistema o especifique la ruta completa a Python en el archivo VBS

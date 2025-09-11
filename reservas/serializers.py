@@ -50,9 +50,10 @@ class ReservaSerializer(serializers.ModelSerializer):
         return value
     
     def validate(self, data):
-        """Validar que no haya otra reserva para el mismo servicio y hora"""
+        """Validar que no haya otra reserva para el mismo servicio y hora, y que el vehículo no esté ocupado"""
         servicio = data.get('servicio')
         fecha_hora = data.get('fecha_hora')
+        vehiculo = data.get('vehiculo')
         
         # Verificar disponibilidad
         if servicio and fecha_hora:
@@ -73,6 +74,21 @@ class ReservaSerializer(serializers.ModelSerializer):
             
             if reservas_existentes.exists():
                 raise serializers.ValidationError(_('Ya existe una reserva para este servicio en el horario seleccionado'))
+            
+            # Verificar que el vehículo no esté ocupado en otra bahía en el mismo horario
+            if vehiculo:
+                vehiculo_ocupado = Reserva.objects.filter(
+                    vehiculo=vehiculo,
+                    fecha_hora__lt=hora_fin,
+                    fecha_hora__gt=fecha_hora - duracion,
+                    estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA, Reserva.EN_PROCESO]
+                )
+                
+                if self.instance:
+                    vehiculo_ocupado = vehiculo_ocupado.exclude(id=self.instance.id)
+                
+                if vehiculo_ocupado.exists():
+                    raise serializers.ValidationError(_('Este vehículo ya tiene una reserva en el horario seleccionado. Un vehículo no puede ocupar más de una bahía al mismo tiempo.'))
         
         return data
 
@@ -91,13 +107,23 @@ class VehiculoSerializer(serializers.ModelSerializer):
         read_only_fields = ['cliente']
     
     def validate_placa(self, value):
-        """Validar que la placa sea única para el cliente"""
+        """Validar que la placa sea única en todo el sistema"""
         request = self.context.get('request')
-        if request and hasattr(request, 'user') and hasattr(request.user, 'cliente'):
-            cliente = request.user.cliente
-            # Verificar si ya existe un vehículo con la misma placa para este cliente
-            if Vehiculo.objects.filter(cliente=cliente, placa=value).exclude(id=self.instance.id if self.instance else None).exists():
-                raise serializers.ValidationError(_('Ya tienes un vehículo registrado con esta placa'))
+        
+        # Verificar si ya existe un vehículo con la misma placa en el sistema
+        existing_vehicle = Vehiculo.objects.filter(placa=value).exclude(id=self.instance.id if self.instance else None).first()
+        
+        if existing_vehicle:
+            # Si el vehículo existe y pertenece a otro cliente
+            if request and hasattr(request, 'user') and hasattr(request.user, 'cliente'):
+                cliente = request.user.cliente
+                if existing_vehicle.cliente != cliente:
+                    raise serializers.ValidationError(_('Esta placa ya está registrada para otro cliente. Cada vehículo debe tener un único propietario.'))
+                else:
+                    raise serializers.ValidationError(_('Ya tienes un vehículo registrado con esta placa'))
+            else:
+                raise serializers.ValidationError(_('Esta placa ya está registrada en el sistema'))
+                
         return value
 
 

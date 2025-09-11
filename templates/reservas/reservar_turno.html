@@ -168,12 +168,11 @@
                         <label for="tipo_vehiculo" class="form-label">Tipo de Vehículo</label>
                         <select class="form-select" id="tipo_vehiculo" name="tipo_vehiculo">
                             <option value="" disabled selected>Seleccione...</option>
-                            <option value="sedan">Sedán</option>
-                            <option value="suv">SUV</option>
-                            <option value="pickup">Pickup</option>
-                            <option value="hatchback">Hatchback</option>
-                            <option value="deportivo">Deportivo</option>
-                            <option value="otro">Otro</option>
+                            <option value="AU">Automóvil</option>
+                            <option value="CA">Camioneta</option>
+                            <option value="SU">SUV</option>
+                            <option value="MO">Motocicleta</option>
+                            <option value="OT">Otro</option>
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">
@@ -777,14 +776,14 @@
                             option.value = horario.hora_inicio;
                             option.dataset.horaFin = horario.hora_fin; // Guardar la hora de fin para usarla después
                             
-                            // Si no está disponible, deshabilitar la opción y mostrar como ocupado
+                            // Si no está disponible, deshabilitar la opción y mostrar como NO DISPONIBLE
                             if (!horario.disponible) {
-                                option.textContent = `${horario.hora_inicio} a ${horario.hora_fin} - OCUPADO (0/${horario.bahias_totales} bahías disponibles)`;
+                                option.textContent = `${horario.hora_inicio} - NO DISPONIBLE`;
                                 option.disabled = true;
                                 option.className = 'text-danger';
                                 option.style.color = 'red';
                             } else {
-                                option.textContent = `${horario.hora_inicio} a ${horario.hora_fin} - ${horario.bahias_disponibles}/${horario.bahias_totales} bahías disponibles`;
+                                option.textContent = `${horario.hora_inicio} - ${horario.bahias_disponibles} BAHIAS DISPONIBLES`;
                             }
                             
                             select.appendChild(option);

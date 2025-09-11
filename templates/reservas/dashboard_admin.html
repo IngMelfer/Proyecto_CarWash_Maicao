@@ -57,8 +57,8 @@
         border-left: 5px solid #ffc107;
     }
     .bahia-en-proceso {
-        background-color: #cce5ff;
-        border-left: 5px solid #007bff;
+         background-color: #ffcc80;
+         border-left: 5px solid #ff8800;
     }
     .bahia-title {
         font-weight: bold;
@@ -77,11 +77,12 @@
         background-color: #28a745;
     }
     .status-ocupada {
-        background-color: #ffc107;
-    }
-    .status-en-proceso {
-        background-color: #007bff;
-    }
+         background-color: #ffc107;
+     }
+     
+     .status-en-proceso {
+          background-color: #ff8800;
+      }
     .bahia-info {
         margin-top: 15px;
         font-size: 0.95rem;
@@ -95,6 +96,37 @@
         display: flex;
         gap: 10px;
         margin-top: auto;
+    }
+    .cronometro {
+        background-color: rgba(0, 0, 0, 0.05);
+        padding: 8px 12px;
+        border-radius: 5px;
+        font-weight: bold;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .cronometro i {
+        margin-right: 5px;
+    }
+    .tiempo-restante {
+        color: #007bff;
+    }
+    .tiempo-excedido {
+        color: #dc3545;
+    }
+    
+    @keyframes parpadeo {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    
+    .bahia-alerta {
+        animation: parpadeo 1s infinite;
+        box-shadow: 0 0 15px rgba(220, 53, 69, 0.7);
+        border-left: 5px solid #dc3545;
     }
 </style>
 {% endblock %}
@@ -143,7 +175,7 @@
             <div class="card text-center dashboard-card">
                 <div class="card-body">
                     <div class="stats-value">{{ reservas_pendientes }}</div>
-                    <div class="stats-label">RESERVAS PENDIENTES HOY</div>
+                    <div class="stats-label">SERVICIOS PENDIENTES</div>
                 </div>
             </div>
         </div>
@@ -163,11 +195,34 @@
                         <p><strong>Vehículo:</strong> {{ info.vehiculo.marca }} {{ info.vehiculo.modelo }} ({{ info.vehiculo.placa }})</p>
                         <p><strong>Servicio:</strong> {{ info.servicio.nombre }}</p>
                         <p><strong>Estado:</strong> {{ info.reserva.get_estado_display }}</p>
-                        {% if info.bahia.tiene_camara %}
-                            <div class="bahia-actions">
-                                <a href="{% url 'reservas:ver_camara' info.reserva.stream_token %}" class="btn btn-sm btn-info">Ver Cámara</a>
+                        
+                        {% if info.estado == 'en_proceso' %}
+                            <div class="cronometro" id="cronometro-{{ info.reserva.id }}" 
+                                 data-inicio="{{ info.reserva.fecha_inicio_servicio|date:'Y-m-d H:i:s' }}" 
+                                 data-duracion="{{ info.servicio.duracion_minutos }}">
+                                <i class="fas fa-clock"></i> <span class="tiempo-restante">Calculando...</span>
                             </div>
                         {% endif %}
+                        
+                        <div class="bahia-actions">
+                            {% if info.bahia.tiene_camara %}
+                                <a href="{% url 'reservas:ver_camara' info.reserva.stream_token %}" class="btn btn-sm btn-info">Ver Cámara</a>
+                            {% endif %}
+                            
+                            {% if info.estado == 'ocupada' %}
+                                <form action="{% url 'reservas:iniciar_servicio' info.reserva.id %}" method="post" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-primary">Iniciar Servicio</button>
+                                </form>
+                            {% endif %}
+                            
+                            {% if info.estado == 'en_proceso' %}
+                                <form action="{% url 'reservas:finalizar_servicio' info.reserva.id %}" method="post" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-success">Servicio Terminado</button>
+                                </form>
+                            {% endif %}
+                        </div>
                     </div>
                 {% else %}
                     <div class="bahia-info">
@@ -250,13 +305,110 @@
                     <div class="dashboard-icon">
                         <i class="fas fa-clock"></i>
                     </div>
-                    <h5 class="card-title">Horarios Disponibles</h5>
-                    <p class="card-text">Configura los horarios de atención</p>
-                    <a href="{% url 'reservas:disponibilidad_horaria_list' %}" class="btn btn-primary">Ir a Horarios</a>
+                    <h5 class="card-title">Gestión de Horarios</h5>
+                    <p class="card-text">Configura los horarios y fechas de atención</p>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'reservas:disponibilidad_horaria_list' %}" class="btn btn-primary">Horarios Semanales</a>
+                        <a href="{% url 'reservas:fecha_especial_list' %}" class="btn btn-info">Fechas Especiales</a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 {% endblock dashboard_content %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Función para actualizar los datos del dashboard mediante AJAX
+        function actualizarDashboard() {
+            fetch('{% url "reservas:obtener_bahias_info" %}')
+                .then(response => response.json())
+                .then(data => {
+                    // Actualizar el HTML de las bahías
+                    document.querySelector('.bahia-grid').innerHTML = data.html_bahias;
+                    
+                    // Actualizar los contadores
+                    document.querySelectorAll('.stats-value')[0].textContent = data.bahias_disponibles;
+                    document.querySelectorAll('.stats-value')[1].textContent = data.bahias_ocupadas;
+                    document.querySelectorAll('.stats-value')[2].textContent = data.bahias_en_proceso;
+                    document.querySelectorAll('.stats-value')[3].textContent = data.reservas_pendientes;
+                    
+                    // Reinicializar los cronómetros después de actualizar el HTML
+                    inicializarCronometros();
+                    
+                    console.log('Dashboard actualizado mediante AJAX');
+                })
+                .catch(error => {
+                    console.error('Error al actualizar el dashboard:', error);
+                });
+        }
+        
+        // Configurar actualización periódica del dashboard
+        setInterval(actualizarDashboard, 15000); // Actualizar cada 15 segundos
+        
+        // Función para inicializar los cronómetros
+        function inicializarCronometros() {
+            const cronometros = document.querySelectorAll('[id^="cronometro-"]');
+            
+            cronometros.forEach(function(cronometro) {
+                const inicioStr = cronometro.getAttribute('data-inicio');
+                const duracionMinutos = parseInt(cronometro.getAttribute('data-duracion'));
+                const tiempoElement = cronometro.querySelector('.tiempo-restante');
+                
+                if (!inicioStr || isNaN(duracionMinutos)) {
+                    tiempoElement.textContent = 'Datos no disponibles';
+                    return;
+                }
+                
+                // Convertir la fecha de inicio a objeto Date
+                const inicio = new Date(inicioStr);
+                // Calcular la fecha de finalización prevista
+                const finPrevisto = new Date(inicio.getTime() + duracionMinutos * 60000);
+                
+                // Función para actualizar el cronómetro
+                function actualizarCronometro() {
+                    const ahora = new Date();
+                    const diferencia = finPrevisto - ahora;
+                    
+                    // Si ya pasó el tiempo previsto
+                    if (diferencia <= 0) {
+                        tiempoElement.textContent = 'Tiempo excedido';
+                        tiempoElement.classList.remove('tiempo-restante');
+                        tiempoElement.classList.add('tiempo-excedido');
+                        
+                        // Agregar clase de alerta a la tarjeta de bahía para que titile
+                        const bahiaCard = cronometro.closest('.bahia-card');
+                        if (bahiaCard && !bahiaCard.classList.contains('bahia-alerta')) {
+                            bahiaCard.classList.add('bahia-alerta');
+                        }
+                        return;
+                    }
+                    
+                    // Calcular minutos y segundos restantes
+                    const minutosRestantes = Math.floor(diferencia / 60000);
+                    const segundosRestantes = Math.floor((diferencia % 60000) / 1000);
+                    
+                    // Formatear el tiempo restante
+                    const tiempoFormateado = `${minutosRestantes}:${segundosRestantes < 10 ? '0' : ''}${segundosRestantes}`;
+                    tiempoElement.textContent = `Tiempo restante: ${tiempoFormateado}`;
+                }
+                
+                // Actualizar inmediatamente y luego cada segundo
+                actualizarCronometro();
+                setInterval(actualizarCronometro, 1000);
+            });
+        }
+        
+        // Inicializar cronómetros al cargar la página
+        inicializarCronometros();
+        
+        // Ya no necesitamos recargar la página completa, ya que usamos AJAX para actualizar los datos
+        // La función actualizarDashboard() se encarga de mantener los datos actualizados
+        console.log('Usando actualización AJAX en lugar de recarga completa de página');
+    });
+</script>
+{% endblock %}
+
 {% endblock content %}

@@ -1,12 +1,39 @@
+"""
+Comando Django para cancelar automáticamente reservas pendientes sin pago.
+
+Este comando identifica reservas que han permanecido en estado pendiente por más
+del tiempo configurado (por defecto 15 minutos) y las cancela automáticamente,
+liberando los horarios reservados y notificando a los clientes.
+
+Uso:
+    python manage.py cancelar_reservas_sin_pago [--dry-run] [--minutos=15]
+
+Opciones:
+    --dry-run: Ejecuta en modo simulación sin realizar cambios reales
+    --minutos: Tiempo en minutos para considerar una reserva como abandonada (default: 15)
+"""
+
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from datetime import datetime, timedelta
 from reservas.models import Reserva
 
 class Command(BaseCommand):
+    """Comando para cancelar reservas pendientes sin pago.
+    
+    Este comando identifica y cancela automáticamente las reservas que han permanecido
+    en estado pendiente por más del tiempo configurado (por defecto 15 minutos).
+    Al cancelar las reservas, también libera los horarios y notifica a los clientes.
+    """
+    
     help = 'Cancela las reservas pendientes que llevan más de 15 minutos sin pago'
 
     def add_arguments(self, parser):
+        """Configura los argumentos del comando.
+        
+        Args:
+            parser: El parser de argumentos de Django
+        """
         parser.add_argument(
             '--dry-run',
             action='store_true',
@@ -20,9 +47,18 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
+        """Ejecuta el comando para cancelar reservas sin pago.
+        
+        Este método busca reservas pendientes creadas antes del tiempo límite configurado,
+        las cancela, libera los horarios asociados y notifica a los clientes.
+        
+        Args:
+            *args: Argumentos posicionales
+            **options: Opciones del comando, incluyendo 'dry-run' y 'minutos'
+        """
         dry_run = options.get('dry_run', False)
         minutos = options.get('minutos', 15)
-        now = datetime.now()
+        now = timezone.now()
         
         # Calcular el tiempo límite (ahora menos los minutos configurados)
         tiempo_limite = now - timedelta(minutes=minutos)
@@ -49,7 +85,7 @@ class Command(BaseCommand):
                 # Cancelar la reserva
                 reserva.estado = Reserva.CANCELADA
                 reserva.notas += f'\nReserva cancelada automáticamente por falta de pago después de {minutos} minutos.'
-                reserva.fecha_actualizacion = datetime.now()
+                reserva.fecha_actualizacion = timezone.now()
                 reserva.save(update_fields=['estado', 'notas', 'fecha_actualizacion'])
                 
                 self.stdout.write(self.style.SUCCESS(f'Reserva {reserva.id} de {reserva.cliente} - {reserva.servicio} cancelada por falta de pago'))

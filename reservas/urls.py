@@ -22,6 +22,7 @@ urlpatterns = [
     
     # Dashboard de administrador
     path('dashboard-admin/', views_admin.DashboardAdminView.as_view(), name='dashboard_admin'),
+    path('dashboard-admin/obtener-bahias-info/', views_admin.ObtenerBahiasInfoView.as_view(), name='obtener_bahias_info'),
     
     # CRUD de bahías
     path('bahias/', views_admin.BahiaListView.as_view(), name='bahia_list'),
@@ -47,6 +48,13 @@ urlpatterns = [
     path('horarios/editar/<int:pk>/', views_admin.DisponibilidadHorariaUpdateView.as_view(), name='disponibilidad_horaria_update'),
     path('horarios/eliminar/<int:pk>/', views_admin.DisponibilidadHorariaDeleteView.as_view(), name='disponibilidad_horaria_delete'),
     
+    # Rutas para gestión de fechas especiales
+    path('fechas-especiales/', views_admin.FechaEspecialListView.as_view(), name='fecha_especial_list'),
+    path('fechas-especiales/crear/', views_admin.FechaEspecialCreateView.as_view(), name='fecha_especial_create'),
+    path('fechas-especiales/editar/<int:pk>/', views_admin.FechaEspecialUpdateView.as_view(), name='fecha_especial_update'),
+    path('fechas-especiales/eliminar/<int:pk>/', views_admin.FechaEspecialDeleteView.as_view(), name='fecha_especial_delete'),
+    # Se eliminó la ruta para cargar horarios disponibles dinámicamente
+    
     # CRUD de reservas
       path('reservas/', views_admin.ReservaListView.as_view(), name='reserva_list'),
       path('reservas/crear/', views_admin.ReservaCreateView.as_view(), name='reserva_create'),
@@ -58,9 +66,18 @@ urlpatterns = [
     # CRUD de clientes
       path('clientes/', views_admin.ClienteListView.as_view(), name='cliente_list'),
       path('clientes/crear/', views_admin.ClienteCreateView.as_view(), name='cliente_create'),
+      # Se mantiene la ruta de edición para compatibilidad, pero no se mostrará en la interfaz
       path('clientes/editar/<int:pk>/', views_admin.ClienteUpdateView.as_view(), name='cliente_update'),
       path('clientes/eliminar/<int:pk>/', views_admin.ClienteDeleteView.as_view(), name='cliente_delete'),
+      path('clientes/validar/<int:pk>/', views_admin.ClienteValidarView.as_view(), name='cliente_validar'),
       path('clientes/detalle/<int:pk>/', views_admin.ClienteDetailView.as_view(), name='cliente_detail'),
+      path('clientes/acceso/', views_admin.ClienteAccesoView.as_view(), name='cliente_acceso'),
+      # Ruta específica para validar clientes
+      path('reservas/clientes/validar/<int:pk>/', views_admin.ClienteValidarAltView.as_view(), name='cliente_validar_alt'),
+      
+      # Iniciar y finalizar servicio
+       path('iniciar-servicio/<int:pk>/', views_admin.IniciarServicioView.as_view(), name='iniciar_servicio'),
+       path('finalizar-servicio/<int:pk>/', views_admin.FinalizarServicioView.as_view(), name='finalizar_servicio'),
       
       # Las rutas de bahías ya están definidas arriba
 ]

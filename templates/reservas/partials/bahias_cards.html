@@ -1,0 +1,50 @@
+{% for info in bahias_info %}
+     <div class="bahia-card bahia-{{ info.estado }}">
+         <div class="bahia-status status-{{ info.estado }}"></div>
+        <div class="bahia-title"><i class="fas fa-car me-1"></i><i class="fas fa-tint me-2"></i>{{ info.bahia.nombre }}</div>
+        
+        {% if info.estado != 'disponible' %}
+            <div class="bahia-info">
+                <p><strong>Cliente:</strong> {{ info.cliente.nombre }} {{ info.cliente.apellido }}</p>
+                <p><strong>Vehículo:</strong> {{ info.vehiculo.marca }} {{ info.vehiculo.modelo }} ({{ info.vehiculo.placa }})</p>
+                <p><strong>Servicio:</strong> {{ info.servicio.nombre }}</p>
+                <p><strong>Estado:</strong> {{ info.reserva.get_estado_display }}</p>
+                
+                {% if info.estado == 'en_proceso' %}
+                    <div class="cronometro" id="cronometro-{{ info.reserva.id }}" 
+                         data-inicio="{{ info.reserva.fecha_inicio_servicio|date:'Y-m-d H:i:s' }}" 
+                         data-duracion="{{ info.servicio.duracion_minutos }}">
+                        <i class="fas fa-clock"></i> <span class="tiempo-restante">Calculando...</span>
+                    </div>
+                {% endif %}
+                
+                <div class="bahia-actions">
+                    {% if info.bahia.tiene_camara %}
+                        <a href="{% url 'reservas:ver_camara' info.reserva.stream_token %}" class="btn btn-sm btn-info">Ver Cámara</a>
+                    {% endif %}
+                    
+                    {% if info.estado == 'ocupada' %}
+                        <form action="{% url 'reservas:iniciar_servicio' info.reserva.id %}" method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-primary">Iniciar Servicio</button>
+                        </form>
+                    {% endif %}
+                    
+                    {% if info.estado == 'en_proceso' %}
+                        <form action="{% url 'reservas:finalizar_servicio' info.reserva.id %}" method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-success">Servicio Terminado</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <div class="bahia-info">
+                <p>Disponible para servicio</p>
+                {% if info.bahia.tiene_camara %}
+                    <p><i class="fas fa-video"></i> Cámara disponible</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+{% endfor %}

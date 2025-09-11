@@ -187,7 +187,8 @@ class DashboardClienteView(LoginRequiredMixin, View):
         ).count()
         
         # Servicios completados
-        servicios_completados = HistorialServicio.objects.filter(cliente=cliente).count()
+        historial_servicios = HistorialServicio.objects.filter(cliente=cliente).order_by('-fecha_servicio')
+        servicios_completados = historial_servicios.count()
         
         # Puntos disponibles
         puntos_disponibles = cliente.saldo_puntos
@@ -211,5 +212,6 @@ class DashboardClienteView(LoginRequiredMixin, View):
             'puntos_disponibles': puntos_disponibles,
             'vehiculos_registrados': vehiculos_registrados,
             'proximos_turnos': proximos_turnos,
-            'vehiculos': vehiculos
+            'vehiculos': vehiculos,
+            'historial': historial_servicios[:5]  # Pasar los últimos 5 servicios completados
         })

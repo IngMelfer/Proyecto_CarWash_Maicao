@@ -614,6 +614,14 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
                 placa = request.POST.get('placa')
                 vehiculo_existente = Vehiculo.objects.filter(cliente=cliente, placa=placa).first()
                 
+                # Verificar si ya existe un vehículo con la misma placa para otro cliente
+                vehiculo_otro_cliente = Vehiculo.objects.filter(placa=placa).exclude(cliente=cliente).first()
+                if vehiculo_otro_cliente:
+                    if is_ajax:
+                        return JsonResponse({'success': False, 'error': 'La placa ya está registrada para otro cliente. Cada vehículo debe tener un único propietario.'}, status=200)
+                    messages.error(request, 'La placa ya está registrada para otro cliente. Cada vehículo debe tener un único propietario.')
+                    return redirect('reservas:reservar_turno')
+                
                 if vehiculo_existente:
                     # Si ya existe, usar ese vehículo
                     vehiculo = vehiculo_existente
@@ -660,6 +668,21 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
                     response['Content-Type'] = 'application/json'
                     return response
                 messages.error(request, 'El horario seleccionado no está disponible.')
+                return redirect('reservas:reservar_turno')
+            
+            # Verificar que el vehículo no esté ya reservado en el mismo horario
+            vehiculo_ocupado = Reserva.objects.filter(
+                vehiculo=vehiculo,
+                fecha_hora=fecha_hora,
+                estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA, Reserva.EN_PROCESO]
+            ).exists()
+            
+            if vehiculo_ocupado:
+                if is_ajax:
+                    response = JsonResponse({'success': False, 'error': 'Este vehículo ya tiene una reserva en el horario seleccionado. Un vehículo no puede ocupar más de una bahía al mismo tiempo.'}, status=200)
+                    response['Content-Type'] = 'application/json'
+                    return response
+                messages.error(request, 'Este vehículo ya tiene una reserva en el horario seleccionado. Un vehículo no puede ocupar más de una bahía al mismo tiempo.')
                 return redirect('reservas:reservar_turno')
             
             # Buscar una bahía disponible
@@ -867,7 +890,7 @@ class MisTurnosView(LoginRequiredMixin, TemplateView):
         # Obtener reservas del cliente
         proximas = Reserva.objects.filter(
             cliente=cliente,
-            fecha_hora__gte=datetime.now(),
+            fecha_hora__gte=timezone.now(),
             estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA]
         ).order_by('fecha_hora')
         
@@ -916,7 +939,7 @@ class CancelarTurnoView(LoginRequiredMixin, View):
             return redirect('reservas:mis_turnos')
         
         # Verificar si la cancelación es con menos de 12 horas de anticipación
-        horas_anticipacion = (reserva.fecha_hora - datetime.now()).total_seconds() / 3600
+        horas_anticipacion = (reserva.fecha_hora - timezone.now()).total_seconds() / 3600
         cargo_cancelacion = horas_anticipacion < 12
         
         # Guardar la bahía antes de cancelar para poder liberarla
@@ -926,7 +949,7 @@ class CancelarTurnoView(LoginRequiredMixin, View):
         reserva.estado = Reserva.CANCELADA
         reserva.notas = f"{reserva.notas}\n\nMotivo de cancelación: {motivo}"
         # Actualizar explícitamente la fecha_actualizacion con la zona horaria correcta
-        reserva.fecha_actualizacion = datetime.now()
+        reserva.fecha_actualizacion = timezone.now()
         reserva.save(update_fields=['estado', 'notas', 'fecha_actualizacion'])
         
         # Decrementar contador de reservas en el horario si existe

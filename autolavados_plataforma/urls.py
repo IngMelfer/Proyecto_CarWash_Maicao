@@ -19,6 +19,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from .views import home_view
+from reservas.views_validar import ClienteValidarDirectView
 
 urlpatterns = [
     path('', home_view, name='home'),
@@ -29,6 +30,8 @@ urlpatterns = [
     path('api/notificaciones/', include('notificaciones.urls')),
     # Rutas para vistas basadas en plantillas con namespace
     path('reservas/', include(('reservas.urls', 'reservas'), namespace='reservas')),
+    # Ruta directa para validar clientes
+    path('clientes/validar/<int:pk>/', ClienteValidarDirectView.as_view(), name='cliente_validar_direct'),
     path('autenticacion/', include(('autenticacion.urls', 'autenticacion'), namespace='autenticacion')),
     path('clientes/', include(('clientes.urls', 'clientes'), namespace='clientes')),
 ]

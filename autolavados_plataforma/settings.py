@@ -69,6 +69,7 @@ MIDDLEWARE = [
     'autolavados_plataforma.middleware.CSRFDebugMiddleware',  # Middleware para diagnosticar problemas CSRF
     'autolavados_plataforma.middleware.AJAXExceptionMiddleware',  # Middleware para manejar excepciones AJAX
     'autolavados_plataforma.middleware.LoginRequiredMiddleware',
+    'autolavados_plataforma.timezone_middleware.TimezoneMiddleware',  # Middleware para manejar zonas horarias
 ]
 
 ROOT_URLCONF = 'autolavados_plataforma.urls'
@@ -111,7 +112,7 @@ if USE_MYSQL:
             'HOST': os.getenv('DB_HOST', 'localhost'),
             'PORT': os.getenv('DB_PORT', '3306'),
             'OPTIONS': {
-                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES', time_zone='+00:00'",
                 'charset': 'utf8mb4',
             },
         }
@@ -150,11 +151,11 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = os.getenv('LANGUAGE_CODE', 'es-co')  # Idioma predeterminado
 
-TIME_ZONE = os.getenv('TIME_ZONE', 'America/Bogota')  # Zona horaria predeterminada
+TIME_ZONE = 'UTC'  # Usar UTC como zona horaria predeterminada
 
 USE_I18N = os.getenv('USE_I18N', 'True').lower() == 'true'
 
-USE_TZ = True  # Habilitado para manejar correctamente las zonas horarias
+USE_TZ = False  # Deshabilitado para evitar problemas con MySQL
 
 
 # Static files (CSS, JavaScript, Images)

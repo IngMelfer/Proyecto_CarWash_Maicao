@@ -1,14 +1,28 @@
-# Proyecto_CarWash_Maicao
-Plataforma Integral para Autolavados con Monitoreo y Fidelización en Maicao, La Guajira
+# Plataforma Integral para Autolavados
+
+## Descripción General
+
+Este proyecto implementa una plataforma completa para la gestión de autolavados, permitiendo a los clientes reservar servicios, recibir notificaciones y acumular puntos de fidelización. Para los administradores, ofrece herramientas de gestión de reservas, servicios, horarios y clientes.
+
+## Características Principales
+
+- **Sistema de Reservas**: Creación, confirmación y cancelación automática de reservas
+- **Gestión de Horarios**: Administración de horarios disponibles para servicios
+- **Gestión de Clientes**: Registro y administración de clientes y sus vehículos
+- **Sistema de Notificaciones**: Notificaciones automáticas para clientes y administradores
+- **API REST**: Interfaz completa para integración con aplicaciones móviles o de terceros
+- **Panel de Administración**: Panel personalizado para gestión del negocio
+- **Sistema de Fidelización**: Acumulación de puntos y beneficios para clientes frecuentes
+- **Procesos Automáticos**: Cancelación de reservas sin pago y verificación de reservas vencidas
 
 ## Configuración del Proyecto
 
 ### Requisitos
 
 - Python 3.10+
-- MySQL 8.0+ o SQLite (desarrollo)
+- PostgreSQL (producción) o SQLite (desarrollo)
 - Pip
-- Visual Studio Code (opcional)
+- Visual Studio Code (recomendado)
 
 ### Instalación
 
@@ -84,6 +98,32 @@ python manage.py runserver
      ```bash
      pip install psycopg2-binary==2.9.9
      ```
+
+## Tareas Programadas
+
+El sistema incluye dos procesos automáticos importantes:
+
+1. **Cancelación de Reservas Sin Pago**: Cancela automáticamente las reservas que no han sido pagadas después de un tiempo determinado.
+   - [Documentación detallada](scripts/README_CANCELACION_RESERVAS.md)
+   - [Instrucciones para Windows](scripts/INSTRUCCIONES_TAREA_PROGRAMADA_DETALLADAS.md)
+   - [Instrucciones para PythonAnywhere](scripts/INSTRUCCIONES_PYTHONANYWHERE_DETALLADAS.md)
+
+2. **Verificación de Reservas Vencidas**: Marca como incumplidas las reservas cuya fecha y hora ya pasaron.
+   - [Documentación detallada](scripts/README_VERIFICACION_RESERVAS.md)
+
+Para una visión general de todas las tareas programadas, consulte [README_TAREAS_PROGRAMADAS.md](README_TAREAS_PROGRAMADAS.md).
+
+## Estructura del Proyecto
+
+Para una descripción detallada de la estructura del proyecto, consulte [ESTRUCTURA_PROYECTO.md](ESTRUCTURA_PROYECTO.md).
+
+## Despliegue
+
+El proyecto está configurado para ser desplegado en diferentes entornos:
+
+- **Desarrollo local**: Configuración en `.env.local`
+- **Railway**: Plataforma principal de producción
+- **PythonAnywhere**: Plataforma alternativa de producción
 
 ## API REST
 
@@ -187,6 +227,21 @@ python manage.py createsuperuser
 # Ejecutar tests
 python manage.py test
 ```
+
+## Sistema de Cancelación Automática de Reservas
+
+El proyecto incluye un sistema automatizado para cancelar reservas pendientes sin pago después de un tiempo configurable (por defecto 15 minutos). Esto permite liberar horarios y recursos cuando los clientes no completan el proceso de pago.
+
+### Componentes del Sistema
+
+- **Comando Django**: `cancelar_reservas_sin_pago` - Identifica y cancela reservas pendientes sin pago
+- **Scripts de Ejecución**: Archivos batch y VBS para ejecución silenciosa en Windows
+- **Configuración PythonAnywhere**: Script para configurar tareas programadas en el hosting
+
+Para más detalles, consulte la documentación específica en la carpeta `scripts/`:
+- `README_TAREAS_PROGRAMADAS.md`: Guía completa de configuración
+- `INSTRUCCIONES_TAREA_PROGRAMADA.txt`: Configuración en Windows
+- `INSTRUCCIONES_PYTHONANYWHERE.txt`: Configuración en PythonAnywhere
 
 ## Licencia
 

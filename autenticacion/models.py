@@ -18,6 +18,13 @@ class UsuarioManager(BaseUserManager):
         if not email:
             raise ValueError(_('El Email es obligatorio'))
         email = self.normalize_email(email)
+        
+        # Asegurar que first_name y last_name estén presentes si se proporcionan nombre y apellido
+        if 'nombre' in extra_fields and not 'first_name' in extra_fields:
+            extra_fields['first_name'] = extra_fields['nombre']
+        if 'apellido' in extra_fields and not 'last_name' in extra_fields:
+            extra_fields['last_name'] = extra_fields['apellido']
+            
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)

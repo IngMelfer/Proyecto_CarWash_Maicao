@@ -3,19 +3,27 @@
 
 {% block dashboard_content %}
 <div class="container-fluid px-4">
-    <h1 class="mt-4">Gestión de Horarios Disponibles</h1>
+    <h1 class="mt-4">Gestión de Disponibilidad Horaria</h1>
     <ol class="breadcrumb mb-4">
         <li class="breadcrumb-item"><a href="{% url 'reservas:dashboard_admin' %}">Dashboard</a></li>
-        <li class="breadcrumb-item active">Horarios Disponibles</li>
+        <li class="breadcrumb-item active">Disponibilidad Horaria</li>
     </ol>
     
     <div class="card mb-4">
         <div class="card-header">
             <i class="fas fa-clock me-1"></i>
-            Horarios Disponibles
-            <a href="{% url 'reservas:disponibilidad_horaria_create' %}" class="btn btn-primary btn-sm float-end">
-                <i class="fas fa-plus"></i> Nuevo Horario
-            </a>
+            Configuración de Disponibilidad Horaria
+            <div class="float-end">
+                <a href="{% url 'reservas:dashboard_admin' %}" class="btn btn-secondary btn-sm me-2">
+                    <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                </a>
+                <a href="{% url 'reservas:fecha_especial_list' %}" class="btn btn-warning btn-sm me-2">
+                    <i class="fas fa-calendar-alt"></i> Fechas Especiales
+                </a>
+                <a href="{% url 'reservas:disponibilidad_horaria_create' %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus"></i> Nuevo Horario
+                </a>
+            </div>
         </div>
         <div class="card-body">
             {% if messages %}
@@ -27,25 +35,79 @@
                 {% endfor %}
             {% endif %}
             
+            <div class="row mb-4">
+                <div class="col-lg-12">
+                    <div class="card border-left-info shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Próximas Fechas Especiales</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        {% if fechas_especiales %}
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-borderless">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Fecha</th>
+                                                            <th>Descripción</th>
+                                                            <th>Estado</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for fecha in fechas_especiales %}
+                                                            <tr>
+                                                                <td>{{ fecha.fecha|date:"d/m/Y" }}</td>
+                                                                <td>{{ fecha.descripcion }}</td>
+                                                                <td>
+                                                                    {% if fecha.disponible %}
+                                                                        <span class="badge bg-success">Abierto</span>
+                                                                    {% else %}
+                                                                        <span class="badge bg-danger">Cerrado</span>
+                                                                    {% endif %}
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        {% else %}
+                                            <p class="text-muted">No hay fechas especiales próximas</p>
+                                        {% endif %}
+                                        <a href="{% url 'reservas:fecha_especial_list' %}" class="btn btn-sm btn-warning mt-2">
+                                            <i class="fas fa-calendar-alt"></i> Ver todas
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-calendar-alt fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <div class="table-responsive">
                 <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
                     <thead>
                         <tr>
                             <th>Día</th>
-                            <th>Hora Inicio</th>
-                            <th>Hora Fin</th>
+                            <th>Horario</th>
                             <th>Capacidad</th>
                             <th>Estado</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for horario in horarios %}
+                        {% for horario in disponibilidades %}
                             <tr>
                                 <td>{{ horario.get_dia_semana_display }}</td>
-                                <td>{{ horario.hora_inicio|time:"H:i" }}</td>
-                                <td>{{ horario.hora_fin|time:"H:i" }}</td>
-                                <td>{{ horario.capacidad_maxima }}</td>
+                                <td>{{ horario.hora_inicio|time:"H:i" }} - {{ horario.hora_fin|time:"H:i" }}</td>
+                                <td>
+                                    <span data-bs-toggle="tooltip" title="Número máximo de vehículos que pueden ser atendidos simultáneamente">
+                                        {{ horario.capacidad_maxima }} vehículo{{ horario.capacidad_maxima|pluralize }}
+                                    </span>
+                                </td>
                                 <td>
                                     {% if horario.activo %}
                                         <span class="badge bg-success">Activo</span>
@@ -64,7 +126,7 @@
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="6" class="text-center">No hay horarios disponibles registrados</td>
+                                <td colspan="5" class="text-center">No hay horarios disponibles registrados</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -78,10 +140,43 @@
 {% block extra_js %}
 <script>
     $(document).ready(function() {
-        $('#dataTable').DataTable({
-            language: {
-                url: '//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json'
-            }
+        // Verificar si la tabla ya ha sido inicializada
+        if (!$.fn.DataTable.isDataTable('#dataTable')) {
+            $('#dataTable').DataTable({
+                "language": {
+                    "sProcessing":     "Procesando...",
+                    "sLengthMenu":     "Mostrar _MENU_ registros",
+                    "sZeroRecords":    "No se encontraron resultados",
+                    "sEmptyTable":     "Ningún dato disponible en esta tabla",
+                    "sInfo":           "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+                    "sInfoEmpty":      "Mostrando registros del 0 al 0 de un total de 0 registros",
+                    "sInfoFiltered":   "(filtrado de un total de _MAX_ registros)",
+                    "sInfoPostFix":    "",
+                    "sSearch":         "Buscar:",
+                    "sUrl":            "",
+                    "sInfoThousands":  ",",
+                    "sLoadingRecords": "Cargando...",
+                    "oPaginate": {
+                        "sFirst":    "Primero",
+                        "sLast":     "Último",
+                        "sNext":     "Siguiente",
+                        "sPrevious": "Anterior"
+                    },
+                    "oAria": {
+                        "sSortAscending":  ": Activar para ordenar la columna de manera ascendente",
+                        "sSortDescending": ": Activar para ordenar la columna de manera descendente"
+                    }
+                },
+                "order": [[0, "asc"]],
+                "pageLength": 10,
+                "responsive": true
+            });
+        }
+        
+        // Inicializar tooltips de Bootstrap
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
         });
     });
 </script>

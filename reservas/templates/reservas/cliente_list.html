@@ -6,9 +6,11 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3">Gestión de Clientes</h1>
-        <a href="{% url 'reservas:cliente_create' %}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Nuevo Cliente
-        </a>
+        <div>
+            <a href="{% url 'reservas:dashboard_admin' %}" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left"></i> Volver al Dashboard
+            </a>
+        </div>
     </div>
 
     {% if messages %}
@@ -32,31 +34,41 @@
                     <thead>
                         <tr>
                             <th>ID</th>
+                            <th>Tipo de documento</th>
                             <th>Nombre</th>
                             <th>Email</th>
                             <th>Teléfono</th>
-                            <th>Documento</th>
                             <th>Puntos</th>
+                            <th>Estado</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for cliente in clientes %}
                         <tr>
-                            <td>{{ cliente.id }}</td>
+                            <td>{{ cliente.numero_documento }}</td>
+                            <td>{{ cliente.get_tipo_documento_display }}</td>
                             <td>{{ cliente.nombre }} {{ cliente.apellido }}</td>
                             <td>{{ cliente.email }}</td>
                             <td>{{ cliente.telefono }}</td>
-                            <td>{{ cliente.get_tipo_documento_display }}: {{ cliente.numero_documento }}</td>
                             <td>{{ cliente.saldo_puntos }}</td>
+                            <td>
+                                {% if cliente.usuario.is_verified %}
+                                <span class="badge bg-success">Validado</span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark">Pendiente</span>
+                                {% endif %}
+                            </td>
                             <td>
                                 <div class="btn-group" role="group">
                                     <a href="{% url 'reservas:cliente_detail' cliente.id %}" class="btn btn-sm btn-outline-primary">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{% url 'reservas:cliente_update' cliente.id %}" class="btn btn-sm btn-outline-secondary">
-                                        <i class="fas fa-edit"></i>
+                                    {% if not cliente.usuario.is_verified %}
+                                    <a href="{% url 'cliente_validar_direct' cliente.id %}" class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-check-circle"></i>
                                     </a>
+                                    {% endif %}
                                     <a href="{% url 'reservas:cliente_delete' cliente.id %}" class="btn btn-sm btn-outline-danger">
                                         <i class="fas fa-trash"></i>
                                     </a>
@@ -78,13 +90,20 @@
 
 {% block extra_js %}
 <script>
-    $(document).ready(function() {
-        $('#dataTable').DataTable({
-            language: {
-                url: '//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json'
-            },
-            order: [[1, 'asc']] // Ordenar por nombre (columna 1) ascendente
-        });
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof $ !== 'undefined') {
+            // Verificar si la tabla ya ha sido inicializada
+            if (!$.fn.DataTable.isDataTable('#dataTable')) {
+                $('#dataTable').DataTable({
+                    language: {
+                        url: '//cdn.datatables.net/plug-ins/1.10.25/i18n/Spanish.json'
+                    },
+                    order: [[1, 'asc']] // Ordenar por nombre (columna 1) ascendente
+                });
+            }
+        } else {
+            console.error('jQuery no está definido. No se puede inicializar DataTable.');
+        }
     });
 </script>
 {% endblock %}

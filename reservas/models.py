@@ -140,6 +140,7 @@ class Reserva(models.Model):
     notas = models.TextField(blank=True, verbose_name=_('Notas'))
     fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name=_('Fecha de Creación'))
     fecha_actualizacion = models.DateTimeField(auto_now=True, verbose_name=_('Última Actualización'))
+    fecha_inicio_servicio = models.DateTimeField(null=True, blank=True, verbose_name=_('Fecha de Inicio del Servicio'))
     medio_pago = models.ForeignKey(MedioPago, on_delete=models.PROTECT, null=True, blank=True, related_name='reservas', verbose_name=_('Medio de Pago'))
     stream_token = models.CharField(max_length=50, blank=True, null=True, verbose_name=_('Token de Transmisión'))
     referencia_pago = models.CharField(max_length=100, blank=True, null=True, verbose_name=_('Referencia de Pago'), help_text=_('Referencia única para el pago en pasarelas'))
@@ -224,16 +225,20 @@ class Reserva(models.Model):
         Acumula los puntos al cliente.
         Libera la bahía ocupada.
         Elimina el código QR si existe.
+        Busca la siguiente reserva pendiente para esa bahía y la asigna automáticamente.
         """
         if self.estado == self.EN_PROCESO:
             self.estado = self.COMPLETADA
             
+            # Guardar la bahía antes de liberarla para buscar la siguiente reserva
+            bahia_actual = self.bahia
+            
             # Liberar la bahía y eliminar el código QR
-            if self.bahia:
+            if bahia_actual:
                 # Si la bahía tiene un código QR, eliminarlo
-                if self.bahia.codigo_qr:
-                    self.bahia.codigo_qr.delete(save=False)
-                    self.bahia.save(update_fields=['codigo_qr'])
+                if bahia_actual.codigo_qr:
+                    bahia_actual.codigo_qr.delete(save=False)
+                    bahia_actual.save(update_fields=['codigo_qr'])
                 # La bahía queda disponible para nuevas reservas
                 # No es necesario hacer nada más ya que al cambiar el estado
                 # la bahía ya no se considera ocupada para ese horario
@@ -253,6 +258,20 @@ class Reserva(models.Model):
             if horario:
                 horario.decrementar_reservas()
             
+            # Buscar la siguiente reserva pendiente para esta bahía
+            if bahia_actual:
+                from django.utils import timezone
+                # Buscar la siguiente reserva pendiente más cercana en el tiempo para esta bahía
+                siguiente_reserva = Reserva.objects.filter(
+                    bahia=bahia_actual,
+                    estado=Reserva.PENDIENTE,
+                    fecha_hora__gte=timezone.now()
+                ).order_by('fecha_hora').first()
+                
+                # Si hay una siguiente reserva pendiente, confirmarla automáticamente
+                if siguiente_reserva:
+                    siguiente_reserva.confirmar()
+            
             return True
         return False
 
@@ -260,6 +279,11 @@ class Reserva(models.Model):
 class DisponibilidadHoraria(models.Model):
     """
     Modelo para gestionar la disponibilidad horaria del autolavado.
+    
+    Este modelo define los horarios disponibles para cada día de la semana.
+    - El campo 'activo' permite activar o desactivar completamente un horario específico.
+    - La 'capacidad_maxima' representa el número máximo de vehículos que pueden ser atendidos
+      simultáneamente en este horario (relacionado con el número de bahías disponibles).
     """
     # Días de la semana
     LUNES = 0
@@ -283,8 +307,10 @@ class DisponibilidadHoraria(models.Model):
     dia_semana = models.PositiveSmallIntegerField(choices=DIA_CHOICES, verbose_name=_('Día de la Semana'))
     hora_inicio = models.TimeField(verbose_name=_('Hora de Inicio'))
     hora_fin = models.TimeField(verbose_name=_('Hora de Fin'))
-    capacidad_maxima = models.PositiveSmallIntegerField(default=1, verbose_name=_('Capacidad Máxima'))
-    activo = models.BooleanField(default=True, verbose_name=_('Activo'))
+    capacidad_maxima = models.PositiveSmallIntegerField(default=1, verbose_name=_('Capacidad Máxima'), 
+                                                      help_text=_('Número máximo de vehículos que pueden ser atendidos simultáneamente en este horario'))
+    activo = models.BooleanField(default=True, verbose_name=_('Activo'), 
+                               help_text=_('Indica si este horario está disponible para reservas'))
     
     class Meta:
         verbose_name = _('Disponibilidad Horaria')
@@ -292,7 +318,13 @@ class DisponibilidadHoraria(models.Model):
         ordering = ['dia_semana', 'hora_inicio']
     
     def __str__(self):
-        return f"{self.get_dia_semana_display()} - {self.hora_inicio} a {self.hora_fin}"
+        estado = "Activo" if self.activo else "Inactivo"
+        return f"{self.get_dia_semana_display()} - {self.hora_inicio} a {self.hora_fin} ({estado})"
+        
+    @property
+    def esta_disponible(self):
+        """Indica si este horario está disponible para reservas."""
+        return self.activo
     
     @classmethod
     def verificar_disponibilidad(cls, fecha_hora, servicio):
@@ -366,8 +398,10 @@ class Vehiculo(models.Model):
         verbose_name = _('Vehículo')
         verbose_name_plural = _('Vehículos')
         ordering = ['cliente', 'marca', 'modelo']
-        # Agregar restricción de unicidad para placa por cliente
-        unique_together = ['cliente', 'placa']
+        # La placa debe ser única en todo el sistema
+        constraints = [
+            models.UniqueConstraint(fields=['placa'], name='unique_placa_vehiculo')
+        ]
     
     def __str__(self):
         return f"{self.marca} {self.modelo} ({self.placa})"
@@ -426,6 +460,35 @@ class Bahia(models.Model):
             
             # Guardar el objeto sin llamar al método save de nuevo para evitar recursión
             super().save(update_fields=['codigo_qr'])
+
+
+class FechaEspecial(models.Model):
+    """
+    Modelo para gestionar el estado de servicios por fecha (días festivos, cierres programados, etc.)
+    donde el lavadero no estará en funcionamiento o tendrá un horario especial.
+    """
+    fecha = models.DateField(verbose_name=_('Fecha'), unique=True)
+    descripcion = models.CharField(max_length=255, verbose_name=_('Descripción'))
+    disponible = models.BooleanField(default=False, verbose_name=_('Disponible'), 
+                                   help_text=_('Indica si el lavadero estará disponible en esta fecha'))
+    hora_inicio = models.TimeField(verbose_name=_('Hora de Inicio'), null=True, blank=True,
+                                help_text=_('Hora de inicio de servicios para esta fecha especial'))
+    hora_fin = models.TimeField(verbose_name=_('Hora de Fin'), null=True, blank=True,
+                              help_text=_('Hora de fin de servicios para esta fecha especial'))
+    capacidad = models.PositiveSmallIntegerField(default=1, verbose_name=_('Capacidad'),
+                                             help_text=_('Número máximo de vehículos que pueden ser atendidos simultáneamente en esta fecha'))
+    
+    class Meta:
+        verbose_name = _('Estado de Servicios por Fecha')
+        verbose_name_plural = _('Estados de Servicios por Fecha')
+        ordering = ['fecha']
+    
+    def __str__(self):
+        estado = "Disponible" if self.disponible else "No Disponible"
+        horario = ""
+        if self.disponible and self.hora_inicio and self.hora_fin:
+            horario = f" de {self.hora_inicio.strftime('%H:%M')} a {self.hora_fin.strftime('%H:%M')}"
+        return f"{self.fecha.strftime('%d/%m/%Y')} - {self.descripcion} ({estado}{horario})"
 
 
 class HorarioDisponible(models.Model):

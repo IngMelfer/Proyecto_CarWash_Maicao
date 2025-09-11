@@ -22,12 +22,12 @@ class Cliente(models.Model):
         (NIT, _('NIT')),
     ]
     
+    numero_documento = models.CharField(max_length=20, unique=True, verbose_name=_('Número de Documento'))
     usuario = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='cliente', verbose_name=_('Usuario'))
     nombre = models.CharField(max_length=100, verbose_name=_('Nombre'))
     apellido = models.CharField(max_length=100, verbose_name=_('Apellido'))
     email = models.EmailField(verbose_name=_('Correo Electrónico'))
     tipo_documento = models.CharField(max_length=2, choices=TIPO_DOCUMENTO_CHOICES, default=CEDULA, verbose_name=_('Tipo de Documento'))
-    numero_documento = models.CharField(max_length=20, unique=True, verbose_name=_('Número de Documento'))
     telefono = models.CharField(max_length=15, verbose_name=_('Teléfono'))
     direccion = models.CharField(max_length=255, verbose_name=_('Dirección'))
     ciudad = models.CharField(max_length=100, verbose_name=_('Ciudad'))

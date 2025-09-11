@@ -1,0 +1,130 @@
+{% extends 'reservas/dashboard_admin.html' %}
+
+{% block dashboard_content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Estado de Servicios por Fecha</h1>
+
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'reservas:dashboard_admin' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'reservas:disponibilidad_horaria_list' %}">Horarios Disponibles</a></li>
+        <li class="breadcrumb-item active">Estado de Servicios por Fecha</li>
+    </ol>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-calendar-alt me-1"></i>
+            Estado de Servicios por Fecha
+            <a href="{% url 'reservas:fecha_especial_create' %}" class="btn btn-primary btn-sm float-end">
+                <i class="fas fa-plus"></i> Nuevo Estado de Servicio
+            </a>
+        </div>
+        <div class="card-body">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Descripción</th>
+                            <th>Horario</th>
+                            <th>Capacidad</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if fechas_especiales %}
+                            {% for fecha in fechas_especiales %}
+                                <tr>
+                                    <td>{{ fecha.fecha|date:"d/m/Y" }}</td>
+                                    <td>{{ fecha.descripcion }}</td>
+                                    <td>
+                                        {% if fecha.disponible and fecha.hora_inicio and fecha.hora_fin %}
+                                        {{ fecha.hora_inicio|time:"H:i" }} - {{ fecha.hora_fin|time:"H:i" }}
+                                        {% else %}
+                                        <span class="text-muted">No definido</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if fecha.disponible and fecha.capacidad %}
+                                        {{ fecha.capacidad }}
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if fecha.disponible %}
+                                            <span class="badge bg-success">Abierto</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Cerrado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'reservas:fecha_especial_update' fecha.id %}" class="btn btn-warning btn-sm">
+                                            <i class="fas fa-edit"></i> Editar
+                                        </a>
+                                        <a href="{% url 'reservas:fecha_especial_delete' fecha.id %}" class="btn btn-danger btn-sm">
+                                            <i class="fas fa-trash"></i> Eliminar
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center">No hay estados de servicios por fecha registrados</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Verificar si la tabla ya ha sido inicializada
+        if (!$.fn.DataTable.isDataTable('#dataTable')) {
+            $('#dataTable').DataTable({
+                "language": {
+                    "sProcessing":     "Procesando...",
+                    "sLengthMenu":     "Mostrar _MENU_ registros",
+                    "sZeroRecords":    "No se encontraron resultados",
+                    "sEmptyTable":     "Ningún dato disponible en esta tabla",
+                    "sInfo":           "Mostrando registros del _START_ al _END_ de un total de _TOTAL_ registros",
+                    "sInfoEmpty":      "Mostrando registros del 0 al 0 de un total de 0 registros",
+                    "sInfoFiltered":   "(filtrado de un total de _MAX_ registros)",
+                    "sInfoPostFix":    "",
+                    "sSearch":         "Buscar:",
+                    "sUrl":            "",
+                    "sInfoThousands":  ",",
+                    "sLoadingRecords": "Cargando...",
+                    "oPaginate": {
+                        "sFirst":    "Primero",
+                        "sLast":     "Último",
+                        "sNext":     "Siguiente",
+                        "sPrevious": "Anterior"
+                    },
+                    "oAria": {
+                        "sSortAscending":  ": Activar para ordenar la columna de manera ascendente",
+                        "sSortDescending": ": Activar para ordenar la columna de manera descendente"
+                    }
+                },
+                "order": [[0, "asc"]],
+                "pageLength": 10,
+                "responsive": true
+            });
+        }
+    });
+</script>
+{% endblock %}
