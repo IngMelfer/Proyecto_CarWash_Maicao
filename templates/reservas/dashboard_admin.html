@@ -323,7 +323,12 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Función para actualizar los datos del dashboard mediante AJAX
         function actualizarDashboard() {
-            fetch('{% url "reservas:obtener_bahias_info" %}')
+            fetch('{% url "reservas:obtener_bahias_info" %}', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
                 .then(response => response.json())
                 .then(data => {
                     // Actualizar el HTML de las bahías

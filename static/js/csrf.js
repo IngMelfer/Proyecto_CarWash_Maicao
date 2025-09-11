@@ -35,10 +35,11 @@ window.fetch = function(url, options) {
     options = options || {};
     options.headers = options.headers || {};
     
-    // Solo agregar el token para solicitudes que no sean GET, HEAD, etc.
-    if (options.method && !['GET', 'HEAD', 'OPTIONS', 'TRACE'].includes(options.method.toUpperCase())) {
-        options.headers['X-CSRFToken'] = csrftoken;
-    }
+    // Agregar el token CSRF a todas las solicitudes
+    options.headers['X-CSRFToken'] = csrftoken;
+    
+    // Agregar el encabezado X-Requested-With para identificar solicitudes AJAX
+    options.headers['X-Requested-With'] = 'XMLHttpRequest';
     
     return originalFetch(url, options);
 };
