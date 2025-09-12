@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Confirmar Eliminación{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <h1>Confirmar Eliminación</h1>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'empleados:empleado_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver a la lista
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="alert alert-danger">
+                <h4 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> ¡Advertencia!</h4>
+                <p>Está a punto de eliminar al empleado <strong>{{ object.nombre }} {{ object.apellido }}</strong>.</p>
+                <p>Esta acción no se puede deshacer y eliminará todos los datos asociados a este empleado, incluyendo:</p>
+                <ul>
+                    <li>Registros de tiempo</li>
+                    <li>Calificaciones</li>
+                    <li>Incentivos</li>
+                </ul>
+                <p>¿Está seguro de que desea continuar?</p>
+            </div>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'empleados:empleado_detail' object.pk %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Sí, eliminar empleado
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

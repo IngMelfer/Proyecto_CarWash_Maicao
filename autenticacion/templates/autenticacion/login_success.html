@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">Inicio de sesión exitoso</h4>
+                </div>
+                <div class="card-body">
+                    <p class="lead">Has iniciado sesión correctamente.</p>
+                    <p>Selecciona una de las siguientes opciones:</p>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'home' %}" class="btn btn-primary">Ir al inicio</a>
+                        <a href="{% url 'reservas:dashboard_admin' %}" class="btn btn-secondary">Dashboard de administrador</a>
+                        <a href="{% url 'reservas:dashboard_cliente' %}" class="btn btn-info">Dashboard de cliente</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,416 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detalle de Empleado{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-header {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+    }
+    .profile-image {
+        width: 150px;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 5px solid #fff;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .rating-stars {
+        color: #ffc107;
+    }
+    .tab-content {
+        padding: 20px;
+        background-color: #fff;
+        border: 1px solid #dee2e6;
+        border-top: none;
+        border-radius: 0 0 5px 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <h1>Perfil de Empleado</h1>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'empleados:empleado_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver a la lista
+            </a>
+            <a href="{% url 'empleados:empleado_update' empleado.id %}" class="btn btn-warning">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-body">
+            <div class="row profile-header">
+                <div class="col-md-3 text-center">
+                    {% if empleado.usuario.foto_perfil %}
+                        <img src="{{ empleado.usuario.foto_perfil.url }}" alt="Foto de perfil" class="profile-image">
+                    {% else %}
+                        <img src="{% static 'img/default-profile.png' %}" alt="Foto de perfil" class="profile-image">
+                    {% endif %}
+                </div>
+                <div class="col-md-9">
+                    <h2>{{ empleado.nombre }} {{ empleado.apellido }}</h2>
+                    <p class="text-muted">{{ empleado.cargo.nombre }}</p>
+                    <div class="mb-2">
+                        <span class="badge bg-primary">{{ empleado.tipo_documento.nombre }} {{ empleado.numero_documento }}</span>
+                        {% if empleado.activo %}
+                            <span class="badge bg-success">Activo</span>
+                        {% else %}
+                            <span class="badge bg-danger">Inactivo</span>
+                        {% endif %}
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <p><i class="fas fa-envelope me-2"></i> {{ empleado.usuario.email }}</p>
+                            <p><i class="fas fa-phone me-2"></i> {{ empleado.telefono }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><i class="fas fa-map-marker-alt me-2"></i> {{ empleado.direccion }}, {{ empleado.ciudad }}</p>
+                            <p><i class="fas fa-calendar me-2"></i> Contratado: {{ empleado.fecha_contratacion|date:"d/m/Y" }}</p>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <h5>Calificación promedio:</h5>
+                        <div class="rating-stars">
+                            {% for i in "12345"|make_list %}
+                                {% if forloop.counter <= promedio_calificacion|floatformat:0 %}
+                                    <i class="fas fa-star"></i>
+                                {% elif forloop.counter <= promedio_calificacion|add:0.5|floatformat:0 %}
+                                    <i class="fas fa-star-half-alt"></i>
+                                {% else %}
+                                    <i class="far fa-star"></i>
+                                {% endif %}
+                            {% endfor %}
+                            <span class="ms-2">{{ promedio_calificacion|floatformat:1 }} / 5</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs" id="empleadoTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="calificaciones-tab" data-bs-toggle="tab" data-bs-target="#calificaciones" type="button" role="tab" aria-controls="calificaciones" aria-selected="true">
+                <i class="fas fa-star me-2"></i>Calificaciones
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tiempos-tab" data-bs-toggle="tab" data-bs-target="#tiempos" type="button" role="tab" aria-controls="tiempos" aria-selected="false">
+                <i class="fas fa-clock me-2"></i>Registros de Tiempo
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="incentivos-tab" data-bs-toggle="tab" data-bs-target="#incentivos" type="button" role="tab" aria-controls="incentivos" aria-selected="false">
+                <i class="fas fa-award me-2"></i>Incentivos
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="empleadoTabContent">
+        <!-- Pestaña de Calificaciones -->
+        <div class="tab-pane fade show active" id="calificaciones" role="tabpanel" aria-labelledby="calificaciones-tab">
+            <div class="row">
+                <div class="col-md-6">
+                    <h4>Últimas calificaciones</h4>
+                    {% if calificaciones %}
+                        <div class="list-group">
+                            {% for calificacion in calificaciones %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h5 class="mb-1">{{ calificacion.cliente }}</h5>
+                                        <small>{{ calificacion.fecha_calificacion|date:"d/m/Y H:i" }}</small>
+                                    </div>
+                                    <p class="mb-1">{{ calificacion.servicio }}</p>
+                                    <div class="rating-stars">
+                                        {% for i in "12345"|make_list %}
+                                            {% if forloop.counter <= calificacion.puntuacion %}
+                                                <i class="fas fa-star"></i>
+                                            {% else %}
+                                                <i class="far fa-star"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    {% if calificacion.comentario %}
+                                        <p class="mt-2">"{{ calificacion.comentario }}"</p>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            No hay calificaciones registradas.
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <h4>Estadísticas de calificaciones</h4>
+                    <div class="card">
+                        <div class="card-body">
+                            <canvas id="calificacionesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pestaña de Registros de Tiempo -->
+        <div class="tab-pane fade" id="tiempos" role="tabpanel" aria-labelledby="tiempos-tab">
+            <div class="row">
+                <div class="col-md-6">
+                    <h4>Últimos registros de tiempo</h4>
+                    {% if registros_tiempo %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Servicio</th>
+                                        <th>Inicio</th>
+                                        <th>Fin</th>
+                                        <th>Duración</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for registro in registros_tiempo %}
+                                        <tr>
+                                            <td>{{ registro.servicio }}</td>
+                                            <td>{{ registro.hora_inicio|date:"d/m/Y H:i" }}</td>
+                                            <td>
+                                                {% if registro.hora_fin %}
+                                                    {{ registro.hora_fin|date:"d/m/Y H:i" }}
+                                                {% else %}
+                                                    <span class="badge bg-warning">En progreso</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if registro.duracion_minutos %}
+                                                    {{ registro.duracion_minutos }} min
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            No hay registros de tiempo.
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <h4>Estadísticas de tiempo</h4>
+                    <div class="card">
+                        <div class="card-body">
+                            <canvas id="tiemposChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pestaña de Incentivos -->
+        <div class="tab-pane fade" id="incentivos" role="tabpanel" aria-labelledby="incentivos-tab">
+            <div class="row mb-3">
+                <div class="col-md-12 text-end">
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#nuevoIncentivoModal">
+                        <i class="fas fa-plus"></i> Nuevo Incentivo
+                    </button>
+                </div>
+            </div>
+            
+            {% if incentivos %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Monto</th>
+                                <th>Fecha</th>
+                                <th>Período</th>
+                                <th>Promedio Calificación</th>
+                                <th>Servicios Completados</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for incentivo in incentivos %}
+                                <tr>
+                                    <td>{{ incentivo.nombre }}</td>
+                                    <td>${{ incentivo.monto }}</td>
+                                    <td>{{ incentivo.fecha_otorgado|date:"d/m/Y" }}</td>
+                                    <td>{{ incentivo.periodo_inicio|date:"d/m/Y" }} - {{ incentivo.periodo_fin|date:"d/m/Y" }}</td>
+                                    <td>
+                                        {% if incentivo.promedio_calificacion %}
+                                            <div class="rating-stars">
+                                                {{ incentivo.promedio_calificacion }}
+                                                <i class="fas fa-star"></i>
+                                            </div>
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ incentivo.servicios_completados }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    No hay incentivos registrados.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal para nuevo incentivo -->
+<div class="modal fade" id="nuevoIncentivoModal" tabindex="-1" aria-labelledby="nuevoIncentivoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="nuevoIncentivoModalLabel">Nuevo Incentivo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Aquí iría el formulario para crear un nuevo incentivo -->
+                <form id="incentivoForm" method="post" action="#">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre del Incentivo</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="descripcion" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="descripcion" name="descripcion" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="monto" class="form-label">Monto</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="monto" name="monto" step="0.01" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="periodo_inicio" class="form-label">Inicio del Período</label>
+                                <input type="date" class="form-control" id="periodo_inicio" name="periodo_inicio" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="periodo_fin" class="form-label">Fin del Período</label>
+                                <input type="date" class="form-control" id="periodo_fin" name="periodo_fin" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="promedio_calificacion" class="form-label">Promedio de Calificación</label>
+                        <input type="number" class="form-control" id="promedio_calificacion" name="promedio_calificacion" step="0.01" min="0" max="5">
+                    </div>
+                    <div class="mb-3">
+                        <label for="servicios_completados" class="form-label">Servicios Completados</label>
+                        <input type="number" class="form-control" id="servicios_completados" name="servicios_completados" min="0">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" form="incentivoForm" class="btn btn-primary">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Cargar datos de calificaciones cuando se cargue la página
+    document.addEventListener('DOMContentLoaded', function() {
+        // Cargar datos de calificaciones
+        fetch('{% url "empleados:api_calificaciones_empleado" empleado.id %}')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('calificacionesChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'Número de calificaciones',
+                            data: data.data,
+                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Distribución de calificaciones'
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error('Error al cargar datos de calificaciones:', error));
+        
+        // Cargar datos de tiempos
+        fetch('{% url "empleados:api_tiempo_empleado" empleado.id %}')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('tiemposChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'Duración (minutos)',
+                            data: data.data,
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 2,
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        },
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Tiempo por servicio (últimos 30 días)'
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error('Error al cargar datos de tiempos:', error));
+    });
+</script>
+{% endblock %}

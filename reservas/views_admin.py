@@ -5,8 +5,8 @@ from django.contrib import messages
 from django.urls import reverse
 from django.http import JsonResponse
 from django.template.loader import render_to_string
-from .models import Bahia, Reserva, Servicio, MedioPago, DisponibilidadHoraria, FechaEspecial
-from .forms import BahiaForm, ServicioForm, MedioPagoForm, DisponibilidadHorariaForm, ReservaForm, ClienteForm, FechaEspecialForm
+from .models import Bahia, Reserva, Servicio, MedioPago, DisponibilidadHoraria, HorarioDisponible
+from .forms import BahiaForm, ServicioForm, MedioPagoForm, DisponibilidadHorariaForm, ReservaForm, ClienteForm, HorarioDisponibleForm
 from django.utils import timezone
 from clientes.models import Cliente
 from datetime import datetime, timedelta
@@ -625,19 +625,8 @@ class DisponibilidadHorariaListView(LoginRequiredMixin, AdminRequiredMixin, View
     def get(self, request):
         disponibilidades = DisponibilidadHoraria.objects.all().order_by('dia_semana', 'hora_inicio')
         
-        # Obtener las próximas fechas especiales (próximos 30 días)
-        from datetime import datetime, timedelta
-        fecha_actual = datetime.now().date()
-        fecha_limite = fecha_actual + timedelta(days=30)
-        fechas_especiales = FechaEspecial.objects.filter(
-            fecha__gte=fecha_actual,
-            fecha__lte=fecha_limite
-        ).order_by('fecha')[:5]  # Mostrar solo las 5 más próximas
-        
         return render(request, self.template_name, {
-            'disponibilidades': disponibilidades,
-            'fechas_especiales': fechas_especiales,
-            'fecha_actual': fecha_actual
+            'disponibilidades': disponibilidades
         })
 
 
@@ -706,132 +695,85 @@ class DisponibilidadHorariaDeleteView(LoginRequiredMixin, AdminRequiredMixin, Vi
         return redirect('reservas:disponibilidad_horaria_list')
 
 
-# Vistas CRUD para Fechas Especiales
-class FechaEspecialListView(LoginRequiredMixin, AdminRequiredMixin, View):
-    """Vista para listar todas las fechas especiales"""
-    template_name = 'reservas/fecha_especial_list.html'
+# Vistas CRUD para Horarios Disponibles
+class HorarioDisponibleListView(LoginRequiredMixin, AdminRequiredMixin, View):
+    """Vista para listar todos los horarios disponibles"""
+    template_name = 'reservas/horario_disponible_list.html'
     
     def get(self, request):
-        fechas_especiales = FechaEspecial.objects.all().order_by('fecha')
-        return render(request, self.template_name, {'fechas_especiales': fechas_especiales})
+        horarios = HorarioDisponible.objects.all().order_by('fecha', 'hora_inicio')
+        
+        return render(request, self.template_name, {
+            'horarios': horarios
+        })
 
 
-class FechaEspecialCreateView(LoginRequiredMixin, AdminRequiredMixin, View):
-    """Vista para crear un nuevo estado de servicio por fecha"""
-    template_name = 'reservas/fecha_especial_form.html'
+class HorarioDisponibleCreateView(LoginRequiredMixin, AdminRequiredMixin, View):
+    """Vista para crear un nuevo horario disponible"""
+    template_name = 'reservas/horario_disponible_form.html'
     
     def get(self, request):
-        form = FechaEspecialForm()
-        # Si hay una fecha en la URL, cargar los horarios disponibles
-        fecha_str = request.GET.get('fecha')
-        if fecha_str:
-            try:
-                fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
-                form.cargar_horarios_disponibles(fecha)
-                
-                # Si es una solicitud AJAX, devolver los datos en formato JSON
-                if request.GET.get('ajax') == 'true':
-                    # Obtener los horarios disponibles para esta fecha
-                    horarios_inicio = [(k, v) for k, v in form.fields['horario_inicio_choices'].choices]
-                    horarios_fin = [(k, v) for k, v in form.fields['horario_fin_choices'].choices]
-                    
-                    return JsonResponse({
-                        'success': True,
-                        'horarios_inicio': horarios_inicio,
-                        'horarios_fin': horarios_fin
-                    })
-            except ValueError:
-                if request.GET.get('ajax') == 'true':
-                    return JsonResponse({'success': False, 'error': 'Formato de fecha inválido'}, status=400)
-                pass
-                
+        form = HorarioDisponibleForm()
         return render(request, self.template_name, {
             'form': form, 
-            'titulo': 'Crear Nuevo Estado de Servicio por Fecha'
+            'titulo': 'Crear Nuevo Horario Disponible'
         })
     
     def post(self, request):
-        form = FechaEspecialForm(request.POST)
+        form = HorarioDisponibleForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Estado de servicio por fecha creado exitosamente')
-            return redirect('reservas:fecha_especial_list')
-        
-        # Si el formulario no es válido, recargar los horarios disponibles
-        fecha_str = request.POST.get('fecha')
-        if fecha_str:
-            try:
-                fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
-                form.cargar_horarios_disponibles(fecha)
-            except ValueError:
-                pass
-                
+            messages.success(request, 'Horario disponible creado exitosamente')
+            return redirect('reservas:horario_disponible_list')
         return render(request, self.template_name, {
             'form': form, 
-            'titulo': 'Crear Nuevo Estado de Servicio por Fecha'
+            'titulo': 'Crear Nuevo Horario Disponible'
         })
 
 
-# Se eliminó la vista CargarHorariosDisponiblesView que manejaba la carga dinámica de horarios
-
-
-class FechaEspecialUpdateView(LoginRequiredMixin, AdminRequiredMixin, View):
-    """Vista para actualizar un estado de servicio por fecha existente"""
-    template_name = 'reservas/fecha_especial_form.html'
+class HorarioDisponibleUpdateView(LoginRequiredMixin, AdminRequiredMixin, View):
+    """Vista para actualizar un horario disponible existente"""
+    template_name = 'reservas/horario_disponible_form.html'
     
     def get(self, request, pk):
-        fecha_especial = get_object_or_404(FechaEspecial, pk=pk)
-        form = FechaEspecialForm(instance=fecha_especial)
-        
-        # Cargar los horarios disponibles para la fecha
-        if fecha_especial.fecha:
-            form.cargar_horarios_disponibles(fecha_especial.fecha)
-            
+        horario = get_object_or_404(HorarioDisponible, pk=pk)
+        form = HorarioDisponibleForm(instance=horario)
         return render(request, self.template_name, {
             'form': form, 
-            'fecha_especial': fecha_especial,
-            'titulo': f'Editar Estado de Servicio: {fecha_especial.fecha.strftime("%d/%m/%Y")}'
+            'horario': horario,
+            'titulo': f'Editar Horario Disponible: {horario.fecha} {horario.hora_inicio}'
         })
     
     def post(self, request, pk):
-        fecha_especial = get_object_or_404(FechaEspecial, pk=pk)
-        form = FechaEspecialForm(request.POST, instance=fecha_especial)
+        horario = get_object_or_404(HorarioDisponible, pk=pk)
+        form = HorarioDisponibleForm(request.POST, instance=horario)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Estado de servicio por fecha actualizado exitosamente')
-            return redirect('reservas:fecha_especial_list')
-        
-        # Si el formulario no es válido, recargar los horarios disponibles
-        fecha_str = request.POST.get('fecha')
-        if fecha_str:
-            try:
-                fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
-                form.cargar_horarios_disponibles(fecha)
-            except ValueError:
-                # Si hay un error, usar la fecha original
-                if fecha_especial.fecha:
-                    form.cargar_horarios_disponibles(fecha_especial.fecha)
-        
+            messages.success(request, 'Horario disponible actualizado exitosamente')
+            return redirect('reservas:horario_disponible_list')
         return render(request, self.template_name, {
             'form': form, 
-            'fecha_especial': fecha_especial,
-            'titulo': f'Editar Estado de Servicio: {fecha_especial.fecha.strftime("%d/%m/%Y")}'
+            'horario': horario,
+            'titulo': f'Editar Horario Disponible: {horario.fecha} {horario.hora_inicio}'
         })
 
 
-class FechaEspecialDeleteView(LoginRequiredMixin, AdminRequiredMixin, View):
-    """Vista para eliminar un estado de servicio por fecha existente"""
-    template_name = 'reservas/fecha_especial_confirm_delete.html'
+class HorarioDisponibleDeleteView(LoginRequiredMixin, AdminRequiredMixin, View):
+    """Vista para eliminar un horario disponible existente"""
+    template_name = 'reservas/horario_disponible_confirm_delete.html'
     
     def get(self, request, pk):
-        fecha_especial = get_object_or_404(FechaEspecial, pk=pk)
-        return render(request, self.template_name, {'fecha_especial': fecha_especial})
+        horario = get_object_or_404(HorarioDisponible, pk=pk)
+        return render(request, self.template_name, {'horario': horario})
     
     def post(self, request, pk):
-        fecha_especial = get_object_or_404(FechaEspecial, pk=pk)
-        fecha_especial.delete()
-        messages.success(request, 'Estado de servicio por fecha eliminado exitosamente')
-        return redirect('reservas:fecha_especial_list')
+        horario = get_object_or_404(HorarioDisponible, pk=pk)
+        horario.delete()
+        messages.success(request, 'Horario disponible eliminado exitosamente')
+        return redirect('reservas:horario_disponible_list')
+
+
+# Se eliminaron las vistas CRUD para Fechas Especiales
 
 
 class BahiaCreateView(LoginRequiredMixin, AdminRequiredMixin, View):

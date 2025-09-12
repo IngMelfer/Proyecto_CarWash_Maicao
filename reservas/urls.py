@@ -48,12 +48,13 @@ urlpatterns = [
     path('horarios/editar/<int:pk>/', views_admin.DisponibilidadHorariaUpdateView.as_view(), name='disponibilidad_horaria_update'),
     path('horarios/eliminar/<int:pk>/', views_admin.DisponibilidadHorariaDeleteView.as_view(), name='disponibilidad_horaria_delete'),
     
-    # Rutas para gestión de fechas especiales
-    path('fechas-especiales/', views_admin.FechaEspecialListView.as_view(), name='fecha_especial_list'),
-    path('fechas-especiales/crear/', views_admin.FechaEspecialCreateView.as_view(), name='fecha_especial_create'),
-    path('fechas-especiales/editar/<int:pk>/', views_admin.FechaEspecialUpdateView.as_view(), name='fecha_especial_update'),
-    path('fechas-especiales/eliminar/<int:pk>/', views_admin.FechaEspecialDeleteView.as_view(), name='fecha_especial_delete'),
-    # Se eliminó la ruta para cargar horarios disponibles dinámicamente
+    # CRUD de horarios disponibles
+    path('horarios-disponibles/', views_admin.HorarioDisponibleListView.as_view(), name='horario_disponible_list'),
+    path('horarios-disponibles/crear/', views_admin.HorarioDisponibleCreateView.as_view(), name='horario_disponible_create'),
+    path('horarios-disponibles/editar/<int:pk>/', views_admin.HorarioDisponibleUpdateView.as_view(), name='horario_disponible_update'),
+    path('horarios-disponibles/eliminar/<int:pk>/', views_admin.HorarioDisponibleDeleteView.as_view(), name='horario_disponible_delete'),
+    
+    # Se eliminaron las rutas para gestión de fechas especiales
     
     # CRUD de reservas
       path('reservas/', views_admin.ReservaListView.as_view(), name='reserva_list'),

@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Registro de Tiempo{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <h1>Registro de Tiempo</h1>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'empleados:dashboard' %}" class="btn btn-secondary">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Marcar Tiempo</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="registroTiempoForm">
+                        {% csrf_token %}
+                        
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }}">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.tipo_registro.id_for_label }}" class="form-label">{{ form.tipo_registro.label }}</label>
+                            {{ form.tipo_registro }}
+                            {% if form.tipo_registro.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.tipo_registro.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.servicio.id_for_label }}" class="form-label">{{ form.servicio.label }}</label>
+                            {{ form.servicio }}
+                            {% if form.servicio.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.servicio.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Seleccione el servicio en el que está trabajando (solo para inicio de servicio)</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.notas.id_for_label }}" class="form-label">{{ form.notas.label }}</label>
+                            {{ form.notas }}
+                            {% if form.notas.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.notas.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-clock"></i> Registrar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Estado Actual</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="display-4" id="reloj">00:00:00</div>
+                        <p class="text-muted">Hora actual</p>
+                    </div>
+                    
+                    <div class="text-center mb-3">
+                        {% if estado_actual == 'trabajando' %}
+                            <div class="alert alert-success">
+                                <i class="fas fa-play-circle"></i> Actualmente trabajando
+                                <p class="mb-0">Inicio: {{ ultimo_registro.fecha_hora|date:'H:i:s' }}</p>
+                                <p class="mb-0">Servicio: {{ ultimo_registro.servicio }}</p>
+                            </div>
+                        {% elif estado_actual == 'descanso' %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-coffee"></i> En descanso
+                                <p class="mb-0">Inicio de descanso: {{ ultimo_registro.fecha_hora|date:'H:i:s' }}</p>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-secondary">
+                                <i class="fas fa-power-off"></i> No ha iniciado actividad
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <h5>Resumen del día</h5>
+                    <table class="table table-sm">
+                        <tr>
+                            <th>Tiempo trabajado:</th>
+                            <td>{{ tiempo_trabajado }}</td>
+                        </tr>
+                        <tr>
+                            <th>Tiempo en descanso:</th>
+                            <td>{{ tiempo_descanso }}</td>
+                        </tr>
+                        <tr>
+                            <th>Servicios completados:</th>
+                            <td>{{ servicios_completados }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card shadow mt-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">Registros de Hoy</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Hora</th>
+                            <th>Tipo</th>
+                            <th>Servicio</th>
+                            <th>Duración</th>
+                            <th>Notas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for registro in registros_hoy %}
+                            <tr>
+                                <td>{{ registro.fecha_hora|date:'H:i:s' }}</td>
+                                <td>
+                                    {% if registro.tipo_registro == 'inicio_servicio' %}
+                                        <span class="badge bg-success">Inicio Servicio</span>
+                                    {% elif registro.tipo_registro == 'fin_servicio' %}
+                                        <span class="badge bg-danger">Fin Servicio</span>
+                                    {% elif registro.tipo_registro == 'inicio_descanso' %}
+                                        <span class="badge bg-warning text-dark">Inicio Descanso</span>
+                                    {% elif registro.tipo_registro == 'fin_descanso' %}
+                                        <span class="badge bg-info">Fin Descanso</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ registro.servicio|default:'-' }}</td>
+                                <td>{{ registro.duracion|default:'-' }}</td>
+                                <td>{{ registro.notas|default:'-' }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">No hay registros para hoy</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Añadir clases de Bootstrap a los campos del formulario
+        const formControls = document.querySelectorAll('input, select, textarea');
+        formControls.forEach(function(element) {
+            if (element.type !== 'checkbox' && element.type !== 'radio') {
+                element.classList.add('form-control');
+            } else {
+                element.classList.add('form-check-input');
+            }
+        });
+        
+        // Mostrar/ocultar campo de servicio según el tipo de registro
+        const tipoRegistroSelect = document.getElementById('{{ form.tipo_registro.id_for_label }}');
+        const servicioField = document.getElementById('{{ form.servicio.id_for_label }}').closest('.mb-3');
+        
+        function updateServiceField() {
+            if (tipoRegistroSelect.value === 'inicio_servicio') {
+                servicioField.style.display = 'block';
+            } else {
+                servicioField.style.display = 'none';
+            }
+        }
+        
+        tipoRegistroSelect.addEventListener('change', updateServiceField);
+        updateServiceField(); // Ejecutar al cargar la página
+        
+        // Reloj en tiempo real
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('reloj').textContent = `${hours}:${minutes}:${seconds}`;
+        }
+        
+        updateClock();
+        setInterval(updateClock, 1000);
+    });
+</script>
+{% endblock %}

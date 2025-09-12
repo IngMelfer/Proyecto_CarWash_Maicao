@@ -17,9 +17,6 @@
                 <a href="{% url 'reservas:dashboard_admin' %}" class="btn btn-secondary btn-sm me-2">
                     <i class="fas fa-arrow-left"></i> Volver al Dashboard
                 </a>
-                <a href="{% url 'reservas:fecha_especial_list' %}" class="btn btn-warning btn-sm me-2">
-                    <i class="fas fa-calendar-alt"></i> Fechas Especiales
-                </a>
                 <a href="{% url 'reservas:disponibilidad_horaria_create' %}" class="btn btn-primary btn-sm">
                     <i class="fas fa-plus"></i> Nuevo Horario
                 </a>
@@ -35,57 +32,7 @@
                 {% endfor %}
             {% endif %}
             
-            <div class="row mb-4">
-                <div class="col-lg-12">
-                    <div class="card border-left-info shadow h-100 py-2">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Próximas Fechas Especiales</div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        {% if fechas_especiales %}
-                                            <div class="table-responsive">
-                                                <table class="table table-sm table-borderless">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Fecha</th>
-                                                            <th>Descripción</th>
-                                                            <th>Estado</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {% for fecha in fechas_especiales %}
-                                                            <tr>
-                                                                <td>{{ fecha.fecha|date:"d/m/Y" }}</td>
-                                                                <td>{{ fecha.descripcion }}</td>
-                                                                <td>
-                                                                    {% if fecha.disponible %}
-                                                                        <span class="badge bg-success">Abierto</span>
-                                                                    {% else %}
-                                                                        <span class="badge bg-danger">Cerrado</span>
-                                                                    {% endif %}
-                                                                </td>
-                                                            </tr>
-                                                        {% endfor %}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        {% else %}
-                                            <p class="text-muted">No hay fechas especiales próximas</p>
-                                        {% endif %}
-                                        <a href="{% url 'reservas:fecha_especial_list' %}" class="btn btn-sm btn-warning mt-2">
-                                            <i class="fas fa-calendar-alt"></i> Ver todas
-                                        </a>
-                                    </div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-calendar-alt fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
             
             <div class="table-responsive">
                 <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">

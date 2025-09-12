@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if form.instance.pk %}
+        Editar Empleado
+    {% else %}
+        Nuevo Empleado
+    {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-photo-container {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    .profile-image {
+        width: 150px;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 5px solid #fff;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <h1>
+                {% if form.instance.pk %}
+                    Editar Empleado
+                {% else %}
+                    Nuevo Empleado
+                {% endif %}
+            </h1>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'empleados:empleado_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Volver a la lista
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                
+                <div class="row mb-4">
+                    <!-- Fotografía del empleado -->
+                    <div class="col-md-12 text-center">
+                        <div class="profile-photo-container mb-3">
+                            <label for="{{ form.fotografia.id_for_label }}" class="form-label d-block">{{ form.fotografia.label }}</label>
+                            {% if form.instance.fotografia %}
+                                <div class="mb-3">
+                                    <img src="{{ form.instance.fotografia.url }}" alt="Fotografía del empleado" class="profile-image">
+                                </div>
+                            {% else %}
+                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white mx-auto mb-3" style="width: 150px; height: 150px;">
+                                    <i class="fas fa-user fa-4x"></i>
+                                </div>
+                            {% endif %}
+                            <div>
+                                <label for="{{ form.fotografia.id_for_label }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-camera me-1"></i> {% if form.instance.fotografia %}Cambiar{% else %}Subir{% endif %} fotografía
+                                </label>
+                                <input type="file" name="fotografia" id="{{ form.fotografia.id_for_label }}" class="d-none" accept="image/*">
+                                {% if form.fotografia.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.fotografia.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Información Personal -->
+                    <div class="col-md-12 mb-3">
+                        <h4>Información Personal</h4>
+                        <hr>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.nombre.id_for_label }}" class="form-label">{{ form.nombre.label }}</label>
+                        {{ form.nombre }}
+                        {% if form.nombre.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.nombre.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.apellido.id_for_label }}" class="form-label">{{ form.apellido.label }}</label>
+                        {{ form.apellido }}
+                        {% if form.apellido.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.apellido.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.tipo_documento.id_for_label }}" class="form-label">{{ form.tipo_documento.label }}</label>
+                        {{ form.tipo_documento }}
+                        {% if form.tipo_documento.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.tipo_documento.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.numero_documento.id_for_label }}" class="form-label">{{ form.numero_documento.label }}</label>
+                        {{ form.numero_documento }}
+                        {% if form.numero_documento.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.numero_documento.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.fecha_nacimiento.id_for_label }}" class="form-label">{{ form.fecha_nacimiento.label }}</label>
+                        <input type="date" name="fecha_nacimiento" id="{{ form.fecha_nacimiento.id_for_label }}" class="form-control" value="{{ form.fecha_nacimiento.value|date:'Y-m-d' }}">
+                        {% if form.fecha_nacimiento.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.fecha_nacimiento.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Información de Contacto -->
+                    <div class="col-md-12 mb-3">
+                        <h4>Información de Contacto</h4>
+                        <hr>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.telefono.id_for_label }}" class="form-label">{{ form.telefono.label }}</label>
+                        {{ form.telefono }}
+                        {% if form.telefono.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.telefono.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.direccion.id_for_label }}" class="form-label">{{ form.direccion.label }}</label>
+                        {{ form.direccion }}
+                        {% if form.direccion.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.direccion.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.ciudad.id_for_label }}" class="form-label">{{ form.ciudad.label }}</label>
+                        {{ form.ciudad }}
+                        {% if form.ciudad.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.ciudad.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Información Laboral -->
+                    <div class="col-md-12 mb-3">
+                        <h4>Información Laboral</h4>
+                        <hr>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.cargo.id_for_label }}" class="form-label">{{ form.cargo.label }}</label>
+                        {{ form.cargo }}
+                        {% if form.cargo.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.cargo.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if form.instance.pk %}
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.activo.id_for_label }}" class="form-label">{{ form.activo.label }}</label>
+                            <div>
+                                {{ form.activo }}
+                            </div>
+                            {% if form.activo.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.activo.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.fecha_contratacion.id_for_label }}" class="form-label">{{ form.fecha_contratacion.label }}</label>
+                            <input type="date" name="fecha_contratacion" id="{{ form.fecha_contratacion.id_for_label }}" class="form-control" value="{{ form.fecha_contratacion.value|date:'Y-m-d' }}">
+                            {% if form.fecha_contratacion.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.fecha_contratacion.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.fecha_contratacion.id_for_label }}" class="form-label">{{ form.fecha_contratacion.label }}</label>
+                            <input type="date" name="fecha_contratacion" id="{{ form.fecha_contratacion.id_for_label }}" class="form-control" value="{{ form.fecha_contratacion.value|date:'Y-m-d' }}">
+                            {% if form.fecha_contratacion.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.fecha_contratacion.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mt-4 text-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Añadir clases de Bootstrap a los campos del formulario
+        const formControls = document.querySelectorAll('input, select, textarea');
+        formControls.forEach(function(element) {
+            if (element.type !== 'checkbox' && element.type !== 'radio') {
+                element.classList.add('form-control');
+            } else {
+                element.classList.add('form-check-input');
+            }
+        });
+    });
+</script>
+{% endblock %}

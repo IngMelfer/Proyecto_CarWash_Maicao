@@ -1,0 +1,130 @@
+{% extends 'reservas/dashboard_admin.html' %}
+{% load static %}
+
+{% block dashboard_content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">{{ titulo }}</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'reservas:dashboard_admin' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'reservas:horario_disponible_list' %}">Horarios Disponibles</a></li>
+        <li class="breadcrumb-item active">{{ titulo }}</li>
+    </ol>
+    
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0 rounded-lg mt-2 mb-4">
+                <div class="card-header">
+                    <h3 class="text-center font-weight-light my-2">
+                        <i class="fas fa-calendar-alt me-2"></i>{{ titulo }}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    {{ form.fecha }}
+                                    <label for="{{ form.fecha.id_for_label }}">Fecha</label>
+                                </div>
+                                {% if form.fecha.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.fecha.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                {% if form.fecha.help_text %}
+                                    <div class="form-text text-muted small">{{ form.fecha.help_text }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    {{ form.capacidad }}
+                                    <label for="{{ form.capacidad.id_for_label }}">Capacidad</label>
+                                </div>
+                                {% if form.capacidad.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.capacidad.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                {% if form.capacidad.help_text %}
+                                    <div class="form-text text-muted small">{{ form.capacidad.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    {{ form.hora_inicio }}
+                                    <label for="{{ form.hora_inicio.id_for_label }}">Hora de Inicio</label>
+                                </div>
+                                {% if form.hora_inicio.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.hora_inicio.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    {{ form.hora_fin }}
+                                    <label for="{{ form.hora_fin.id_for_label }}">Hora de Fin</label>
+                                </div>
+                                {% if form.hora_fin.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.hora_fin.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            {{ form.disponible }}
+                            <label class="form-check-label" for="{{ form.disponible.id_for_label }}">
+                                Disponible
+                            </label>
+                            {% if form.disponible.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.disponible.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if form.disponible.help_text %}
+                                <div class="form-text text-muted small">{{ form.disponible.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mt-4 mb-0">
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Guardar
+                                </button>
+                                <a href="{% url 'reservas:horario_disponible_list' %}" class="btn btn-secondary">
+                                    <i class="fas fa-times me-2"></i>Cancelar
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock dashboard_content %}

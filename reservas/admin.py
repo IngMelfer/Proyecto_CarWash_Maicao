@@ -139,11 +139,52 @@ class DisponibilidadHorariaAdmin(admin.ModelAdmin):
     list_display = ('dia_semana', 'hora_inicio', 'hora_fin', 'activo')
     list_filter = ('dia_semana', 'activo')
     list_editable = ('hora_inicio', 'hora_fin', 'activo')
+    
+    actions = ['generar_horarios_disponibles']
+    
+    def generar_horarios_disponibles(self, request, queryset):
+        """
+        Acción para generar horarios disponibles a partir de la configuración de disponibilidad horaria.
+        """
+        from django.core.management import call_command
+        call_command('generar_horarios_disponibles')
+        self.message_user(request, _('Se han generado los horarios disponibles correctamente.'))
+    generar_horarios_disponibles.short_description = _('Generar horarios disponibles')
 
 admin.site.register(Servicio, ServicioAdmin)
 admin.site.register(Reserva, ReservaAdmin)
 admin.site.register(DisponibilidadHoraria, DisponibilidadHorariaAdmin)
 admin.site.register(Bahia, BahiaAdmin)
 admin.site.register(Vehiculo)
-admin.site.register(HorarioDisponible)
+class HorarioDisponibleAdmin(admin.ModelAdmin):
+    """
+    Personalización del panel de administración para el modelo HorarioDisponible.
+    """
+    list_display = ('fecha', 'hora_inicio', 'hora_fin', 'disponible', 'capacidad', 'reservas_actuales')
+    list_filter = ('fecha', 'disponible')
+    search_fields = ('fecha',)
+    date_hierarchy = 'fecha'
+    list_editable = ('disponible', 'capacidad')
+    
+    actions = ['regenerar_horarios_disponibles', 'borrar_todos_horarios_disponibles']
+    
+    def regenerar_horarios_disponibles(self, request, queryset):
+        """
+        Acción para regenerar horarios disponibles forzando la actualización.
+        """
+        from django.core.management import call_command
+        call_command('generar_horarios_disponibles', forzar=True)
+        self.message_user(request, _('Se han regenerado los horarios disponibles correctamente.'))
+    regenerar_horarios_disponibles.short_description = _('Regenerar horarios disponibles')
+    
+    def borrar_todos_horarios_disponibles(self, request, queryset):
+        """
+        Acción para borrar todos los horarios disponibles.
+        """
+        from django.core.management import call_command
+        call_command('borrar_horarios_disponibles', confirmar=True)
+        self.message_user(request, _('Se han eliminado todos los horarios disponibles correctamente.'))
+    borrar_todos_horarios_disponibles.short_description = _('Borrar todos los horarios disponibles')
+
+admin.site.register(HorarioDisponible, HorarioDisponibleAdmin)
 admin.site.register(MedioPago, MedioPagoAdmin)

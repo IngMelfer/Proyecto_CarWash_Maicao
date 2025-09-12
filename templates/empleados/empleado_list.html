@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Lista de Empleados{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>Gestión de Empleados</h1>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'empleados:empleado_create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Nuevo Empleado
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Empleados</h5>
+        </div>
+        <div class="card-body">
+            {% if empleados %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Cargo</th>
+                                <th>Tipo Documento</th>
+                                <th>Nro. Doc.</th>
+                                <th>Teléfono</th>
+                                <th>Fecha Contratación</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for empleado in empleados %}
+                                <tr>
+                                    <td>{{ empleado.nombre }} {{ empleado.apellido }}</td>
+                                    <td>{{ empleado.cargo.nombre }}</td>
+                                    <td>{{ empleado.tipo_documento.nombre }}</td>
+                                    <td>{{ empleado.numero_documento }}</td>
+                                    <td>{{ empleado.telefono }}</td>
+                                    <td>{{ empleado.fecha_contratacion|date:"d/m/Y" }}</td>
+                                    <td>
+                                        {% if empleado.activo %}
+                                            <span class="badge bg-success">Activo</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Inactivo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'empleados:empleado_detail' empleado.id %}" class="btn btn-sm btn-info" title="Ver detalles">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'empleados:empleado_update' empleado.id %}" class="btn btn-sm btn-warning" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            {% if empleado.activo %}
+                                                <a href="{% url 'empleados:toggle_estado' empleado.id %}" class="btn btn-sm btn-secondary" title="Desactivar">
+                                                    <i class="fas fa-toggle-off"></i>
+                                                </a>
+                                            {% else %}
+                                                <a href="{% url 'empleados:toggle_estado' empleado.id %}" class="btn btn-sm btn-success" title="Activar">
+                                                    <i class="fas fa-toggle-on"></i>
+                                                </a>
+                                            {% endif %}
+                                            <a href="{% url 'empleados:empleado_delete' empleado.id %}" class="btn btn-sm btn-danger" title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    No hay empleados registrados actualmente.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

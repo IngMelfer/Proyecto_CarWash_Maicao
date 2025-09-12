@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 from datetime import datetime, timedelta
-from reservas.models import Servicio, DisponibilidadHoraria, Bahia, Reserva, FechaEspecial
+from reservas.models import Servicio, DisponibilidadHoraria, Bahia, Reserva
 
 class Command(BaseCommand):
     help = 'Verifica los horarios disponibles para un servicio específico'
@@ -37,13 +37,7 @@ class Command(BaseCommand):
         dia_semana = fecha.weekday()
         self.stdout.write(f'Día de la semana: {dia_semana}')
         
-        # Verificar si es una fecha especial
-        fecha_especial = FechaEspecial.objects.filter(fecha=fecha).first()
-        
-        # Si es una fecha especial y está marcada como no disponible, no hay horarios disponibles
-        if fecha_especial and not fecha_especial.disponible:
-            self.stdout.write(self.style.WARNING(f'El día {fecha} está marcado como no disponible (fecha especial)'))
-            return
+        # Ya no se verifica si es una fecha especial
         
         # Buscar disponibilidad general para ese día
         disponibilidad_general = DisponibilidadHoraria.objects.filter(

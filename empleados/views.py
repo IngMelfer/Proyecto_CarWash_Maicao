@@ -1,0 +1,275 @@
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from django.contrib import messages
+from django.db.models import Avg, Count
+from django.http import JsonResponse
+from django.urls import reverse
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.urls import reverse_lazy
+from django.contrib.auth.mixins import LoginRequiredMixin
+
+from autenticacion.mixins import RolRequiredMixin
+from autenticacion.models import Usuario
+from .models import Empleado, RegistroTiempo, Calificacion, Incentivo
+from .forms import EmpleadoForm, RegistroTiempoForm
+
+# Create your views here.
+
+class EmpleadoListView(LoginRequiredMixin, RolRequiredMixin, ListView):
+    """Vista para listar todos los empleados"""
+    model = Empleado
+    template_name = 'empleados/empleado_list.html'
+    context_object_name = 'empleados'
+    roles_permitidos = [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO, Usuario.ROL_GERENTE]
+    
+    def get_queryset(self):
+        return Empleado.objects.all().order_by('nombre', 'apellido')
+
+
+class EmpleadoDetailView(LoginRequiredMixin, RolRequiredMixin, DetailView):
+    """Vista para ver el detalle de un empleado"""
+    model = Empleado
+    template_name = 'empleados/empleado_detail.html'
+    context_object_name = 'empleado'
+    roles_permitidos = [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO, Usuario.ROL_GERENTE]
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        empleado = self.get_object()
+        
+        # Obtener calificaciones del empleado
+        context['calificaciones'] = empleado.calificaciones.all().order_by('-fecha_calificacion')[:10]
+        context['promedio_calificacion'] = empleado.calificaciones.aggregate(promedio=Avg('puntuacion'))['promedio'] or 0
+        
+        # Obtener registros de tiempo recientes
+        context['registros_tiempo'] = empleado.registros_tiempo.all().order_by('-hora_inicio')[:10]
+        
+        # Obtener incentivos recientes
+        context['incentivos'] = empleado.incentivos.all().order_by('-fecha_otorgado')[:5]
+        
+        return context
+
+
+class EmpleadoCreateView(LoginRequiredMixin, RolRequiredMixin, CreateView):
+    """Vista para crear un nuevo empleado"""
+    model = Empleado
+    form_class = EmpleadoForm
+    template_name = 'empleados/empleado_form.html'
+    success_url = reverse_lazy('empleados:empleado_list')
+    roles_permitidos = [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO]
+    
+    def form_valid(self, form):
+        # Crear un nuevo usuario con el rol de empleado
+        email = f"{form.cleaned_data['numero_documento']}@autolavado.com"
+        usuario = Usuario.objects.create(
+            email=email,
+            first_name=form.cleaned_data['nombre'],
+            last_name=form.cleaned_data['apellido'],
+            rol=Usuario.ROL_EMPLEADO,
+            is_active=True
+        )
+        
+        # Asignar una contraseña temporal basada en el número de documento
+        usuario.set_password(form.cleaned_data['numero_documento'])
+        usuario.save()
+        
+        # Asignar el usuario al empleado
+        empleado = form.save(commit=False)
+        empleado.usuario = usuario
+        
+        messages.success(self.request, f'Empleado {form.cleaned_data["nombre"]} {form.cleaned_data["apellido"]} creado correctamente')
+        return super().form_valid(form)
+
+
+class EmpleadoUpdateView(LoginRequiredMixin, RolRequiredMixin, UpdateView):
+    """Vista para actualizar un empleado existente"""
+    model = Empleado
+    form_class = EmpleadoForm
+    template_name = 'empleados/empleado_form.html'
+    success_url = reverse_lazy('empleados:empleado_list')
+    roles_permitidos = [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO]
+    
+    def form_valid(self, form):
+        messages.success(self.request, f'Empleado {form.cleaned_data["nombre"]} {form.cleaned_data["apellido"]} actualizado correctamente')
+        return super().form_valid(form)
+
+
+class EmpleadoDeleteView(LoginRequiredMixin, RolRequiredMixin, DeleteView):
+    """Vista para eliminar un empleado"""
+    model = Empleado
+    template_name = 'empleados/empleado_confirm_delete.html'
+    success_url = reverse_lazy('empleados:empleado_list')
+    roles_permitidos = [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO]
+    
+    def delete(self, request, *args, **kwargs):
+        empleado = self.get_object()
+        # En lugar de eliminar, marcamos como inactivo
+        empleado.activo = False
+        empleado.save()
+        
+        # También actualizamos el usuario asociado
+        if empleado.usuario:
+            empleado.usuario.is_active = False
+            empleado.usuario.save()
+            
+        messages.success(request, f'Empleado {empleado.nombre} {empleado.apellido} desactivado correctamente')
+        return redirect(self.success_url)
+
+
+@login_required
+def registrar_tiempo_view(request, empleado_id):
+    """Vista para registrar el tiempo de inicio/fin de un servicio"""
+    empleado = get_object_or_404(Empleado, pk=empleado_id)
+    
+    # Verificar que el usuario sea el empleado o tenga permisos
+    if request.user.rol not in [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO, Usuario.ROL_GERENTE] and request.user != empleado.usuario:
+        messages.error(request, 'No tienes permisos para registrar tiempo para este empleado')
+        return redirect('empleados:dashboard_empleado')
+    
+    if request.method == 'POST':
+        servicio_id = request.POST.get('servicio_id')
+        accion = request.POST.get('accion')  # 'inicio' o 'fin'
+        
+        if accion == 'inicio':
+            # Crear nuevo registro de tiempo
+            registro = RegistroTiempo.objects.create(
+                empleado=empleado,
+                servicio_id=servicio_id,
+                hora_inicio=timezone.now()
+            )
+            messages.success(request, 'Tiempo de inicio registrado correctamente')
+            
+        elif accion == 'fin':
+            # Buscar el registro de tiempo abierto para este servicio y empleado
+            try:
+                registro = RegistroTiempo.objects.get(
+                    empleado=empleado,
+                    servicio_id=servicio_id,
+                    hora_fin__isnull=True
+                )
+                registro.hora_fin = timezone.now()
+                registro.save()  # El cálculo de duración se hace en el método save
+                messages.success(request, 'Tiempo de finalización registrado correctamente')
+            except RegistroTiempo.DoesNotExist:
+                messages.error(request, 'No se encontró un registro de tiempo abierto para este servicio')
+    
+    # Redirigir a la página de servicios activos o dashboard
+    return redirect('empleados:dashboard_empleado')
+
+
+@login_required
+def dashboard_empleado_view(request):
+    """Vista del dashboard para empleados"""
+    # Verificar que el usuario sea un empleado
+    if request.user.rol != Usuario.ROL_EMPLEADO:
+        messages.error(request, 'Esta página es solo para empleados')
+        return redirect('autenticacion:login_success')
+    
+    try:
+        empleado = request.user.empleado
+    except Empleado.DoesNotExist:
+        messages.error(request, 'No se encontró un perfil de empleado asociado a tu usuario')
+        return redirect('autenticacion:login_success')
+    
+    # Obtener servicios activos asignados al empleado
+    servicios_activos = empleado.servicios_asignados.filter(estado='en_proceso')
+    
+    # Obtener registros de tiempo recientes
+    registros_tiempo = empleado.registros_tiempo.all().order_by('-hora_inicio')[:10]
+    
+    # Obtener calificaciones recientes
+    calificaciones = empleado.calificaciones.all().order_by('-fecha_calificacion')[:10]
+    promedio_calificacion = empleado.calificaciones.aggregate(promedio=Avg('puntuacion'))['promedio'] or 0
+    
+    # Obtener incentivos
+    incentivos = empleado.incentivos.all().order_by('-fecha_otorgado')[:5]
+    
+    context = {
+        'empleado': empleado,
+        'servicios_activos': servicios_activos,
+        'registros_tiempo': registros_tiempo,
+        'calificaciones': calificaciones,
+        'promedio_calificacion': promedio_calificacion,
+        'incentivos': incentivos,
+    }
+    
+    return render(request, 'empleados/dashboard_empleado.html', context)
+
+
+# API Views para AJAX
+
+@login_required
+def api_calificaciones_empleado(request, empleado_id):
+    """API para obtener las calificaciones de un empleado"""
+    empleado = get_object_or_404(Empleado, pk=empleado_id)
+    
+    # Verificar permisos
+    if request.user.rol not in [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO, Usuario.ROL_GERENTE] and request.user != empleado.usuario:
+        return JsonResponse({'error': 'No tienes permisos para ver esta información'}, status=403)
+    
+    # Obtener calificaciones agrupadas por puntuación
+    calificaciones_por_puntuacion = Calificacion.objects.filter(empleado=empleado).values('puntuacion').annotate(total=Count('puntuacion')).order_by('puntuacion')
+    
+    # Obtener promedio de calificaciones
+    promedio = Calificacion.objects.filter(empleado=empleado).aggregate(promedio=Avg('puntuacion'))['promedio'] or 0
+    
+    # Formatear datos para gráficos
+    labels = [f"{c['puntuacion']} estrellas" for c in calificaciones_por_puntuacion]
+    data = [c['total'] for c in calificaciones_por_puntuacion]
+    
+    return JsonResponse({
+        'labels': labels,
+        'data': data,
+        'promedio': round(promedio, 2)
+    })
+
+
+@login_required
+def api_tiempo_empleado(request, empleado_id):
+    """API para obtener estadísticas de tiempo de un empleado"""
+    empleado = get_object_or_404(Empleado, pk=empleado_id)
+    
+    # Verificar permisos
+    if request.user.rol not in [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO, Usuario.ROL_GERENTE] and request.user != empleado.usuario:
+        return JsonResponse({'error': 'No tienes permisos para ver esta información'}, status=403)
+    
+    # Obtener registros de tiempo completados (con hora_fin)
+    registros = RegistroTiempo.objects.filter(empleado=empleado, hora_fin__isnull=False)
+    
+    # Calcular tiempo promedio por servicio
+    tiempo_promedio = registros.aggregate(promedio=Avg('duracion_minutos'))['promedio'] or 0
+    
+    # Obtener los últimos 30 días de registros para gráfico de tendencia
+    fecha_inicio = timezone.now() - timezone.timedelta(days=30)
+    registros_recientes = registros.filter(hora_inicio__gte=fecha_inicio).order_by('hora_inicio')
+    
+    # Formatear datos para gráficos
+    labels = [r.hora_inicio.strftime('%d/%m/%Y') for r in registros_recientes]
+    data = [r.duracion_minutos for r in registros_recientes]
+    
+    return JsonResponse({
+        'tiempo_promedio': round(tiempo_promedio, 1),
+        'labels': labels,
+        'data': data
+    })
+
+
+@login_required
+def toggle_estado_empleado(request, pk):
+    """Vista para activar/desactivar un empleado"""
+    # Verificar roles permitidos
+    if request.user.rol not in [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO, Usuario.ROL_GERENTE]:
+        messages.error(request, 'No tiene permisos para realizar esta acción.')
+        return redirect('empleados:empleado_list')
+    
+    empleado = get_object_or_404(Empleado, pk=pk)
+    empleado.activo = not empleado.activo
+    empleado.save()
+    
+    if empleado.activo:
+        messages.success(request, f'El empleado {empleado.nombre} {empleado.apellido} ha sido activado.')
+    else:
+        messages.success(request, f'El empleado {empleado.nombre} {empleado.apellido} ha sido desactivado.')
+    
+    return redirect('empleados:empleado_list')

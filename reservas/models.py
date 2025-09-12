@@ -541,33 +541,7 @@ class Bahia(models.Model):
             super().save(update_fields=['codigo_qr'])
 
 
-class FechaEspecial(models.Model):
-    """
-    Modelo para gestionar el estado de servicios por fecha (días festivos, cierres programados, etc.)
-    donde el lavadero no estará en funcionamiento o tendrá un horario especial.
-    """
-    fecha = models.DateField(verbose_name=_('Fecha'), unique=True)
-    descripcion = models.CharField(max_length=255, verbose_name=_('Descripción'))
-    disponible = models.BooleanField(default=False, verbose_name=_('Disponible'), 
-                                   help_text=_('Indica si el lavadero estará disponible en esta fecha'))
-    hora_inicio = models.TimeField(verbose_name=_('Hora de Inicio'), null=True, blank=True,
-                                help_text=_('Hora de inicio de servicios para esta fecha especial'))
-    hora_fin = models.TimeField(verbose_name=_('Hora de Fin'), null=True, blank=True,
-                              help_text=_('Hora de fin de servicios para esta fecha especial'))
-    capacidad = models.PositiveSmallIntegerField(default=1, verbose_name=_('Capacidad'),
-                                             help_text=_('Número máximo de vehículos que pueden ser atendidos simultáneamente en esta fecha'))
-    
-    class Meta:
-        verbose_name = _('Estado de Servicios por Fecha')
-        verbose_name_plural = _('Estados de Servicios por Fecha')
-        ordering = ['fecha']
-    
-    def __str__(self):
-        estado = "Disponible" if self.disponible else "No Disponible"
-        horario = ""
-        if self.disponible and self.hora_inicio and self.hora_fin:
-            horario = f" de {self.hora_inicio.strftime('%H:%M')} a {self.hora_fin.strftime('%H:%M')}"
-        return f"{self.fecha.strftime('%d/%m/%Y')} - {self.descripcion} ({estado}{horario})"
+# Se eliminó el modelo FechaEspecial
 
 
 class HorarioDisponible(models.Model):
