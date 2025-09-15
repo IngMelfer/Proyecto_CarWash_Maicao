@@ -225,9 +225,78 @@
                             </div>
                         </div>
                         
-                        <!-- Paso 5: Medio de Pago -->
+                        <!-- Paso 5: Selección de Lavador -->
                         <div class="reservation-step" id="step5" style="display: none;">
-                            <h5 class="border-bottom pb-2 mb-4">Paso 5: Seleccionar Medio de Pago</h5>
+                            <h5 class="border-bottom pb-2 mb-4">Paso 5: Selecciona tu Lavador</h5>
+                            
+                            <div class="alert alert-info mb-4">
+                                <i class="fas fa-info-circle me-2"></i> Selecciona el lavador que deseas que realice tu servicio. Puedes ver su calificación promedio y experiencia.
+                            </div>
+                            
+                            <!-- Campo oculto para almacenar el lavador seleccionado -->
+                            <input type="hidden" name="lavador_id" id="lavadorInput">
+                            
+                            <div id="lavadoresContainer" class="row row-cols-1 row-cols-md-3 g-4 mb-4">
+                                {% if lavadores_disponibles %}
+                                    {% for lavador in lavadores_disponibles %}
+                                        <div class="col">
+                                            <div class="card h-100 lavador-card" data-lavador-id="{{ lavador.id }}">
+                                                <div class="card-body text-center">
+                                                    <div class="lavador-icon mb-3">
+                                                        {% if lavador.fotografia %}
+                                                            <img src="{{ lavador.fotografia.url }}" alt="{{ lavador.nombre_completo }}" class="rounded-circle" width="80" height="80">
+                                                        {% else %}
+                                                            <i class="fas fa-user-circle fa-4x text-secondary"></i>
+                                                        {% endif %}
+                                                    </div>
+                                                    <h5 class="card-title">{{ lavador.nombre_completo }}</h5>
+                                                    <p class="card-text">{{ lavador.cargo.nombre }}</p>
+                                                    <div class="mb-2">
+                                                        {% with calificacion=lavador.promedio_calificacion %}
+                                                            {% for i in "12345"|make_list %}
+                                                                {% if forloop.counter <= calificacion|floatformat:0|add:"0" %}
+                                                                    <i class="fas fa-star text-warning"></i>
+                                                                {% else %}
+                                                                    <i class="far fa-star text-warning"></i>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                            <span class="ms-1">({{ calificacion|floatformat:1 }})</span>
+                                                        {% endwith %}
+                                                    </div>
+                                                </div>
+                                                <div class="card-footer bg-transparent">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input lavador-radio" type="radio" name="lavador" id="lavador{{ lavador.id }}" value="{{ lavador.id }}">
+                                                        <label class="form-check-label" for="lavador{{ lavador.id }}">
+                                                            Seleccionar
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="col-12">
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle me-2"></i> No hay lavadores disponibles en este momento. Se asignará uno automáticamente cuando se confirme tu reserva.
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="d-flex justify-content-between mt-4">
+                                <button type="button" class="btn btn-outline-secondary" id="backToStep4">
+                                    <i class="fas fa-arrow-left me-2"></i> Anterior
+                                </button>
+                                <button type="button" class="btn btn-primary" id="nextToStep6">
+                                    Siguiente <i class="fas fa-arrow-right ms-2"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Paso 6: Medio de Pago -->
+                        <div class="reservation-step" id="step6" style="display: none;">
+                            <h5 class="border-bottom pb-2 mb-4">Paso 6: Seleccionar Medio de Pago</h5>
                             
                             <!-- Sección de puntos disponibles -->
                             {% if request.user.is_authenticated and request.user.cliente %}
@@ -446,6 +515,7 @@
                                             <p><strong>Fecha:</strong> <span id="resumen-fecha"></span></p>
                                             <p><strong>Hora:</strong> <span id="resumen-hora"></span></p>
                                             <p><strong>Bahía:</strong> <span id="resumen-bahia"></span></p>
+                                <p><strong>Lavador:</strong> <span id="resumen-lavador"></span></p>
                                         </div>
                                         <div class="col-md-6">
                                             <p><strong>Vehículo:</strong> <span id="resumen-vehiculo"></span></p>
@@ -619,6 +689,8 @@
         const backToStep3 = document.querySelector('#backToStep3');
         const nextToStep5 = document.querySelector('#nextToStep5');
         const backToStep4 = document.querySelector('#backToStep4');
+        const nextToStep6 = document.querySelector('#nextToStep6');
+        const backToStep5 = document.querySelector('#backToStep5');
         
         // Definir el elemento de medio de pago para usarlo en todo el script
         const medioPagoElement = document.querySelector('#medioPago');
@@ -696,6 +768,9 @@
                 return;
             }
             
+            // Cargar los lavadores disponibles para el horario y servicio seleccionado
+            cargarLavadoresDisponibles(selectedDate, selectedTime, selectedService);
+            
             document.querySelector('#step4').style.display = 'none';
             document.querySelector('#step5').style.display = 'block';
         });
@@ -704,6 +779,64 @@
             document.querySelector('#step5').style.display = 'none';
             document.querySelector('#step4').style.display = 'block';
         });
+        
+        // Función para cargar los lavadores disponibles
+        function cargarLavadoresDisponibles(fecha, hora, servicioId) {
+            const url = `/reservas/obtener-lavadores-disponibles/?fecha=${fecha}&hora=${hora}&servicio_id=${servicioId}`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Si ya hay lavadores en el contexto, no necesitamos hacer nada
+                        // El template ya los muestra con el bucle for
+                        
+                        // Agregar evento de selección a las tarjetas de lavadores
+                        const lavadorCards = document.querySelectorAll('.lavador-card');
+                        const lavadorRadios = document.querySelectorAll('.lavador-radio');
+                        let selectedLavador = null;
+                        
+                        lavadorCards.forEach(card => {
+                            card.addEventListener('click', function() {
+                                const lavadorId = this.dataset.lavadorId;
+                                const radio = document.querySelector(`#lavador${lavadorId}`);
+                                radio.checked = true;
+                                
+                                // Actualizar estilos
+                                lavadorCards.forEach(c => c.classList.remove('border-primary'));
+                                this.classList.add('border-primary');
+                                
+                                // Guardar selección
+                                selectedLavador = lavadorId;
+                                document.querySelector('#lavadorInput').value = lavadorId;
+                            });
+                        });
+                        
+                        lavadorRadios.forEach(radio => {
+                            radio.addEventListener('change', function() {
+                                if (this.checked) {
+                                    const lavadorId = this.value;
+                                    
+                                    // Actualizar estilos
+                                    lavadorCards.forEach(c => c.classList.remove('border-primary'));
+                                    document.querySelector(`.lavador-card[data-lavador-id="${lavadorId}"]`).classList.add('border-primary');
+                                    
+                                    // Guardar selección
+                                    selectedLavador = lavadorId;
+                                    document.querySelector('#lavadorInput').value = lavadorId;
+                                }
+                            });
+                        });
+                    } else {
+                        // Mostrar mensaje de error
+                        showAlert('No se pudieron cargar los lavadores disponibles', 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar lavadores:', error);
+                    showAlert('Error al cargar los lavadores disponibles', 'danger');
+                });
+        }
         
         // Manejar el switch de redimir puntos
         const usarPuntosSwitch = document.querySelector('#usarPuntos');
@@ -766,12 +899,28 @@
             });
         }
         
-        // Nuevo evento para el paso 5 -> 6
+        // Evento para el paso 5 -> 6
         const nextToStep6 = document.querySelector('#nextToStep6');
         nextToStep6.addEventListener('click', function() {
+            // Verificar si se seleccionó un lavador
+            const lavadorSeleccionado = document.querySelector('input[name="lavador"]:checked');
+            let lavadorId = null;
+            
+            if (lavadorSeleccionado) {
+                lavadorId = lavadorSeleccionado.value;
+                document.querySelector('#lavadorInput').value = lavadorId;
+            }
+            
+            document.querySelector('#step5').style.display = 'none';
+            document.querySelector('#step6').style.display = 'block';
+        });
+        
+        // Evento para el paso 6 -> 7 (confirmación)
+        const nextToStep7 = document.querySelector('#nextToStep7');
+        nextToStep7.addEventListener('click', function() {
             const medioPagoSeleccionado = document.querySelector('input[name="medio_pago"]:checked');
             if (!medioPagoSeleccionado) {
-                mostrarAlerta('Por favor selecciona un medio de pago', 'warning');
+                showAlert('Por favor selecciona un medio de pago', 'warning');
                 return;
             }
             
@@ -818,6 +967,20 @@
                 document.querySelector('#resumen-bahia').textContent = 'No seleccionada';
             }
             
+            // Añadir información del lavador seleccionado al resumen
+            const lavadorId = document.querySelector('#lavadorInput').value;
+            if (lavadorId) {
+                const lavadorCard = document.querySelector(`.lavador-card[data-lavador-id="${lavadorId}"]`);
+                if (lavadorCard) {
+                    const nombreLavador = lavadorCard.querySelector('.card-title').textContent;
+                    document.querySelector('#resumen-lavador').textContent = nombreLavador;
+                } else {
+                    document.querySelector('#resumen-lavador').textContent = 'Asignación automática';
+                }
+            } else {
+                document.querySelector('#resumen-lavador').textContent = 'Asignación automática';
+            }
+            
             // Añadir información del medio de pago al resumen
             const medioPagoCard = document.querySelector(`.medio-pago-card.selected`);
             const medioPagoText = medioPagoCard ? medioPagoCard.querySelector('.card-title').textContent : 'No seleccionado';
@@ -859,6 +1022,14 @@
             document.querySelector('#step6').style.display = 'none';
             document.querySelector('#step5').style.display = 'block';
         });
+        
+        const backToStep6 = document.querySelector('#backToStep6');
+        if (backToStep6) {
+            backToStep6.addEventListener('click', function() {
+                document.querySelector('#step7').style.display = 'none';
+                document.querySelector('#step6').style.display = 'block';
+            });
+        }
         
         // Manejo de fecha y horarios
         const fechaInput = document.querySelector('#fecha');
@@ -1543,6 +1714,7 @@
                                                     <p><strong>Fecha:</strong> ${document.querySelector('#resumen-fecha').textContent}</p>
                                                     <p><strong>Hora:</strong> ${document.querySelector('#resumen-hora').textContent}</p>
                                                     <p><strong>Bahía:</strong> ${document.querySelector('#resumen-bahia').textContent}</p>
+                                                    <p><strong>Lavador:</strong> ${document.querySelector('#resumen-lavador').textContent}</p>
                                                 </div>
                                                 <div class="col-md-6">
                                                     <p><strong>Vehículo:</strong> ${document.querySelector('#resumen-vehiculo').textContent}</p>

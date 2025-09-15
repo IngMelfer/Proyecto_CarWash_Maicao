@@ -37,9 +37,10 @@ class TimezoneMiddleware:
                     cursor.execute("SELECT @@session.time_zone")
                     db_timezone = cursor.fetchone()[0]
                     
-                    # Si la zona horaria no está configurada como UTC, configurarla
-                    if db_timezone != '+00:00':
-                        cursor.execute("SET time_zone = '+00:00'")
+                    # Si la zona horaria no está configurada como America/Bogota, configurarla
+                    if db_timezone != '-05:00':
+                        cursor.execute("SET time_zone = '-05:00'")
+                        # -05:00 corresponde a la zona horaria de Bogotá (COT)
         except Exception as e:
             # Registrar el error pero no interrumpir la solicitud
             import logging

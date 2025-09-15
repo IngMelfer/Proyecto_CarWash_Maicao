@@ -314,6 +314,32 @@
                 </div>
             </div>
         </div>
+        
+        <div class="col-md-3">
+            <div class="card text-center dashboard-card">
+                <div class="card-body">
+                    <div class="dashboard-icon">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <h5 class="card-title">Gestionar Empleados</h5>
+                    <p class="card-text">Administra los perfiles de empleados y lavadores</p>
+                    <a href="{% url 'empleados:empleado_list' %}" class="btn btn-primary">Ir a Empleados</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card text-center dashboard-card">
+                <div class="card-body">
+                    <div class="dashboard-icon">
+                        <i class="fas fa-id-badge"></i>
+                    </div>
+                    <h5 class="card-title">Gestionar Cargos</h5>
+                    <p class="card-text">Administra los cargos de los empleados</p>
+                    <a href="{% url 'empleados:cargo_list' %}" class="btn btn-primary">Ir a Cargos</a>
+                </div>
+            </div>
+        </div>
 
     </div>
 </div>

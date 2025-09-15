@@ -34,6 +34,7 @@ urlpatterns = [
     path('clientes/validar/<int:pk>/', ClienteValidarDirectView.as_view(), name='cliente_validar_direct'),
     path('autenticacion/', include(('autenticacion.urls', 'autenticacion'), namespace='autenticacion')),
     path('clientes/', include(('clientes.urls', 'clientes'), namespace='clientes')),
+    path('empleados/', include(('empleados.urls', 'empleados'), namespace='empleados')),
 ]
 
 # Servir archivos estáticos y medios en desarrollo

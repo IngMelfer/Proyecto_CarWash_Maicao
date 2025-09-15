@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'clientes',
     'reservas',
     'notificaciones',
+    'empleados',
 ]
 
 MIDDLEWARE = [
@@ -112,7 +113,7 @@ if USE_MYSQL:
             'HOST': os.getenv('DB_HOST', 'localhost'),
             'PORT': os.getenv('DB_PORT', '3306'),
             'OPTIONS': {
-                'init_command': "SET sql_mode='STRICT_TRANS_TABLES', time_zone='+00:00'",
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES', time_zone='-05:00'",
                 'charset': 'utf8mb4',
             },
         }
@@ -151,7 +152,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = os.getenv('LANGUAGE_CODE', 'es-co')  # Idioma predeterminado
 
-TIME_ZONE = 'UTC'  # Usar UTC como zona horaria predeterminada
+TIME_ZONE = 'America/Bogota'  # Usar Bogotá como zona horaria predeterminada
 
 USE_I18N = os.getenv('USE_I18N', 'True').lower() == 'true'
 

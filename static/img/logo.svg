@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 300">
-  <!-- Fondo negro con gradiente -->
+  <!-- Fondo negro -->
   <rect x="0" y="0" width="800" height="300" fill="#000000" opacity="0" />
   
   <!-- Silueta del auto con gradiente -->

@@ -22,7 +22,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
             <a class="navbar-brand" href="{% url 'home' %}">
-                <img src="/static/img/logo.svg" alt="Premium Car Detailing" height="60" class="d-inline-block align-text-top me-2" style="max-width: 220px;">
+                <img src="/static/img/logo.png" alt="Premium Car Detailing" height="100" class="d-inline-block align-text-top me-2" style="max-width: 350px;">
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -149,5 +149,7 @@
     <script src="/static/js/main.js"></script>
     <script src="/static/js/modal-fix.js"></script>
     {% block extra_js %}{% endblock %}
+    {% block page_scripts %}{% endblock %}
+    {% block form_scripts %}{% endblock %}
 </body>
 </html>

@@ -21,4 +21,10 @@ urlpatterns = [
     
     # Cambiar estado de empleado
     path('<int:pk>/toggle-estado/', views.toggle_estado_empleado, name='toggle_estado'),
+    
+    # Rutas para gestión de cargos
+    path('cargos/', views.CargoListView.as_view(), name='cargo_list'),
+    path('cargos/crear/', views.CargoCreateView.as_view(), name='cargo_create'),
+    path('cargos/<int:pk>/editar/', views.CargoUpdateView.as_view(), name='cargo_update'),
+    path('cargos/<int:pk>/eliminar/', views.CargoDeleteView.as_view(), name='cargo_delete'),
 ]

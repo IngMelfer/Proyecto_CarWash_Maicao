@@ -11,6 +11,8 @@ urlpatterns = [
     # Rutas para AJAX
     path('obtener_horarios_disponibles/', views.ObtenerHorariosDisponiblesView.as_view(), name='obtener_horarios_disponibles'),
     path('obtener_bahias_disponibles/', views.ObtenerBahiasDisponiblesView.as_view(), name='obtener_bahias_disponibles'),
+    path('obtener_lavadores_disponibles/', views.ObtenerLavadoresDisponiblesView.as_view(), name='obtener_lavadores_disponibles'),
+    path('seleccionar_lavador/<int:reserva_id>/<int:lavador_id>/', views.SeleccionarLavadorView.as_view(), name='seleccionar_lavador'),
     path('obtener_medios_pago/', views.ObtenerMediosPagoView.as_view(), name='obtener_medios_pago'),
     # Rutas para pasarelas de pago
     path('procesar-pago/<int:reserva_id>/', views.ProcesarPagoView.as_view(), name='procesar_pago'),

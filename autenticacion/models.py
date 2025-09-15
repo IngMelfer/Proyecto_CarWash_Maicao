@@ -58,12 +58,28 @@ class Usuario(AbstractUser):
     """
     Modelo personalizado de usuario que utiliza email como identificador único.
     """
+    # Definición de roles
+    ROL_ADMIN_SISTEMA = 'admin_sistema'
+    ROL_ADMIN_AUTOLAVADO = 'admin_autolavado'
+    ROL_GERENTE = 'gerente'
+    ROL_LAVADOR = 'lavador'
+    ROL_CLIENTE = 'cliente'
+    
+    ROL_CHOICES = [
+        (ROL_ADMIN_SISTEMA, _('Administrador del Sistema')),
+        (ROL_ADMIN_AUTOLAVADO, _('Administrador de Autolavado')),
+        (ROL_GERENTE, _('Gerente')),
+        (ROL_LAVADOR, _('Lavador')),
+        (ROL_CLIENTE, _('Cliente')),
+    ]
+    
     username = None  # Removemos el campo username
     email = models.EmailField(_('Correo Electrónico'), unique=True)
     is_verified = models.BooleanField(_('Verificado'), default=False)
     verification_token = models.UUIDField(_('Token de Verificación'), default=uuid.uuid4, editable=False)
     token_created_at = models.DateTimeField(_('Fecha de Creación del Token'), default=timezone.now)
     foto_perfil = models.ImageField(_('Foto de Perfil'), upload_to=user_profile_image_path, null=True, blank=True)
+    rol = models.CharField(_('Rol'), max_length=20, choices=ROL_CHOICES, default=ROL_CLIENTE)
     
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []

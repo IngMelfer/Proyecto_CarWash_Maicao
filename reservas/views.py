@@ -17,6 +17,7 @@ from .models import Servicio, Reserva, Vehiculo, HorarioDisponible, Bahia, Dispo
 from .serializers import ServicioSerializer, ReservaSerializer, ReservaUpdateSerializer, BahiaSerializer
 from notificaciones.models import Notificacion
 from clientes.models import Cliente, HistorialServicio
+from empleados.models import Empleado, Calificacion
 import json
 import uuid
 import requests
@@ -767,6 +768,14 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
         context['medios_pago'] = [mp for mp in medios_pago if mp.es_electronico()]
         # Añadir información sobre el tiempo límite para pago
         context['tiempo_limite_pago'] = 15  # minutos
+        
+        # Obtener lavadores disponibles
+        lavadores_disponibles = Empleado.objects.filter(
+            rol=Empleado.ROL_LAVADOR,
+            disponible=True,
+            activo=True
+        )
+        context['lavadores_disponibles'] = lavadores_disponibles
         return context
     
     def post(self, request, *args, **kwargs):
@@ -962,6 +971,19 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
                 puntos_redimidos=puntos_a_redimir if usar_puntos else 0,
                 recompensa_aplicada=recompensa_seleccionada if usar_puntos else ''
             )
+            
+            # Verificar si se seleccionó un lavador específico
+            lavador_id = request.POST.get('lavador_id')
+            if lavador_id:
+                try:
+                    lavador = Empleado.objects.get(id=lavador_id, rol=Empleado.ROL_LAVADOR, disponible=True, activo=True)
+                    reserva.asignar_lavador(lavador, automatico=False)
+                except (Empleado.DoesNotExist, ValueError):
+                    # Si no se encuentra el lavador o hay un error, asignar automáticamente
+                    reserva.asignar_lavador()
+            else:
+                # Asignar automáticamente un lavador disponible
+                reserva.asignar_lavador()
             
             # Si el medio de pago es una pasarela, redirigir al proceso de pago
             if medio_pago.es_pasarela():
@@ -1315,6 +1337,58 @@ class ObtenerMediosPagoView(LoginRequiredMixin, View):
             response = JsonResponse({'error': str(e)}, status=500)
             response['Content-Type'] = 'application/json'
             return response
+
+
+class ObtenerLavadoresDisponiblesView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        try:
+            # Obtener lavadores disponibles
+            lavadores = Empleado.objects.filter(
+                rol=Empleado.ROL_LAVADOR,
+                disponible=True,
+                activo=True
+            )
+            
+            # Formatear los datos para la respuesta JSON
+            lavadores_data = [{
+                'id': lavador.id,
+                'nombre': lavador.nombre_completo(),
+                'foto_url': lavador.fotografia.url if lavador.fotografia else None,
+                'calificacion': lavador.promedio_calificacion(),
+                'cargo': lavador.cargo.nombre,
+            } for lavador in lavadores]
+            
+            response = JsonResponse({'lavadores': lavadores_data}, status=200)
+            response['Content-Type'] = 'application/json'
+            return response
+        except Exception as e:
+            response = JsonResponse({'error': str(e)}, status=500)
+            response['Content-Type'] = 'application/json'
+            return response
+
+
+class SeleccionarLavadorView(LoginRequiredMixin, View):
+    def post(self, request, reserva_id, lavador_id, *args, **kwargs):
+        try:
+            # Verificar que el usuario sea el cliente de la reserva
+            try:
+                reserva = get_object_or_404(Reserva, id=reserva_id, cliente=request.user.cliente)
+            except AttributeError:
+                return JsonResponse({'success': False, 'error': 'Debe ser cliente para seleccionar un lavador'}, status=403)
+            
+            # Verificar que la reserva esté en estado pendiente o confirmada
+            if reserva.estado not in [Reserva.PENDIENTE, Reserva.CONFIRMADA]:
+                return JsonResponse({'success': False, 'error': 'Solo se puede seleccionar un lavador para reservas pendientes o confirmadas'}, status=400)
+            
+            # Obtener el lavador
+            lavador = get_object_or_404(Empleado, id=lavador_id, rol=Empleado.ROL_LAVADOR, disponible=True, activo=True)
+            
+            # Asignar el lavador a la reserva
+            reserva.asignar_lavador(lavador, automatico=False)
+            
+            return JsonResponse({'success': True, 'message': f'Lavador {lavador.nombre_completo()} asignado correctamente'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
 class ObtenerHorariosDisponiblesView(LoginRequiredMixin, View):

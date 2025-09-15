@@ -93,8 +93,8 @@ def configurar_mysql_timezone_windows():
     # En Windows, necesitamos ejecutar comandos SQL directamente
     # para configurar la zona horaria del servidor MySQL
     commands = [
-        "SET GLOBAL time_zone = '+00:00';",  # UTC
-        "SET time_zone = '+00:00';",        # UTC para la sesión actual
+        "SET GLOBAL time_zone = '-05:00';",  # America/Bogota (COT)
+        "SET time_zone = '-05:00';",        # America/Bogota para la sesión actual
         "FLUSH PRIVILEGES;"                 # Aplicar cambios
     ]
     

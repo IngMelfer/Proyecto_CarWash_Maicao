@@ -142,6 +142,8 @@ class Reserva(models.Model):
     fecha_hora = models.DateTimeField(verbose_name=_('Fecha y Hora'))
     bahia = models.ForeignKey('Bahia', on_delete=models.SET_NULL, null=True, blank=True, related_name='reservas', verbose_name=_('Bahía'))
     vehiculo = models.ForeignKey('Vehiculo', on_delete=models.SET_NULL, null=True, blank=True, related_name='reservas', verbose_name=_('Vehículo'))
+    lavador = models.ForeignKey('empleados.Empleado', on_delete=models.SET_NULL, null=True, blank=True, related_name='reservas_asignadas', verbose_name=_('Lavador'))
+    asignacion_automatica = models.BooleanField(default=True, verbose_name=_('Asignación Automática'), help_text=_('Indica si el lavador fue asignado automáticamente o seleccionado por el cliente'))
     estado = models.CharField(max_length=2, choices=ESTADO_CHOICES, default=PENDIENTE, verbose_name=_('Estado'))
     notas = models.TextField(blank=True, verbose_name=_('Notas'))
     fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name=_('Fecha de Creación'))
@@ -157,6 +159,7 @@ class Reserva(models.Model):
     puntos_redimidos = models.PositiveIntegerField(default=0, verbose_name=_('Puntos Redimidos'), help_text=_('Cantidad de puntos redimidos para esta reserva'))
     descuento_aplicado = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name=_('Descuento Aplicado'), help_text=_('Monto de descuento aplicado por redención de puntos'))
     fecha_confirmacion = models.DateTimeField(null=True, blank=True, verbose_name=_('Fecha de Confirmación'))
+    calificacion_solicitada = models.BooleanField(default=False, verbose_name=_('Calificación Solicitada'), help_text=_('Indica si se ha enviado la solicitud de calificación al cliente'))
     
     class Meta:
         verbose_name = _('Reserva')
@@ -187,7 +190,8 @@ class Reserva(models.Model):
         """
         if self.estado == self.PENDIENTE:
             self.estado = self.CONFIRMADA
-            self.save(update_fields=['estado', 'fecha_actualizacion'])
+            self.fecha_confirmacion = timezone.now()
+            self.save(update_fields=['estado', 'fecha_actualizacion', 'fecha_confirmacion'])
             
             # Si la bahía tiene cámara, generar código QR para esta reserva
             if self.bahia and self.bahia.tiene_camara and self.bahia.ip_camara:
@@ -211,7 +215,6 @@ class Reserva(models.Model):
                 qr.make(fit=True)
                 img = qr.make_image(fill_color="black", back_color="white")
                 
-                # Guardar la imagen como archivo
                 buffer = BytesIO()
                 img.save(buffer, format='PNG')
                 file_name = f'reserva_{self.id}_qr.png'
@@ -219,6 +222,60 @@ class Reserva(models.Model):
                 # Guardar el archivo en el campo codigo_qr de la bahía
                 self.bahia.codigo_qr.save(file_name, File(buffer), save=True)
             
+            return True
+        return False
+    
+    def asignar_lavador(self, lavador=None, automatico=True):
+        """
+        Asigna un lavador a la reserva. Si no se especifica un lavador,
+        se asigna automáticamente uno disponible.
+        """
+        from empleados.models import Empleado
+        
+        if lavador:
+            self.lavador = lavador
+            self.asignacion_automatica = False
+        else:
+            # Buscar lavadores disponibles
+            lavadores_disponibles = Empleado.objects.filter(
+                rol=Empleado.ROL_LAVADOR,
+                disponible=True,
+                activo=True
+            )
+            
+            if lavadores_disponibles.exists():
+                # Asignar el lavador con menos reservas pendientes
+                lavador_asignado = sorted(
+                    lavadores_disponibles,
+                    key=lambda l: l.reservas_asignadas.filter(
+                        estado__in=[self.PENDIENTE, self.CONFIRMADA, self.EN_PROCESO]
+                    ).count()
+                )[0]
+                
+                self.lavador = lavador_asignado
+                self.asignacion_automatica = True
+        
+        self.save(update_fields=['lavador', 'asignacion_automatica'])
+        return self.lavador
+    
+    def solicitar_calificacion(self):
+        """
+        Marca la reserva para solicitar calificación al cliente
+        """
+        if self.estado == self.COMPLETADA and self.lavador and not self.calificacion_solicitada:
+            self.calificacion_solicitada = True
+            self.save(update_fields=['calificacion_solicitada'])
+            return True
+        return False
+    
+    def completar_servicio(self):
+        """
+        Completa el servicio y solicita calificación
+        """
+        if self.estado == self.EN_PROCESO:
+            self.estado = self.COMPLETADA
+            self.save(update_fields=['estado'])
+            self.solicitar_calificacion()
             return True
         return False
     

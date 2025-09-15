@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Cargos{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Gestión de Cargos</h1>
+        <a href="{% url 'empleados:cargo_create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Nuevo Cargo
+        </a>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-body">
+            {% if cargos %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Código</th>
+                                <th>Nombre</th>
+                                <th>Descripción</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cargo in cargos %}
+                                <tr>
+                                    <td>{{ cargo.codigo }}</td>
+                                    <td>{{ cargo.nombre }}</td>
+                                    <td>{{ cargo.descripcion|default:"--" }}</td>
+                                    <td>
+                                        {% if cargo.activo %}
+                                            <span class="badge bg-success">Activo</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Inactivo</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'empleados:cargo_update' cargo.id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'empleados:cargo_delete' cargo.id %}" class="btn btn-sm btn-outline-danger">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    No hay cargos registrados. <a href="{% url 'empleados:cargo_create' %}">Crear el primer cargo</a>.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

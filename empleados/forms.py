@@ -6,11 +6,12 @@ class EmpleadoForm(forms.ModelForm):
     class Meta:
         model = Empleado
         fields = ['nombre', 'apellido', 'tipo_documento', 'numero_documento', 
-                 'telefono', 'direccion', 'ciudad', 'fecha_nacimiento', 'cargo', 
+                 'email_personal', 'telefono', 'direccion', 'ciudad', 'fecha_nacimiento', 'cargo', 
                  'fecha_contratacion', 'fotografia', 'activo']
         widgets = {
             'fecha_nacimiento': forms.DateInput(attrs={'type': 'date'}),
             'fecha_contratacion': forms.DateInput(attrs={'type': 'date'}),
+            'fotografia': forms.FileInput(attrs={'accept': 'image/*'}),
         }
     
     def __init__(self, *args, **kwargs):
@@ -21,6 +22,10 @@ class EmpleadoForm(forms.ModelForm):
                 field.widget.attrs['class'] = 'form-control'
             else:
                 field.widget.attrs['class'] = 'form-check-input'
+                
+        # Asegurarse de que el campo de fotografía no tenga la clase form-control
+        if 'fotografia' in self.fields:
+            self.fields['fotografia'].widget.attrs.pop('class', None)
 
 class RegistroTiempoForm(forms.ModelForm):
     TIPO_REGISTRO_CHOICES = [

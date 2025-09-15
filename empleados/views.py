@@ -11,7 +11,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 
 from autenticacion.mixins import RolRequiredMixin
 from autenticacion.models import Usuario
-from .models import Empleado, RegistroTiempo, Calificacion, Incentivo
+from .models import Empleado, RegistroTiempo, Calificacion, Incentivo, Cargo
 from .forms import EmpleadoForm, RegistroTiempoForm
 
 # Create your views here.
@@ -57,11 +57,22 @@ class EmpleadoCreateView(LoginRequiredMixin, RolRequiredMixin, CreateView):
     form_class = EmpleadoForm
     template_name = 'empleados/empleado_form.html'
     success_url = reverse_lazy('empleados:empleado_list')
-    roles_permitidos = [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO]
+    roles_permitidos = [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO, Usuario.ROL_GERENTE]
+    
+    def dispatch(self, request, *args, **kwargs):
+        # Verificación adicional para asegurar que los administradores de autolavado tengan acceso
+        if request.user.rol == Usuario.ROL_ADMIN_AUTOLAVADO:
+            return super().dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
     
     def form_valid(self, form):
         # Crear un nuevo usuario con el rol de empleado
-        email = f"{form.cleaned_data['numero_documento']}@autolavado.com"
+        # Usar el correo personal del empleado si está disponible, de lo contrario usar el correo generado
+        if form.cleaned_data.get('email_personal'):
+            email = form.cleaned_data['email_personal']
+        else:
+            email = f"{form.cleaned_data['numero_documento']}@autolavado.com"
+            
         usuario = Usuario.objects.create(
             email=email,
             first_name=form.cleaned_data['nombre'],
@@ -74,9 +85,15 @@ class EmpleadoCreateView(LoginRequiredMixin, RolRequiredMixin, CreateView):
         usuario.set_password(form.cleaned_data['numero_documento'])
         usuario.save()
         
-        # Asignar el usuario al empleado
+        # Asignar el usuario al empleado y guardar explícitamente para procesar la fotografía
         empleado = form.save(commit=False)
         empleado.usuario = usuario
+        
+        # Verificar si hay una fotografía en la solicitud
+        if 'fotografia' in self.request.FILES:
+            empleado.fotografia = self.request.FILES['fotografia']
+            
+        empleado.save()
         
         messages.success(self.request, f'Empleado {form.cleaned_data["nombre"]} {form.cleaned_data["apellido"]} creado correctamente')
         return super().form_valid(form)
@@ -88,9 +105,20 @@ class EmpleadoUpdateView(LoginRequiredMixin, RolRequiredMixin, UpdateView):
     form_class = EmpleadoForm
     template_name = 'empleados/empleado_form.html'
     success_url = reverse_lazy('empleados:empleado_list')
-    roles_permitidos = [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO]
+    roles_permitidos = [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO, Usuario.ROL_GERENTE]
+    
+    def dispatch(self, request, *args, **kwargs):
+        # Verificación adicional para asegurar que los administradores de autolavado tengan acceso
+        if request.user.rol == Usuario.ROL_ADMIN_AUTOLAVADO:
+            return super().dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
     
     def form_valid(self, form):
+        # Guardar el formulario con la foto actualizada
+        empleado = form.save(commit=False)
+        # Si hay una nueva foto, se procesará automáticamente
+        empleado.save()
+        
         messages.success(self.request, f'Empleado {form.cleaned_data["nombre"]} {form.cleaned_data["apellido"]} actualizado correctamente')
         return super().form_valid(form)
 
@@ -100,7 +128,13 @@ class EmpleadoDeleteView(LoginRequiredMixin, RolRequiredMixin, DeleteView):
     model = Empleado
     template_name = 'empleados/empleado_confirm_delete.html'
     success_url = reverse_lazy('empleados:empleado_list')
-    roles_permitidos = [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO]
+    roles_permitidos = [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO, Usuario.ROL_GERENTE]
+    
+    def dispatch(self, request, *args, **kwargs):
+        # Verificación adicional para asegurar que los administradores de autolavado tengan acceso
+        if request.user.rol == Usuario.ROL_ADMIN_AUTOLAVADO:
+            return super().dispatch(request, *args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
     
     def delete(self, request, *args, **kwargs):
         empleado = self.get_object()
@@ -168,33 +202,70 @@ def dashboard_empleado_view(request):
     
     try:
         empleado = request.user.empleado
+        # Lógica del dashboard
+        return render(request, 'empleados/dashboard.html', {'empleado': empleado})
     except Empleado.DoesNotExist:
         messages.error(request, 'No se encontró un perfil de empleado asociado a tu usuario')
         return redirect('autenticacion:login_success')
+
+
+# Vistas para CRUD de Cargos
+class CargoListView(LoginRequiredMixin, RolRequiredMixin, ListView):
+    """Vista para listar todos los cargos"""
+    model = Cargo
+    template_name = 'empleados/cargo_list.html'
+    context_object_name = 'cargos'
+    roles_permitidos = [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO, Usuario.ROL_GERENTE]
     
-    # Obtener servicios activos asignados al empleado
-    servicios_activos = empleado.servicios_asignados.filter(estado='en_proceso')
+    def get_queryset(self):
+        return Cargo.objects.all().order_by('nombre')
+
+
+class CargoCreateView(LoginRequiredMixin, RolRequiredMixin, CreateView):
+    """Vista para crear un nuevo cargo"""
+    model = Cargo
+    template_name = 'empleados/cargo_form.html'
+    fields = ['codigo', 'nombre', 'descripcion', 'activo']
+    success_url = reverse_lazy('empleados:cargo_list')
+    roles_permitidos = [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO, Usuario.ROL_GERENTE]
     
-    # Obtener registros de tiempo recientes
-    registros_tiempo = empleado.registros_tiempo.all().order_by('-hora_inicio')[:10]
+    def form_valid(self, form):
+        messages.success(self.request, f'Cargo {form.cleaned_data["nombre"]} creado correctamente')
+        return super().form_valid(form)
+
+
+class CargoUpdateView(LoginRequiredMixin, RolRequiredMixin, UpdateView):
+    """Vista para actualizar un cargo existente"""
+    model = Cargo
+    template_name = 'empleados/cargo_form.html'
+    fields = ['codigo', 'nombre', 'descripcion', 'activo']
+    success_url = reverse_lazy('empleados:cargo_list')
+    roles_permitidos = [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO, Usuario.ROL_GERENTE]
     
-    # Obtener calificaciones recientes
-    calificaciones = empleado.calificaciones.all().order_by('-fecha_calificacion')[:10]
-    promedio_calificacion = empleado.calificaciones.aggregate(promedio=Avg('puntuacion'))['promedio'] or 0
+    def form_valid(self, form):
+        messages.success(self.request, f'Cargo {form.cleaned_data["nombre"]} actualizado correctamente')
+        return super().form_valid(form)
+
+
+class CargoDeleteView(LoginRequiredMixin, RolRequiredMixin, DeleteView):
+    """Vista para eliminar un cargo"""
+    model = Cargo
+    template_name = 'empleados/cargo_confirm_delete.html'
+    success_url = reverse_lazy('empleados:cargo_list')
+    roles_permitidos = [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO, Usuario.ROL_GERENTE]
     
-    # Obtener incentivos
-    incentivos = empleado.incentivos.all().order_by('-fecha_otorgado')[:5]
+    def delete(self, request, *args, **kwargs):
+        cargo = self.get_object()
+        nombre = cargo.nombre
+        # Verificar si hay empleados usando este cargo
+        if cargo.empleados.exists():
+            messages.error(request, f'No se puede eliminar el cargo {nombre} porque hay empleados asignados a él')
+            return redirect('empleados:cargo_list')
+        
+        messages.success(request, f'Cargo {nombre} eliminado correctamente')
+        return super().delete(request, *args, **kwargs)
     
-    context = {
-        'empleado': empleado,
-        'servicios_activos': servicios_activos,
-        'registros_tiempo': registros_tiempo,
-        'calificaciones': calificaciones,
-        'promedio_calificacion': promedio_calificacion,
-        'incentivos': incentivos,
-    }
-    
-    return render(request, 'empleados/dashboard_empleado.html', context)
+# Código eliminado - estaba fuera de contexto
 
 
 # API Views para AJAX

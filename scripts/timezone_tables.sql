@@ -48,9 +48,9 @@ INSERT IGNORE INTO time_zone (Time_zone_id, Use_leap_seconds) VALUES (2, 'N');
 INSERT IGNORE INTO time_zone_name (Name, Time_zone_id) VALUES ('America/Bogota', 2);
 INSERT IGNORE INTO time_zone_transition_type (Time_zone_id, Transition_type_id, Offset, Is_DST, Abbreviation) VALUES (2, 0, -18000, 0, 'COT');
 
--- Configurar la zona horaria del servidor a UTC
-SET GLOBAL time_zone = '+00:00';
-SET time_zone = '+00:00';
+-- Configurar la zona horaria del servidor a America/Bogota (COT)
+SET GLOBAL time_zone = '-05:00';
+SET time_zone = '-05:00';
 
 -- Verificar la configuración
 SELECT @@global.time_zone, @@session.time_zone;

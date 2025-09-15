@@ -48,16 +48,32 @@ class Empleado(models.Model):
     Modelo para almacenar la información de los empleados del autolavado.
     Relacionado con el usuario de autenticación para el acceso al sistema.
     """
+    # Opciones para el rol del empleado
+    ROL_LAVADOR = 'lavador'
+    ROL_ADMINISTRATIVO = 'administrativo'
+    ROL_SUPERVISOR = 'supervisor'
+    ROL_OTRO = 'otro'
+    
+    ROL_CHOICES = [
+        (ROL_LAVADOR, _('Lavador')),
+        (ROL_ADMINISTRATIVO, _('Administrativo')),
+        (ROL_SUPERVISOR, _('Supervisor')),
+        (ROL_OTRO, _('Otro')),
+    ]
+    
     usuario = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='empleado', verbose_name=_('Usuario'))
     numero_documento = models.CharField(max_length=20, unique=True, verbose_name=_('Número de Documento'))
     tipo_documento = models.ForeignKey('TipoDocumento', on_delete=models.PROTECT, related_name='empleados', verbose_name=_('Tipo de Documento'))
     nombre = models.CharField(max_length=100, verbose_name=_('Nombre'))
     apellido = models.CharField(max_length=100, verbose_name=_('Apellido'))
+    email_personal = models.EmailField(max_length=255, blank=True, null=True, verbose_name=_('Correo Personal'))
     telefono = models.CharField(max_length=15, verbose_name=_('Teléfono'))
     direccion = models.CharField(max_length=255, verbose_name=_('Dirección'))
     ciudad = models.CharField(max_length=100, verbose_name=_('Ciudad'))
     fecha_nacimiento = models.DateField(null=True, blank=True, verbose_name=_('Fecha de Nacimiento'))
     cargo = models.ForeignKey('Cargo', on_delete=models.PROTECT, related_name='empleados', verbose_name=_('Cargo'))
+    rol = models.CharField(max_length=20, choices=ROL_CHOICES, default=ROL_OTRO, verbose_name=_('Rol'))
+    disponible = models.BooleanField(default=False, verbose_name=_('Disponible'))
     fecha_contratacion = models.DateField(verbose_name=_('Fecha de Contratación'))
     fotografia = models.ImageField(upload_to='empleados/fotografias/', null=True, blank=True, verbose_name=_('Fotografía'))
     activo = models.BooleanField(default=True, verbose_name=_('Activo'))
@@ -71,6 +87,19 @@ class Empleado(models.Model):
     
     def __str__(self):
         return f"{self.nombre} {self.apellido} - {self.cargo.nombre}"
+        
+    def nombre_completo(self):
+        return f"{self.nombre} {self.apellido}"
+        
+    def es_lavador(self):
+        return self.rol == self.ROL_LAVADOR
+        
+    def promedio_calificacion(self):
+        """Retorna el promedio de calificaciones del empleado"""
+        calificaciones = self.calificaciones.all()
+        if not calificaciones:
+            return 0
+        return sum(c.puntuacion for c in calificaciones) / calificaciones.count()
 
 
 class RegistroTiempo(models.Model):

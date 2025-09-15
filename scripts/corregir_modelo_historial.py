@@ -24,10 +24,10 @@ def corregir_modelo_historial():
             db_timezone = cursor.fetchone()[0]
             print(f"Zona horaria actual de MySQL: {db_timezone}")
             
-            # Configurar la zona horaria a UTC si no lo está
-            if db_timezone != '+00:00':
-                cursor.execute("SET time_zone = '+00:00'")
-                print("Zona horaria de MySQL configurada a UTC")
+            # Configurar la zona horaria a America/Bogota si no lo está
+            if db_timezone != '-05:00':
+                cursor.execute("SET time_zone = '-05:00'")
+                print("Zona horaria de MySQL configurada a America/Bogota (COT)")
         
         # Obtener todos los registros de HistorialServicio
         registros = HistorialServicio.objects.all()
@@ -60,7 +60,7 @@ def corregir_modelo_historial():
         # Actualizar la configuración de Django para usar zona horaria UTC
         print("\nIMPORTANTE: Asegúrese de que en settings.py:")
         print("1. USE_TZ = False  # Cambiar a False para evitar problemas con MySQL")
-        print("2. TIME_ZONE = 'UTC'  # Usar UTC como zona horaria predeterminada")
+        print("2. TIME_ZONE = 'America/Bogota'  # Usar Bogotá como zona horaria predeterminada")
         
         return True
     except Exception as e:

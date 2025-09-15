@@ -51,8 +51,8 @@
         <div class="card-body">
             <div class="row profile-header">
                 <div class="col-md-3 text-center">
-                    {% if empleado.usuario.foto_perfil %}
-                        <img src="{{ empleado.usuario.foto_perfil.url }}" alt="Foto de perfil" class="profile-image">
+                    {% if empleado.fotografia %}
+                        <img src="{{ empleado.fotografia.url }}" alt="Foto de perfil" class="profile-image">
                     {% else %}
                         <img src="{% static 'img/default-profile.png' %}" alt="Foto de perfil" class="profile-image">
                     {% endif %}
@@ -70,7 +70,7 @@
                     </div>
                     <div class="row mt-3">
                         <div class="col-md-6">
-                            <p><i class="fas fa-envelope me-2"></i> {{ empleado.usuario.email }}</p>
+                            <p><i class="fas fa-envelope me-2"></i> {% if empleado.email_personal %}{{ empleado.email_personal }}{% else %}{{ empleado.usuario.email }}{% endif %}</p>
                             <p><i class="fas fa-phone me-2"></i> {{ empleado.telefono }}</p>
                         </div>
                         <div class="col-md-6">

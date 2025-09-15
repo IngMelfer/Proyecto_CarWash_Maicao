@@ -77,7 +77,7 @@ Este script corrige las fechas en los registros existentes del historial de serv
 - Si estás usando MySQL en producción, asegúrate de que el servidor MySQL tenga configurada la zona horaria correctamente en el archivo de configuración (`my.cnf` o `my.ini`):
   ```
   [mysqld]
-  default-time-zone = '+00:00'
+  default-time-zone = '-05:00'  # America/Bogota (COT)
   ```
 
 - Si sigues teniendo problemas, puedes intentar cargar manualmente las tablas de zonas horarias en MySQL:

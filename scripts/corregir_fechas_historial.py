@@ -31,10 +31,10 @@ def verificar_conexion_mysql():
         db_timezone = cursor.fetchone()[0]
         print(f"Zona horaria actual de MySQL: {db_timezone}")
         
-        # Configurar la zona horaria a UTC si no lo está
-        if db_timezone != '+00:00':
-            print("Configurando zona horaria de MySQL a UTC...")
-            cursor.execute("SET time_zone = '+00:00'")
+        # Configurar la zona horaria a America/Bogota si no lo está
+        if db_timezone != '-05:00':
+            print("Configurando zona horaria de MySQL a America/Bogota (COT)...")
+            cursor.execute("SET time_zone = '-05:00'")
             cursor.execute("SELECT @@session.time_zone")
             db_timezone = cursor.fetchone()[0]
             print(f"Nueva zona horaria de MySQL: {db_timezone}")
