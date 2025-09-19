@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60">
+  <style>
+    .wompi-text { fill: #0070CD; font-family: Arial, sans-serif; font-weight: bold; }
+    .wompi-circle { fill: #00A1FF; }
+  </style>
+  <g>
+    <circle class="wompi-circle" cx="30" cy="30" r="20"/>
+    <text x="60" y="38" class="wompi-text" font-size="24">WOMPI</text>
+  </g>
+</svg>

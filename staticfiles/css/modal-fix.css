@@ -1,0 +1,186 @@
+/* Corrección para el problema de parpadeo en modales */
+.modal {
+    pointer-events: auto !important;
+    cursor: auto;
+}
+
+.modal-dialog {
+    pointer-events: auto !important;
+    cursor: auto;
+}
+
+.modal-content {
+    pointer-events: auto !important;
+    cursor: auto;
+}
+
+.modal-body, .modal-header, .modal-footer {
+    pointer-events: auto !important;
+    cursor: auto;
+}
+
+/* Asegurar que todos los elementos dentro del modal sean interactivos */
+.modal * {
+    pointer-events: auto !important;
+}
+
+/* Asegurar que los modales tengan un z-index adecuado */
+.modal-backdrop {
+    z-index: 1040 !important;
+    pointer-events: none !important;
+    opacity: 0.5 !important;
+    background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Asegurar que el backdrop se muestre correctamente */
+.modal-backdrop.show {
+    opacity: 0.5 !important;
+}
+
+.modal {
+    z-index: 1050 !important;
+}
+
+/* Asegurar que el modal esté por encima de todo */
+.modal.show {
+    display: block !important;
+    z-index: 1050 !important;
+}
+
+/* Asegurar que los modales se vean independientes */
+.modal-dialog {
+    margin: 1.75rem auto;
+    max-width: 500px;
+}
+
+/* Mejorar la apariencia visual para dar sensación de independencia */
+.modal-content {
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    background-color: #ffffff;
+}
+
+/* Estilizar el encabezado del modal */
+.modal-header {
+    border-bottom: 2px solid #007bff;
+    background-color: #f0f8ff;
+    border-top-left-radius: 0.5rem;
+    border-top-right-radius: 0.5rem;
+    padding: 1rem 1.5rem;
+}
+
+.modal-header .modal-title {
+    color: #0056b3;
+    font-weight: 600;
+}
+
+/* Estilizar el pie del modal */
+.modal-footer {
+    border-top: 2px solid #007bff;
+    background-color: #f0f8ff;
+    border-bottom-left-radius: 0.5rem;
+    border-bottom-right-radius: 0.5rem;
+    padding: 1rem 1.5rem;
+}
+
+/* Añadir efecto de transición suave y animado */
+.modal.fade .modal-dialog {
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform: translate(0, -70px) scale(0.95);
+    opacity: 0;
+}
+
+.modal.show .modal-dialog {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+}
+
+/* Estilizar el cuerpo del modal */
+.modal-body {
+    padding: 1.5rem;
+    background-color: #ffffff;
+}
+
+.modal-body h6 {
+    color: #0056b3;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.modal-body p {
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+/* Estilizar los botones del modal */
+.modal-footer .btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.modal-footer .btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.modal-footer .btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.modal-footer .btn-primary:hover {
+    background-color: #0069d9;
+    border-color: #0062cc;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Evitar que las tarjetas interfieran con los modales */
+.card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    z-index: 10;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Asegurar que los botones dentro de los modales funcionen correctamente */
+.modal-content button {
+    position: relative;
+    z-index: 1060;
+    pointer-events: auto;
+}
+
+/* Asegurar que los enlaces dentro de los modales funcionen correctamente */
+.modal-content a {
+    position: relative;
+    z-index: 1060;
+    pointer-events: auto;
+}
+
+/* Prevenir que los eventos de mouse se propaguen incorrectamente */
+.modal-content * {
+    pointer-events: auto;
+}
+
+/* Mejorar la interactividad de los elementos en modales */
+.modal-content button:hover,
+.modal-content a:hover,
+.modal-content .btn:hover {
+    cursor: pointer !important;
+    opacity: 0.9;
+}
+
+/* Asegurar que los modales no sean afectados por otros elementos */
+.modal-backdrop.show {
+    opacity: 0.5;
+    pointer-events: auto;
+}

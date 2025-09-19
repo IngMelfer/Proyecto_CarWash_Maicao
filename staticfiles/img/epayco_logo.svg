@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60">
+  <style>
+    .epayco-text-e { fill: #00B140; font-family: Arial, sans-serif; font-weight: bold; }
+    .epayco-text-payco { fill: #333333; font-family: Arial, sans-serif; font-weight: bold; }
+  </style>
+  <g>
+    <text x="30" y="38" class="epayco-text-e" font-size="28">e</text>
+    <text x="50" y="38" class="epayco-text-payco" font-size="28">payco</text>
+  </g>
+</svg>
