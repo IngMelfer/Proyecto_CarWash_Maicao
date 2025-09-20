@@ -119,7 +119,8 @@ class DashboardAdminView(LoginRequiredMixin, AdminRequiredMixin, View):
             'reservas_pendientes': reservas_pendientes,
             'total_reservas': total_reservas,
             'total_clientes': total_clientes,
-            'total_bahias': total_bahias
+            'total_bahias': total_bahias,
+            'user_rol': request.user.rol  # Agregar el rol del usuario al contexto
         }
         
         return render(request, self.template_name, context)

@@ -16,8 +16,8 @@ def home_view(request):
     if hasattr(request.user, 'cliente'):
         return redirect('clientes:dashboard')
     
-    # Si es administrador, redirigir al dashboard de administrador
-    if request.user.is_staff:
+    # Si es administrador (staff o con rol de administrador), redirigir al dashboard de administrador
+    if request.user.is_staff or request.user.rol in ['admin_sistema', 'admin_autolavado']:
         return redirect('reservas:dashboard_admin')
     
     # Si es otro tipo de usuario, mostrar la vista normal

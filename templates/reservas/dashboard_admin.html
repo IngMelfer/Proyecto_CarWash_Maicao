@@ -137,14 +137,20 @@
     <div class="container">
         <div class="row">
             <div class="col-md-12">
-                <h1>Dashboard de Administrador</h1>
-                <p class="lead">Monitoreo de bahías y servicios en tiempo real</p>
+                {% if user_rol == 'admin_sistema' %}
+                    <h1>Administrador del Sistema</h1>
+                    <p class="lead">Configura todos los parámetros necesarios.</p>
+                {% else %}
+                    <h1>Dashboard de Administrador</h1>
+                    <p class="lead">Monitoreo de bahías y servicios en tiempo real</p>
+                {% endif %}
             </div>
         </div>
     </div>
 </header>
 
 <div class="container">
+    {% if user_rol != 'admin_sistema' %}
     <!-- Estadísticas rápidas -->
     <div class="row mb-4">
         <div class="col-md-3">
@@ -235,6 +241,7 @@
             </div>
         {% endfor %}
     </div>
+    {% endif %}
 
     <!-- Configuración -->
     <h2 class="mb-4 mt-5">Configuración</h2>
@@ -348,37 +355,47 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Función para actualizar los datos del dashboard mediante AJAX
-        function actualizarDashboard() {
-            fetch('{% url "reservas:obtener_bahias_info" %}', {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-                .then(response => response.json())
-                .then(data => {
-                    // Actualizar el HTML de las bahías
-                    document.querySelector('.bahia-grid').innerHTML = data.html_bahias;
-                    
-                    // Actualizar los contadores
-                    document.querySelectorAll('.stats-value')[0].textContent = data.bahias_disponibles;
-                    document.querySelectorAll('.stats-value')[1].textContent = data.bahias_ocupadas;
-                    document.querySelectorAll('.stats-value')[2].textContent = data.bahias_en_proceso;
-                    document.querySelectorAll('.stats-value')[3].textContent = data.reservas_pendientes;
-                    
-                    // Reinicializar los cronómetros después de actualizar el HTML
-                    inicializarCronometros();
-                    
-                    console.log('Dashboard actualizado mediante AJAX');
-                })
-                .catch(error => {
-                    console.error('Error al actualizar el dashboard:', error);
-                });
-        }
+        // Verificar si existen los elementos del dashboard de bahías antes de configurar la actualización
+        const bahiaGrid = document.querySelector('.bahia-grid');
+        const statsValues = document.querySelectorAll('.stats-value');
         
-        // Configurar actualización periódica del dashboard
-        setInterval(actualizarDashboard, 15000); // Actualizar cada 15 segundos
+        // Solo configurar la actualización AJAX si los elementos existen (para admin_autolavado)
+        if (bahiaGrid && statsValues.length > 0) {
+            // Función para actualizar los datos del dashboard mediante AJAX
+            function actualizarDashboard() {
+                fetch('{% url "reservas:obtener_bahias_info" %}', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Actualizar el HTML de las bahías
+                        bahiaGrid.innerHTML = data.html_bahias;
+                        
+                        // Actualizar los contadores
+                        if (statsValues[0]) statsValues[0].textContent = data.bahias_disponibles;
+                        if (statsValues[1]) statsValues[1].textContent = data.bahias_ocupadas;
+                        if (statsValues[2]) statsValues[2].textContent = data.bahias_en_proceso;
+                        if (statsValues[3]) statsValues[3].textContent = data.reservas_pendientes;
+                        
+                        // Reinicializar los cronómetros después de actualizar el HTML
+                        inicializarCronometros();
+                        
+                        console.log('Dashboard actualizado mediante AJAX');
+                    })
+                    .catch(error => {
+                        console.error('Error al actualizar el dashboard:', error);
+                    });
+            }
+            
+            // Configurar actualización periódica del dashboard
+            setInterval(actualizarDashboard, 15000); // Actualizar cada 15 segundos
+            console.log('Actualización automática del dashboard configurada');
+        } else {
+            console.log('Dashboard de administrador del sistema - No se requiere actualización de bahías');
+        }
         
         // Función para inicializar los cronómetros
         function inicializarCronometros() {
