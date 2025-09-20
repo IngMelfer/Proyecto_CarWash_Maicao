@@ -87,6 +87,9 @@ class LoginRequiredMiddleware:
             r'^/admin/.*$',  # Permitir acceso a todo el panel de administración
             r'^/static/.*$',  # Permitir acceso a archivos estáticos
             r'^/media/.*$',  # Permitir acceso a archivos media
+            r'^/reservas/obtener_horarios_disponibles/.*$',  # API para obtener horarios disponibles
+            r'^/reservas/obtener_lavadores_disponibles/.*$',  # API para obtener lavadores disponibles
+            r'^/reservas/obtener_bahias_disponibles/.*$',  # API para obtener bahías disponibles
         ]
         self.exempt_url_patterns = [re.compile(url) for url in self.exempt_urls]
 

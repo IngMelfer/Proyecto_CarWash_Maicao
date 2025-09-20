@@ -24,7 +24,7 @@ import requests
 import hashlib
 import hmac
 import base64
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 
 # Create your views here.
 
@@ -1339,7 +1339,7 @@ class ObtenerMediosPagoView(LoginRequiredMixin, View):
             return response
 
 
-class ObtenerLavadoresDisponiblesView(LoginRequiredMixin, View):
+class ObtenerLavadoresDisponiblesView(View):
     def get(self, request, *args, **kwargs):
         try:
             # Obtener lavadores disponibles
@@ -1391,313 +1391,55 @@ class SeleccionarLavadorView(LoginRequiredMixin, View):
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
-class ObtenerHorariosDisponiblesView(LoginRequiredMixin, View):
+class ObtenerHorariosDisponiblesView(View):
     def get(self, request, *args, **kwargs):
         try:
+            import time
+            start_time = time.time()
+            print(f"[DEBUG] Iniciando obtener_horarios_disponibles")
+            
+            # Obtener parámetros
             fecha_str = request.GET.get('fecha')
             servicio_id = request.GET.get('servicio_id')
             
             if not fecha_str or not servicio_id:
-                return JsonResponse({'error': 'Parámetros incompletos'}, status=400)
+                response = JsonResponse({'error': 'Fecha y servicio son requeridos'}, status=400)
+                response['Content-Type'] = 'application/json'
+                return response
             
             # Convertir fecha
             try:
                 fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+                print(f"[DEBUG] Fecha parseada: {fecha}")
             except ValueError:
-                return JsonResponse({'error': 'Formato de fecha inválido'}, status=400)
-            
-            # Verificar que la fecha no sea en el pasado
-            if fecha < datetime.now().date():
-                return JsonResponse({'error': 'No se pueden hacer reservas para fechas pasadas'}, status=400)
+                response = JsonResponse({'error': 'Formato de fecha inválido'}, status=400)
+                response['Content-Type'] = 'application/json'
+                return response
             
             # Obtener servicio
-            servicio = get_object_or_404(Servicio, id=servicio_id)
-            # Guardar la duración del servicio para calcular disponibilidad
-            duracion_servicio = servicio.duracion_minutos
+            try:
+                servicio = Servicio.objects.get(id=servicio_id, activo=True)
+                duracion_servicio = servicio.duracion_minutos
+                print(f"[DEBUG] Servicio encontrado: {servicio.nombre}, duración: {duracion_servicio}")
+            except Servicio.DoesNotExist:
+                response = JsonResponse({'error': 'Servicio no encontrado'}, status=404)
+                response['Content-Type'] = 'application/json'
+                return response
             
-            # Verificar si hay bahías activas disponibles
-            bahias_activas = Bahia.objects.filter(activo=True).count()
-            if bahias_activas == 0:
-                return JsonResponse({'error': 'No hay bahías disponibles en el sistema'}, status=400)
+            # Verificar si hay bahías activas
+            total_bahias = Bahia.objects.filter(activo=True).count()
+            print(f"[DEBUG] Total bahías activas: {total_bahias}")
+            if total_bahias == 0:
+                response = JsonResponse({'error': 'No hay bahías disponibles'}, status=404)
+                response['Content-Type'] = 'application/json'
+                return response
             
-            # Obtener horarios disponibles para esa fecha
-            horarios_disponibles = HorarioDisponible.objects.filter(
-                fecha=fecha,
-                disponible=True
-            ).order_by('hora_inicio')
+            # Obtener horarios reales basados en disponibilidad horaria y reservas existentes
+            horarios = self._obtener_horarios_reales(fecha, duracion_servicio, total_bahias)
+            print(f"[DEBUG] Horarios generados: {len(horarios)}")
             
-            # Ya no filtramos los horarios llenos, los mostraremos todos pero con indicador de disponibilidad
-            # Mantenemos la lista original de horarios_disponibles
-            
-            # Si no hay horarios específicos para esa fecha, verificar si hay registros en HorarioDisponible para esta fecha
-            if not horarios_disponibles:
-                # Verificar si existen registros para esta fecha en la base de datos
-                existe_registro = HorarioDisponible.objects.filter(fecha=fecha).exists()
-                
-                # Si no existen registros para esta fecha, usar la disponibilidad general
-                # Esto asegura que siempre se muestren horarios, incluso si no hay registros específicos
-                
-                # Si hay registros pero no hay disponibles, usar la disponibilidad general
-                # Obtener el día de la semana (0-6, donde 0 es lunes)
-                dia_semana = fecha.weekday()
-                
-                # Buscar disponibilidad general para ese día
-                disponibilidad_general = DisponibilidadHoraria.objects.filter(
-                    dia_semana=dia_semana,
-                    activo=True
-                ).order_by('hora_inicio')
-                
-                # Si no hay disponibilidad general para este día, crear una disponibilidad ficticia
-                # para mostrar al menos algunos horarios
-                if not disponibilidad_general.exists():
-                    # Crear una disponibilidad ficticia para el día actual
-                    # desde las 8:00 hasta las 18:00 con intervalos de 1 hora
-                    horarios = []
-                    for hora in range(8, 18):
-                        hora_inicio = time(hour=hora, minute=0)
-                        hora_fin = time(hour=hora+1, minute=0)
-                        
-                        # Verificar si el horario ya ha pasado para el día actual
-                        now_local = datetime.now()
-                        horario_ya_paso = False
-                        # Mostramos todos los horarios del día, incluso los pasados
-                        # pero los marcamos como no disponibles
-                        if fecha == now_local.date() and hora_inicio < now_local.time():
-                            horario_ya_paso = True
-                            
-                        horarios.append({
-                            'hora_inicio': hora_inicio.strftime('%H:%M'),
-                            'hora_fin': hora_fin.strftime('%H:%M'),
-                            'disponible': not horario_ya_paso,  # Solo disponible si no ha pasado
-                            'bahias_disponibles': 0 if horario_ya_paso else 1,
-                            'bahias_totales': 1
-                        })
-                    
-                    response = JsonResponse({'horarios': horarios}, status=200)
-                    response['Content-Type'] = 'application/json'
-                    return response
-                
-                # Crear horarios disponibles basados en la disponibilidad general y la duración del servicio
-                horarios = []
-                for disp in disponibilidad_general:
-                    # Crear intervalos exactos según la duración del servicio seleccionado
-                    # Si es el día actual, empezamos desde la hora actual
-                    # Como USE_TZ está deshabilitado, usamos datetime.now() directamente
-                    now_local = datetime.now()
-                    if fecha == now_local.date():
-                        # Usar la hora actual si estamos dentro del horario de atención, o la hora de inicio si aún no ha comenzado
-                        hora_actual_sistema = now_local.time()
-                        
-                        # Verificar si la hora actual ya está fuera del horario de atención
-                        if hora_actual_sistema >= disp.hora_fin:
-                            # Si ya pasó la hora de cierre, no hay horarios disponibles para hoy
-                            continue
-                            
-                        if hora_actual_sistema >= disp.hora_inicio:
-                            # Usamos la hora de inicio del horario disponible
-                            # Esto mostrará todos los horarios, incluso los que ya han pasado
-                            # pero los marcaremos como no disponibles
-                            hora_actual = disp.hora_inicio
-                        else:
-                            hora_actual = disp.hora_inicio
-                    else:
-                        # Para fechas futuras, usar la hora de inicio normal
-                        hora_actual = disp.hora_inicio
-                    
-                    # Generamos horarios en intervalos de 15 minutos para mostrar más opciones
-                    # Usamos un intervalo más pequeño para ofrecer mayor flexibilidad
-                    intervalo_minutos = 15
-                    
-                    # Aseguramos que haya al menos duracion_servicio minutos disponibles
-                    while hora_actual <= (datetime.combine(fecha, disp.hora_fin) - timedelta(minutes=duracion_servicio)).time():
-                        # Calculamos la hora de fin del servicio
-                        hora_fin = (datetime.combine(fecha, hora_actual) + timedelta(minutes=duracion_servicio)).time()
-                        
-                        # Solo agregamos el horario si el servicio cabe completamente en el horario disponible
-                        if hora_fin <= disp.hora_fin:
-                            # Verificamos disponibilidad de bahías para este horario
-                            hora_inicio_dt = datetime.combine(fecha, hora_actual)
-                            hora_fin_dt = datetime.combine(fecha, hora_fin)
-                            
-                            # Ya no necesitamos hacer aware las fechas porque USE_TZ está deshabilitado
-                            # hora_inicio_dt y hora_fin_dt ya son naive
-                            
-                            # Obtenemos todas las bahías activas
-                            bahias_activas = Bahia.objects.filter(activo=True)
-                            
-                            # Obtenemos las reservas que se solapan con este horario considerando la duración del servicio
-                            reservas_solapadas = Reserva.objects.filter(
-                                fecha_hora__lt=hora_fin_dt,
-                                fecha_hora__gte=hora_inicio_dt,
-                                estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA, Reserva.EN_PROCESO]
-                            )
-                            
-                            # También considerar reservas que empezaron antes pero terminan durante nuestro horario
-                            otras_reservas = Reserva.objects.filter(
-                                fecha_hora__lt=hora_inicio_dt,
-                                estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA, Reserva.EN_PROCESO]
-                            )
-                            
-                            # Filtrar aquellas que se solapan con nuestro horario
-                            for reserva in otras_reservas:
-                                # Calcular la hora de fin de la reserva según la duración del servicio
-                                fin_reserva = reserva.fecha_hora + timedelta(minutes=reserva.servicio.duracion_minutos)
-                                # Ya no necesitamos hacer aware las fechas porque USE_TZ está deshabilitado
-                                hora_inicio_dt_aware = hora_inicio_dt
-                                # Si la reserva termina después de nuestra hora de inicio, hay solapamiento
-                                if fin_reserva > hora_inicio_dt_aware:
-                                    reservas_solapadas = reservas_solapadas | Reserva.objects.filter(id=reserva.id)
-                            
-                            # Obtener las bahías ocupadas
-                            bahias_ocupadas = reservas_solapadas.values_list('bahia', flat=True).distinct()
-                            
-                            # Calcular bahías disponibles
-                            bahias_disponibles = bahias_activas.exclude(id__in=bahias_ocupadas).count()
-                            
-                            # Verificar si el horario ya ha pasado para el día actual
-                            now_local = datetime.now()
-                            horario_ya_paso = False
-                            # Eliminamos la restricción de horarios pasados para mostrar todos los horarios del día
-                            # incluso si ya han pasado (pero los marcaremos como no disponibles)
-                            if fecha == now_local.date() and hora_actual < now_local.time():
-                                horario_ya_paso = True
-                                
-                            # Agregamos el horario siempre, pero marcamos si está disponible o no
-                            horarios.append({
-                                'hora_inicio': hora_actual.strftime('%H:%M'),
-                                'hora_fin': hora_fin.strftime('%H:%M'),
-                                'disponible': bahias_disponibles > 0 and not horario_ya_paso,
-                                'bahias_disponibles': 0 if horario_ya_paso else bahias_disponibles,
-                                'bahias_totales': bahias_activas.count()
-                            })
-                        
-                        # Avanzamos en intervalos de 30 minutos para mostrar más opciones
-                        hora_actual = (datetime.combine(fecha, hora_actual) + timedelta(minutes=intervalo_minutos)).time()
-                
-                # Ya no necesitamos filtrar horarios aquí, ya que lo hacemos al crearlos
-                # Los horarios ya incluyen solo aquellos donde hay bahías disponibles
-            else:
-                # Usar los horarios específicos de la fecha, considerando la duración del servicio
-                horarios = []
-                for h in horarios_disponibles:
-                    # Para cada horario, verificar si hay bahías disponibles y si el servicio cabe en el horario
-                    
-                    # Si es el día actual, verificar que la hora de inicio sea posterior a la hora actual
-                    # Como USE_TZ está deshabilitado, usamos datetime.now() directamente
-                    now_local = datetime.now()
-                    if fecha == now_local.date():
-                        hora_actual = now_local.time()
-                        # Ya no saltamos los horarios pasados, los mostraremos todos
-                        # Si estamos fuera del horario de atención, saltamos este horario
-                        if hora_actual >= h.hora_fin:
-                            continue
-                        
-                    hora_inicio = datetime.combine(fecha, h.hora_inicio)
-                    # Ya no necesitamos hacer aware la fecha porque USE_TZ está deshabilitado
-                    # Calcular hora fin según la duración del servicio
-                    hora_fin_servicio = hora_inicio + timedelta(minutes=duracion_servicio)
-                    hora_fin = datetime.combine(fecha, h.hora_fin)
-                    hora_fin = timezone.make_aware(hora_fin)
-                    
-                    # Verificar que el servicio quepa en el horario disponible
-                    if hora_fin_servicio.time() > h.hora_fin:
-                        continue  # El servicio no cabe en este horario, saltamos
-                    
-                    # Obtener todas las bahías activas
-                    bahias_activas = Bahia.objects.filter(activo=True)
-                    
-                    # Obtener las reservas que se solapan con este horario considerando la duración del servicio
-                    reservas_solapadas = Reserva.objects.filter(
-                        fecha_hora__lt=hora_fin_servicio,
-                        fecha_hora__gte=hora_inicio,
-                        estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA, Reserva.EN_PROCESO]
-                    )
-                    
-                    # También considerar reservas que empezaron antes pero terminan durante nuestro horario
-                    # Obtener todas las reservas activas que podrían solaparse
-                    otras_reservas = Reserva.objects.filter(
-                        fecha_hora__lt=hora_inicio,
-                        estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA, Reserva.EN_PROCESO]
-                    )
-                    
-                    # Filtrar aquellas que se solapan con nuestro horario
-                    for reserva in otras_reservas:
-                        # Calcular la hora de fin de la reserva según la duración del servicio
-                        fin_reserva = reserva.fecha_hora + timedelta(minutes=reserva.servicio.duracion_minutos)
-                        # Ya no necesitamos hacer aware las fechas porque USE_TZ está deshabilitado
-                        hora_inicio_aware = hora_inicio
-                        # Si la reserva termina después de nuestra hora de inicio, hay solapamiento
-                        if fin_reserva > hora_inicio_aware:
-                            reservas_solapadas = reservas_solapadas | Reserva.objects.filter(id=reserva.id)
-                    
-                    # Obtener las bahías ocupadas
-                    bahias_ocupadas = reservas_solapadas.values_list('bahia', flat=True).distinct()
-                    
-                    # Calcular bahías disponibles
-                    bahias_disponibles = bahias_activas.exclude(id__in=bahias_ocupadas).count()
-                    
-                    # Agregar todos los horarios, incluso los que no tienen bahías disponibles
-                    # Ya no filtramos por bahías disponibles
-                    # Crear intervalos de 30 minutos dentro del horario disponible
-                    # Si es el día actual, empezamos desde la hora actual
-                    now_local = datetime.now()
-                    if fecha == now_local.date():
-                        hora_actual_sistema = now_local.time()
-                        # Si ya pasó la hora de cierre, no hay horarios disponibles
-                        if hora_actual_sistema >= h.hora_fin:
-                            continue
-                            
-                        if hora_actual_sistema >= h.hora_inicio:
-                            hora_actual = hora_actual_sistema
-                        else:
-                            hora_actual = h.hora_inicio
-                    else:
-                        hora_actual = h.hora_inicio
-                        
-                    intervalo_minutos = 15
-                    
-                    while hora_actual <= (datetime.combine(fecha, h.hora_fin) - timedelta(minutes=duracion_servicio)).time():
-                        hora_fin_intervalo = (datetime.combine(fecha, hora_actual) + timedelta(minutes=duracion_servicio)).time()
-                        
-                        # Verificar disponibilidad específica para este intervalo
-                        hora_inicio_dt = datetime.combine(fecha, hora_actual)
-                        hora_fin_dt = datetime.combine(fecha, hora_fin_intervalo)
-                        
-                        # Ya no necesitamos hacer aware las fechas porque USE_TZ está deshabilitado
-                        # hora_inicio_dt y hora_fin_dt ya son naive
-                        
-                        # Obtener todas las bahías activas para este intervalo
-                        bahias_activas_intervalo = Bahia.objects.filter(activo=True)
-                        
-                        # Verificar reservas solapadas para este intervalo específico
-                        reservas_intervalo = Reserva.objects.filter(
-                            fecha_hora__lt=hora_fin_dt,
-                            fecha_hora__gte=hora_inicio_dt,
-                            estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA, Reserva.EN_PROCESO]
-                        ).count()
-                        
-                        # Calculamos las bahías disponibles para este intervalo
-                        bahias_disponibles_intervalo = bahias_activas.count() - reservas_intervalo
-                        
-                        # Verificar si el horario ya ha pasado para el día actual
-                        now_local = datetime.now()
-                        horario_ya_paso = False
-                        # Eliminamos la restricción de horarios pasados para mostrar todos los horarios del día
-                        # incluso si ya han pasado (pero los marcaremos como no disponibles)
-                        if fecha == now_local.date() and hora_actual < now_local.time():
-                            horario_ya_paso = True
-                            
-                        # Agregamos el horario siempre, pero marcamos si está disponible o no
-                        horarios.append({
-                            'hora_inicio': hora_actual.strftime('%H:%M'),
-                            'hora_fin': hora_fin_intervalo.strftime('%H:%M'),
-                            'disponible': bahias_disponibles_intervalo > 0 and not horario_ya_paso,
-                            'bahias_disponibles': 0 if horario_ya_paso else bahias_disponibles_intervalo,
-                            'bahias_totales': bahias_activas_intervalo.count()
-                        })
-                        
-                        # Avanzar al siguiente intervalo
-                        hora_actual = (datetime.combine(fecha, hora_actual) + timedelta(minutes=intervalo_minutos)).time()
+            elapsed_time = time.time() - start_time
+            print(f"[DEBUG] Tiempo total de procesamiento: {elapsed_time:.2f} segundos")
             
             response = JsonResponse({'horarios': horarios}, status=200)
             response['Content-Type'] = 'application/json'
@@ -1710,6 +1452,277 @@ class ObtenerHorariosDisponiblesView(LoginRequiredMixin, View):
             response = JsonResponse({'error': 'Error al cargar los horarios disponibles. Por favor, inténtalo de nuevo.'}, status=500)
             response['Content-Type'] = 'application/json'
             return response
+    
+    def _obtener_horarios_reales(self, fecha, duracion_servicio, total_bahias):
+        """Obtener horarios reales basados en disponibilidad horaria y reservas existentes - intervalos de 15 minutos"""
+        horarios = []
+        now_local = datetime.now()
+        dia_semana = fecha.weekday()  # 0=Lunes, 6=Domingo
+        
+        # Obtener bahías activas reales
+        bahias_activas = Bahia.objects.filter(activo=True)
+        total_bahias_activas = bahias_activas.count()
+        
+        print(f"[DEBUG] Total bahías activas: {total_bahias_activas}")
+        
+        # Primero verificar si hay horarios específicos para esta fecha
+        horarios_especificos = HorarioDisponible.objects.filter(
+            fecha=fecha,
+            disponible=True
+        ).order_by('hora_inicio')
+        
+        print(f"[DEBUG] Horarios específicos encontrados: {horarios_especificos.count()}")
+        
+        if horarios_especificos.exists():
+            print(f"[DEBUG] Usando horarios específicos para {fecha}")
+            # Usar horarios específicos, pero dividirlos en bloques de 15 minutos
+            for horario in horarios_especificos:
+                print(f"[DEBUG] Procesando horario específico: {horario.hora_inicio} - {horario.hora_fin}")
+                # Dividir el horario específico en bloques de 15 minutos
+                hora_actual = horario.hora_inicio
+                bloque_count = 0
+                while hora_actual < horario.hora_fin and bloque_count < 72:  # Límite de seguridad (18 horas * 4 bloques)
+                    # Calcular hora de fin (15 minutos después o hasta el fin del horario específico)
+                    hora_fin_bloque = (datetime.combine(fecha, hora_actual) + timedelta(minutes=15)).time()
+                    if hora_fin_bloque > horario.hora_fin:
+                        hora_fin_bloque = horario.hora_fin
+                    
+                    # Verificar si el horario ya pasó (solo para hoy)
+                    horario_ya_paso = False
+                    if fecha == now_local.date():
+                        horario_ya_paso = hora_actual <= now_local.time()
+                    
+                    print(f"[DEBUG] Bloque {bloque_count}: {hora_actual} - ya pasó: {horario_ya_paso}")
+                    
+                    # Solo agregar horarios que no hayan pasado
+                    if not horario_ya_paso:
+                        # Calcular reservas existentes para este horario
+                        reservas_en_horario = self._contar_reservas_en_horario(fecha, hora_actual, duracion_servicio)
+                        bahias_disponibles = max(0, total_bahias_activas - reservas_en_horario)
+                        
+                        horarios.append({
+                            'hora_inicio': hora_actual.strftime('%H:%M'),
+                            'hora_fin': hora_fin_bloque.strftime('%H:%M'),
+                            'disponible': bahias_disponibles > 0,
+                            'bahias_disponibles': bahias_disponibles,
+                            'bahias_totales': total_bahias_activas
+                        })
+                    
+                    # Avanzar 15 minutos
+                    hora_actual = (datetime.combine(fecha, hora_actual) + timedelta(minutes=15)).time()
+                    bloque_count += 1
+                    if hora_actual >= horario.hora_fin:
+                        break
+        else:
+            print(f"[DEBUG] Usando disponibilidad general para día {dia_semana}")
+            # Usar disponibilidad general del día de la semana
+            disponibilidad_general = DisponibilidadHoraria.objects.filter(
+                dia_semana=dia_semana,
+                activo=True
+            ).order_by('hora_inicio')
+            
+            if disponibilidad_general.exists():
+                for disp in disponibilidad_general:
+                    # Generar horarios cada 15 minutos dentro del rango
+                    hora_actual = disp.hora_inicio
+                    bloque_count = 0
+                    while hora_actual < disp.hora_fin and bloque_count < 72:  # Límite de seguridad
+                        # Calcular hora de fin (15 minutos después o hasta el fin del rango)
+                        hora_fin = (datetime.combine(fecha, hora_actual) + timedelta(minutes=15)).time()
+                        if hora_fin > disp.hora_fin:
+                            hora_fin = disp.hora_fin
+                        
+                        # Verificar si el horario ya pasó (solo para hoy)
+                        horario_ya_paso = False
+                        if fecha == now_local.date():
+                            horario_ya_paso = hora_actual <= now_local.time()
+                        
+                        # Solo agregar horarios que no hayan pasado
+                        if not horario_ya_paso:
+                            # Calcular reservas existentes para este horario
+                            reservas_en_horario = self._contar_reservas_en_horario(fecha, hora_actual, duracion_servicio)
+                            bahias_disponibles = max(0, total_bahias_activas - reservas_en_horario)
+                            
+                            horarios.append({
+                                'hora_inicio': hora_actual.strftime('%H:%M'),
+                                'hora_fin': hora_fin.strftime('%H:%M'),
+                                'disponible': bahias_disponibles > 0,
+                                'bahias_disponibles': bahias_disponibles,
+                                'bahias_totales': total_bahias_activas
+                            })
+                        
+                        # Avanzar 15 minutos
+                        hora_actual = (datetime.combine(fecha, hora_actual) + timedelta(minutes=15)).time()
+                        bloque_count += 1
+                        if hora_actual >= disp.hora_fin:
+                            break
+            else:
+                print(f"[DEBUG] No hay disponibilidad configurada activa para el día {dia_semana}")
+                # Si no hay disponibilidad configurada activa, no mostrar horarios
+                # El frontend mostrará el mensaje "Para la fecha escogida no hay horarios disponibles"
+                horarios = []
+        
+        return horarios
+    
+    def _contar_reservas_en_horario(self, fecha, hora_inicio, duracion_servicio):
+        """Contar cuántas reservas existen en un horario específico - versión optimizada para intervalos de 15 minutos"""
+        try:
+            # Crear datetime para el inicio del horario
+            inicio_horario = datetime.combine(fecha, hora_inicio)
+            fin_horario = inicio_horario + timedelta(minutes=15)  # Bloques de 15 minutos
+            
+            # Contar reservas que se superponen con este horario de 15 minutos
+            # Consideramos reservas que:
+            # 1. Empiezan durante nuestro bloque de 15 minutos
+            # 2. Están en curso durante nuestro bloque (empezaron antes pero no han terminado)
+            reservas_count = Reserva.objects.filter(
+                fecha_hora__date=fecha,
+                estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA, Reserva.EN_PROCESO]
+            ).filter(
+                # Reservas que se superponen con nuestro bloque de 15 minutos
+                fecha_hora__lt=fin_horario,
+                fecha_hora__gte=inicio_horario
+            ).count()
+            
+            # También contar reservas que empezaron antes pero siguen activas durante nuestro bloque
+            reservas_anteriores = Reserva.objects.filter(
+                fecha_hora__date=fecha,
+                fecha_hora__lt=inicio_horario,
+                estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA, Reserva.EN_PROCESO]
+            )
+            
+            for reserva in reservas_anteriores:
+                # Calcular cuándo termina esta reserva
+                fin_reserva = reserva.fecha_hora + timedelta(minutes=reserva.servicio.duracion_minutos)
+                # Si la reserva termina después del inicio de nuestro bloque, cuenta como ocupada
+                if fin_reserva > inicio_horario:
+                    reservas_count += 1
+            
+            print(f"[DEBUG] Reservas en horario {hora_inicio} (15 min): {reservas_count}")
+            return reservas_count
+        except Exception as e:
+            print(f"[ERROR] Error contando reservas: {e}")
+            return 0  # En caso de error, asumir 0 reservas
+    
+    def _crear_horarios_default_con_reservas(self, fecha, duracion_servicio, total_bahias):
+        """Crear horarios por defecto de 8:00 a 18:00 considerando reservas existentes - intervalos de 15 minutos"""
+        horarios = []
+        now_local = datetime.now()
+        
+        # Obtener bahías activas reales
+        bahias_activas = Bahia.objects.filter(activo=True)
+        total_bahias_activas = bahias_activas.count()
+        
+        # Generar horarios cada 15 minutos de 8:00 a 18:00
+        hora_actual = time(hour=8, minute=0)
+        hora_limite = time(hour=18, minute=0)
+        
+        while hora_actual < hora_limite:
+            # Calcular hora de fin (15 minutos después)
+            hora_fin = (datetime.combine(fecha, hora_actual) + timedelta(minutes=15)).time()
+            
+            # Verificar si el horario ya pasó (solo para hoy)
+            horario_ya_paso = False
+            if fecha == now_local.date():
+                horario_ya_paso = hora_actual <= now_local.time()
+            
+            # Solo agregar horarios que no hayan pasado
+            if not horario_ya_paso:
+                # Calcular reservas existentes para este horario
+                reservas_en_horario = self._contar_reservas_en_horario(fecha, hora_actual, duracion_servicio)
+                bahias_disponibles = max(0, total_bahias_activas - reservas_en_horario)
+                
+                horarios.append({
+                    'hora_inicio': hora_actual.strftime('%H:%M'),
+                    'hora_fin': hora_fin.strftime('%H:%M'),
+                    'disponible': bahias_disponibles > 0,
+                    'bahias_disponibles': bahias_disponibles,
+                    'bahias_totales': total_bahias_activas
+                })
+            
+            # Avanzar 15 minutos
+            hora_actual = (datetime.combine(fecha, hora_actual) + timedelta(minutes=15)).time()
+        
+        return horarios
+    
+    def _crear_horarios_desde_disponibilidad(self, disponibilidad_general, fecha, duracion_servicio, total_bahias, horarios_ocupados):
+        """Crear horarios desde disponibilidad general optimizada"""
+        horarios = []
+        now_local = datetime.now()
+        
+        for disp in disponibilidad_general:
+            # Determinar hora de inicio
+            if fecha == now_local.date():
+                hora_actual_sistema = now_local.time()
+                if hora_actual_sistema >= disp.hora_fin:
+                    continue
+                hora_actual = max(disp.hora_inicio, hora_actual_sistema) if hora_actual_sistema >= disp.hora_inicio else disp.hora_inicio
+            else:
+                hora_actual = disp.hora_inicio
+            
+            # Generar intervalos de 15 minutos
+            while hora_actual <= (datetime.combine(fecha, disp.hora_fin) - timedelta(minutes=duracion_servicio)).time():
+                hora_fin = (datetime.combine(fecha, hora_actual) + timedelta(minutes=duracion_servicio)).time()
+                
+                if hora_fin <= disp.hora_fin:
+                    key = hora_actual.strftime('%H:%M')
+                    bahias_ocupadas = horarios_ocupados.get(key, 0)
+                    bahias_disponibles = max(0, total_bahias - bahias_ocupadas)
+                    
+                    horario_ya_paso = (fecha == now_local.date() and hora_actual < now_local.time())
+                    
+                    horarios.append({
+                        'hora_inicio': hora_actual.strftime('%H:%M'),
+                        'hora_fin': hora_fin.strftime('%H:%M'),
+                        'disponible': bahias_disponibles > 0 and not horario_ya_paso,
+                        'bahias_disponibles': 0 if horario_ya_paso else bahias_disponibles,
+                        'bahias_totales': total_bahias
+                    })
+                
+                hora_actual = (datetime.combine(fecha, hora_actual) + timedelta(minutes=15)).time()
+        
+        return horarios
+    
+    def _crear_horarios_desde_especificos(self, horarios_disponibles, fecha, duracion_servicio, total_bahias, horarios_ocupados):
+        """Crear horarios desde horarios específicos optimizada"""
+        horarios = []
+        now_local = datetime.now()
+        
+        for h in horarios_disponibles:
+            if fecha == now_local.date():
+                hora_actual_sistema = now_local.time()
+                if hora_actual_sistema >= h.hora_fin:
+                    continue
+                hora_actual = max(h.hora_inicio, hora_actual_sistema) if hora_actual_sistema >= h.hora_inicio else h.hora_inicio
+            else:
+                hora_actual = h.hora_inicio
+            
+            # Verificar que el servicio quepa en el horario
+            hora_fin_servicio = (datetime.combine(fecha, hora_actual) + timedelta(minutes=duracion_servicio)).time()
+            if hora_fin_servicio > h.hora_fin:
+                continue
+            
+            # Generar intervalos de 15 minutos
+            while hora_actual <= (datetime.combine(fecha, h.hora_fin) - timedelta(minutes=duracion_servicio)).time():
+                hora_fin_intervalo = (datetime.combine(fecha, hora_actual) + timedelta(minutes=duracion_servicio)).time()
+                
+                key = hora_actual.strftime('%H:%M')
+                bahias_ocupadas = horarios_ocupados.get(key, 0)
+                bahias_disponibles = max(0, total_bahias - bahias_ocupadas)
+                
+                horario_ya_paso = (fecha == now_local.date() and hora_actual < now_local.time())
+                
+                horarios.append({
+                    'hora_inicio': hora_actual.strftime('%H:%M'),
+                    'hora_fin': hora_fin_intervalo.strftime('%H:%M'),
+                    'disponible': bahias_disponibles > 0 and not horario_ya_paso,
+                    'bahias_disponibles': 0 if horario_ya_paso else bahias_disponibles,
+                    'bahias_totales': total_bahias
+                })
+                
+                hora_actual = (datetime.combine(fecha, hora_actual) + timedelta(minutes=15)).time()
+        
+        return horarios
 
 class ServicioViewSet(viewsets.ModelViewSet):
     """ViewSet para el modelo Servicio"""
@@ -1823,7 +1836,7 @@ class ReservaViewSet(viewsets.ModelViewSet):
             return Reserva.objects.none()
 
 
-class ObtenerBahiasDisponiblesView(LoginRequiredMixin, View):
+class ObtenerBahiasDisponiblesView(View):
     def get(self, request, *args, **kwargs):
         try:
             fecha_str = request.GET.get('fecha')

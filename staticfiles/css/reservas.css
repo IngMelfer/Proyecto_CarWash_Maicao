@@ -1,0 +1,46 @@
+/* Estilos para la página de reservas */
+
+/* Solución específica para ocultar los botones duplicados que se muestran en la imagen */
+.container > .row > .col-md-9 > a.btn-primary,
+.container > .row > .col-md-9 > a.btn-outline-secondary {
+    display: none !important;
+}
+
+/* Ocultar botones duplicados que aparecen fuera del flujo normal */
+body > a.btn-primary,
+body > a.btn-outline-secondary,
+.card-body > a.btn-primary,
+.card-body > a.btn-outline-secondary {
+    display: none !important;
+}
+
+/* Asegurar que solo se muestren los botones dentro de los pasos del formulario */
+.reservation-step .d-flex.justify-content-between.mt-4,
+.reservation-step .d-flex.justify-content-end.mt-4 {
+    position: relative;
+    z-index: 10;
+}
+
+/* Mejorar la visibilidad de los pasos activos */
+.reservation-step {
+    position: relative;
+}
+
+/* Asegurar que los botones de navegación tengan el estilo correcto */
+.btn-primary {
+    background-color: #00A0D2;
+    border-color: #00A0D2;
+}
+
+.btn-primary:hover {
+    background-color: #0088b9;
+    border-color: #0088b9;
+}
+
+/* Solución adicional para botones duplicados */
+.container > .btn-primary,
+.container > .btn-outline-secondary,
+.row > .btn-primary,
+.row > .btn-outline-secondary {
+    display: none !important;
+}

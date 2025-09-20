@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+
+{% block title %}Comprobante de Reserva{% endblock %}
+
+{% block extra_css %}
+<style>
+    .comprobante-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .comprobante-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    .comprobante-body {
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 30px;
+        background-color: #f9f9f9;
+    }
+    
+    .qr-container {
+        text-align: center;
+        margin: 20px 0;
+    }
+    
+    .qr-code {
+        max-width: 200px;
+        margin: 0 auto;
+    }
+    
+    .info-section {
+        margin-bottom: 20px;
+    }
+    
+    .info-section h4 {
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .info-row {
+        display: flex;
+        margin-bottom: 10px;
+    }
+    
+    .info-label {
+        font-weight: bold;
+        width: 150px;
+    }
+    
+    .info-value {
+        flex: 1;
+    }
+    
+    .actions {
+        margin-top: 30px;
+        text-align: center;
+    }
+    
+    @media print {
+        .no-print {
+            display: none;
+        }
+        
+        body {
+            padding: 0;
+            margin: 0;
+        }
+        
+        .comprobante-container {
+            width: 100%;
+            max-width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="comprobante-container">
+        <div class="comprobante-header">
+            <h1>Comprobante de Reserva</h1>
+            <p class="text-muted">Reserva #{{ reserva.id }}</p>
+        </div>
+        
+        <div class="comprobante-body">
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> Tu reserva ha sido confirmada exitosamente.
+            </div>
+            
+            <div class="info-section">
+                <h4>Detalles del Servicio</h4>
+                <div class="info-row">
+                    <div class="info-label">Servicio:</div>
+                    <div class="info-value">{{ reserva.servicio.nombre }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Fecha:</div>
+                    <div class="info-value">{{ reserva.fecha|date:"l, j \d\e F \d\e Y" }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Hora:</div>
+                    <div class="info-value">{{ reserva.hora_inicio|time:"g:i A" }} - {{ reserva.hora_fin|time:"g:i A" }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Bahía:</div>
+                    <div class="info-value">{{ reserva.bahia.nombre }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Lavador:</div>
+                    <div class="info-value">{{ reserva.lavador.usuario.first_name }} {{ reserva.lavador.usuario.last_name }}</div>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <h4>Vehículo</h4>
+                <div class="info-row">
+                    <div class="info-label">Marca y Modelo:</div>
+                    <div class="info-value">{{ reserva.vehiculo.marca }} {{ reserva.vehiculo.modelo }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Placa:</div>
+                    <div class="info-value">{{ reserva.vehiculo.placa }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Color:</div>
+                    <div class="info-value">{{ reserva.vehiculo.color }}</div>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <h4>Pago</h4>
+                <div class="info-row">
+                    <div class="info-label">Precio:</div>
+                    <div class="info-value">${{ reserva.precio|floatformat:0 }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Método de pago:</div>
+                    <div class="info-value">{{ reserva.medio_pago.nombre }}</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Estado:</div>
+                    <div class="info-value">
+                        {% if reserva.pagado %}
+                            <span class="badge bg-success">Pagado</span>
+                        {% else %}
+                            <span class="badge bg-warning">Pendiente</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="qr-container">
+                <h4>Código QR para Acceso a Cámara</h4>
+                <p class="text-muted">Este código QR te permitirá acceder a la cámara de la bahía 1 minuto antes y hasta 1 minuto después del servicio.</p>
+                <div class="qr-code">
+                    <img src="{{ qr_code_url }}" alt="Código QR" class="img-fluid">
+                </div>
+                <p class="mt-2">
+                    <small>Enlace de acceso: <a href="{{ camara_url }}">{{ camara_url }}</a></small>
+                </p>
+            </div>
+        </div>
+        
+        <div class="actions no-print">
+            <button class="btn btn-primary" onclick="window.print()">
+                <i class="fas fa-print"></i> Imprimir Comprobante
+            </button>
+            <a href="{% url 'mis_turnos' %}" class="btn btn-secondary">
+                <i class="fas fa-list"></i> Ver Mis Turnos
+            </a>
+            <a href="{% url 'reservar_turno' %}" class="btn btn-success">
+                <i class="fas fa-plus"></i> Nueva Reserva
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Código adicional si es necesario
+    });
+</script>
+{% endblock %}
