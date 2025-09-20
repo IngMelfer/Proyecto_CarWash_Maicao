@@ -493,13 +493,28 @@ class PerfilUsuarioView(View):
         
         # Manejar la foto de perfil si se proporciona
         if 'foto_perfil' in request.FILES and request.FILES['foto_perfil']:
-            data['foto_perfil'] = request.FILES['foto_perfil']
-            # Actualizar la foto de perfil del usuario
-            request.user.foto_perfil = request.FILES['foto_perfil']
-            request.user.save()
-            print(f"Foto de perfil recibida: {request.FILES['foto_perfil']}")
+            foto_archivo = request.FILES['foto_perfil']
+            
+            # Validar que sea una imagen válida
+            if not foto_archivo.content_type.startswith('image/'):
+                messages.error(request, 'Por favor, seleccione un archivo de imagen válido.')
+                return self._render_form_with_errors(request, data)
+            
+            # Validar tamaño del archivo (máximo 5MB)
+            if foto_archivo.size > 5 * 1024 * 1024:
+                messages.error(request, 'La imagen es demasiado grande. El tamaño máximo es 5MB.')
+                return self._render_form_with_errors(request, data)
+            
+            data['foto_perfil'] = foto_archivo
+            print(f"Foto de perfil recibida: {foto_archivo}")
         else:
             print("No se recibió foto de perfil")
+        
+        # Actualizar campos del usuario
+        if request.POST.get('nombre'):
+            request.user.first_name = request.POST.get('nombre')
+        if request.POST.get('apellido'):
+            request.user.last_name = request.POST.get('apellido')
         
         # Verificar si el usuario tiene un cliente asociado
         try:
@@ -508,12 +523,8 @@ class PerfilUsuarioView(View):
             # Solo actualizar campos que no sean nulos
             if request.POST.get('nombre'):
                 cliente.nombre = request.POST.get('nombre')
-                # También actualizar el nombre del usuario
-                request.user.first_name = request.POST.get('nombre')
             if request.POST.get('apellido'):
                 cliente.apellido = request.POST.get('apellido')
-                # También actualizar el apellido del usuario
-                request.user.last_name = request.POST.get('apellido')
             if request.POST.get('telefono'):
                 cliente.telefono = request.POST.get('telefono')
             if request.POST.get('direccion'):
@@ -530,16 +541,8 @@ class PerfilUsuarioView(View):
             # Guardar los cambios del cliente
             cliente.save()
         except:
-            # Si no tiene cliente asociado, actualizar solo los datos del usuario
-            if request.POST.get('nombre'):
-                request.user.first_name = request.POST.get('nombre')
-            if request.POST.get('apellido'):
-                request.user.last_name = request.POST.get('apellido')
-        
-        # Guardar los cambios del usuario
-        request.user.save()
-        
-        # Ya no necesitamos esta parte porque guardamos el cliente dentro del bloque try
+            # Si no tiene cliente asociado, no hay problema
+            pass
         
         # Actualizar el usuario con el serializador para manejar la foto de perfil
         serializer = UsuarioSerializer(request.user, data=data, partial=True)
@@ -552,18 +555,21 @@ class PerfilUsuarioView(View):
             for field, errors in serializer.errors.items():
                 for error in errors:
                     messages.error(request, f'{field}: {error}')
-            # Verificar si el usuario tiene un cliente asociado
-            cliente = None
-            try:
-                cliente = request.user.cliente
-            except:
-                pass
-                
-            return render(request, 'autenticacion/perfil.html', {
-                'usuario': request.user,
-                'cliente': cliente,
-                'form_data': data
-            })
+            return self._render_form_with_errors(request, data)
+    
+    def _render_form_with_errors(self, request, data):
+        """Método auxiliar para renderizar el formulario con errores"""
+        cliente = None
+        try:
+            cliente = request.user.cliente
+        except:
+            pass
+            
+        return render(request, 'autenticacion/perfil.html', {
+            'usuario': request.user,
+            'cliente': cliente,
+            'form_data': data
+        })
 
 
 class PerfilUsuarioAPIView(APIView):

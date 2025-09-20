@@ -1,29 +1,90 @@
 {% extends 'base.html' %}
 
-{% block title %}Calificar Servicio - Premium Car Detailing{% endblock %}
+{% block title %}Calificar Turno - Premium Car Detailing{% endblock %}
+
+{% block extra_css %}
+<style>
+    .sidebar-enhanced {
+        background: linear-gradient(135deg, #ffffff, #f8fbff);
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        overflow: hidden;
+        border: none;
+    }
+    
+    .sidebar-header-enhanced {
+        background: linear-gradient(135deg, #056a96, #085173);
+        color: white;
+        padding: 1.5rem;
+        border: none;
+    }
+    
+    .sidebar-header-enhanced h5 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    
+    .sidebar-menu-enhanced {
+        padding: 0;
+    }
+    
+    .sidebar-item-enhanced {
+        border: none;
+        padding: 1rem 1.5rem;
+        transition: all 0.3s ease;
+        color: #333;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+    }
+    
+    .sidebar-item-enhanced:hover {
+        background: linear-gradient(135deg, #f0f8ff, #e6f3ff);
+        color: #056a96;
+        transform: translateX(5px);
+    }
+    
+    .sidebar-item-enhanced.active {
+        background: linear-gradient(135deg, #056a96, #085173);
+        color: white;
+        border-left: 4px solid #06a7cf;
+    }
+    
+    .sidebar-item-enhanced i {
+        width: 20px;
+        margin-right: 12px;
+        font-size: 1rem;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="container py-5">
     <div class="row">
         <!-- Menú lateral -->
         <div class="col-md-3 mb-4">
-            <div class="card shadow">
-                <div class="card-header bg-dark text-white">
-                    <h5 class="mb-0">Mi Cuenta</h5>
+            <div class="card sidebar-enhanced">
+                <div class="sidebar-header-enhanced">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user-circle me-2"></i>
+                        Mi Cuenta
+                    </h5>
                 </div>
-                <div class="list-group list-group-flush">
-                    <a href="{% url 'autenticacion:perfil' %}" class="list-group-item list-group-item-action">
-                        <i class="fas fa-user-circle me-2"></i> Mi Perfil
+                <div class="sidebar-menu-enhanced">
+                    <a href="{% url 'autenticacion:perfil' %}" class="sidebar-item-enhanced">
+                        <i class="fas fa-user-circle"></i> Mi Perfil
                     </a>
                     {% if not user.is_staff %}
-                    <a href="{% url 'reservas:mis_turnos' %}" class="list-group-item list-group-item-action">
-                        <i class="fas fa-calendar-alt me-2"></i> Mis Turnos
+                    <a href="{% url 'reservas:mis_turnos' %}" class="sidebar-item-enhanced">
+                        <i class="fas fa-calendar-alt"></i> Mis Turnos
                     </a>
-                    <a href="{% url 'clientes:historial_servicios' %}" class="list-group-item list-group-item-action">
-                        <i class="fas fa-history me-2"></i> Historial de Servicios
+                    <a href="{% url 'clientes:historial_servicios' %}" class="sidebar-item-enhanced">
+                        <i class="fas fa-history"></i> Historial de Servicios
                     </a>
-                    <a href="{% url 'clientes:puntos_recompensas' %}" class="list-group-item list-group-item-action">
-                        <i class="fas fa-star me-2"></i> Puntos y Recompensas
+                    <a href="{% url 'clientes:puntos_recompensas' %}" class="sidebar-item-enhanced">
+                        <i class="fas fa-star"></i> Puntos y Recompensas
                     </a>
                     {% endif %}
                     <a href="{% url 'autenticacion:logout' %}" class="list-group-item list-group-item-action text-danger">

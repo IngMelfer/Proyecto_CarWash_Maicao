@@ -3,11 +3,15 @@ from . import views, views_admin
 
 urlpatterns = [
     # Rutas para vistas basadas en plantillas
-    path('reservar-turno/', views.ReservarTurnoView.as_view(), name='reservar_turno'),
+    path('reservar/', views.ReservarTurnoView.as_view(), name='reservar_turno'),
     path('mis-turnos/', views.MisTurnosView.as_view(), name='mis_turnos'),
     path('cancelar-turno/<int:turno_id>/', views.CancelarTurnoView.as_view(), name='cancelar_turno'),
     path('calificar-turno/<int:turno_id>/', views.CalificarTurnoView.as_view(), name='calificar_turno'),
     path('ver-camara/<str:token>/', views.VerCamaraView.as_view(), name='ver_camara'),
+    
+    # Gestión de vehículos
+    path('crear-vehiculo/', views.CrearVehiculoView.as_view(), name='crear_vehiculo'),
+    
     # Rutas para AJAX
     path('obtener_horarios_disponibles/', views.ObtenerHorariosDisponiblesView.as_view(), name='obtener_horarios_disponibles'),
     path('obtener_bahias_disponibles/', views.ObtenerBahiasDisponiblesView.as_view(), name='obtener_bahias_disponibles'),

@@ -1163,6 +1163,12 @@ class MisTurnosView(LoginRequiredMixin, TemplateView):
             estado=Reserva.COMPLETADA
         ).order_by('-fecha_hora')
         
+        # Turnos en proceso
+        en_proceso = Reserva.objects.filter(
+            cliente=cliente,
+            estado=Reserva.EN_PROCESO
+        ).select_related('servicio').order_by('fecha_hora')
+        
         # Incluir tanto canceladas como incumplidas
         canceladas = Reserva.objects.filter(
             cliente=cliente,
@@ -1170,6 +1176,7 @@ class MisTurnosView(LoginRequiredMixin, TemplateView):
         ).order_by('-fecha_hora')
         
         context['proximas'] = proximas
+        context['en_proceso'] = en_proceso
         context['pasadas'] = pasadas
         context['canceladas'] = canceladas
         
@@ -1182,6 +1189,8 @@ class MisTurnosView(LoginRequiredMixin, TemplateView):
                 # Determinar en qué pestaña está el turno
                 if turno in proximas:
                     context['active_tab'] = 'proximas'
+                elif turno in en_proceso:
+                    context['active_tab'] = 'en_proceso'
                 elif turno in pasadas:
                     context['active_tab'] = 'pasadas'
                 elif turno in canceladas:
@@ -2212,3 +2221,70 @@ class BahiaViewSet(viewsets.ModelViewSet):
         return Response({
             'mensaje': 'Reserva confirmada exitosamente'
         }, status=status.HTTP_200_OK)
+
+
+class CrearVehiculoView(LoginRequiredMixin, View):
+    """Vista para crear un nuevo vehículo"""
+    template_name = 'reservas/crear_vehiculo.html'
+    
+    def get(self, request, *args, **kwargs):
+        """Mostrar el formulario de creación de vehículo"""
+        context = {
+            'tipos_vehiculo': Vehiculo.TIPO_CHOICES,
+        }
+        return render(request, self.template_name, context)
+    
+    def post(self, request, *args, **kwargs):
+        """Procesar la creación del vehículo"""
+        try:
+            # Obtener datos del formulario
+            marca = request.POST.get('marca', '').strip()
+            modelo = request.POST.get('modelo', '').strip()
+            anio = request.POST.get('anio', '').strip()
+            placa = request.POST.get('placa', '').strip().upper()
+            tipo = request.POST.get('tipo', '')
+            color = request.POST.get('color', '').strip()
+            observaciones = request.POST.get('observaciones', '').strip()
+            
+            # Validaciones básicas
+            if not all([marca, modelo, anio, placa, tipo]):
+                messages.error(request, 'Todos los campos marcados con * son obligatorios.')
+                return redirect('reservas:crear_vehiculo')
+            
+            # Validar año
+            try:
+                anio_int = int(anio)
+                if anio_int < 1900 or anio_int > datetime.now().year + 1:
+                    messages.error(request, 'El año debe estar entre 1900 y el año actual.')
+                    return redirect('reservas:crear_vehiculo')
+            except ValueError:
+                messages.error(request, 'El año debe ser un número válido.')
+                return redirect('reservas:crear_vehiculo')
+            
+            # Verificar si ya existe un vehículo con la misma placa
+            vehiculo_existente = Vehiculo.objects.filter(placa=placa).first()
+            if vehiculo_existente:
+                if vehiculo_existente.cliente == request.user.cliente:
+                    messages.error(request, 'Ya tienes un vehículo registrado con esta placa.')
+                else:
+                    messages.error(request, 'Esta placa ya está registrada por otro cliente.')
+                return redirect('reservas:crear_vehiculo')
+            
+            # Crear el vehículo
+            vehiculo = Vehiculo.objects.create(
+                cliente=request.user.cliente,
+                marca=marca,
+                modelo=modelo,
+                anio=anio_int,
+                placa=placa,
+                tipo=tipo,
+                color=color,
+                observaciones=observaciones
+            )
+            
+            messages.success(request, f'Vehículo {marca} {modelo} ({placa}) registrado exitosamente.')
+            return redirect('clientes:dashboard')
+            
+        except Exception as e:
+            messages.error(request, f'Error al registrar el vehículo: {str(e)}')
+            return redirect('reservas:crear_vehiculo')

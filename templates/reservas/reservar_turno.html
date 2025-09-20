@@ -5,51 +5,280 @@
 
 {% block extra_css %}
 <style>
-    .service-card {
-        cursor: pointer;
+    /* Sidebar moderno */
+    .sidebar-enhanced {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    
+    .sidebar-enhanced .card-header {
+        background: rgba(255,255,255,0.1);
+        border: none;
+        backdrop-filter: blur(10px);
+    }
+    
+    .sidebar-enhanced .list-group-item {
+        background: transparent;
+        border: none;
+        color: rgba(255,255,255,0.8);
         transition: all 0.3s ease;
+        padding: 15px 20px;
     }
     
-    .service-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    .sidebar-enhanced .list-group-item:hover {
+        background: rgba(255,255,255,0.1);
+        color: white;
+        transform: translateX(5px);
     }
     
-    .service-card.border-primary {
-        border: 2px solid #0d6efd !important;
-        background-color: #f8f9ff;
+    .sidebar-enhanced .list-group-item.active {
+        background: rgba(255,255,255,0.2);
+        color: white;
+        border-left: 4px solid #fff;
     }
     
+    .sidebar-enhanced .list-group-item.text-danger {
+        color: #ff6b6b !important;
+    }
+    
+    .sidebar-enhanced .list-group-item.text-danger:hover {
+        background: rgba(255,107,107,0.1);
+        color: #ff6b6b !important;
+    }
+    
+    /* Contenido principal moderno */
+    .main-card-enhanced {
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    
+    .main-card-enhanced .card-header {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        border: none;
+        padding: 25px 30px;
+    }
+    
+    .main-card-enhanced .card-body {
+        padding: 30px;
+        background: #fafbfc;
+    }
+    
+    /* Pasos de reserva mejorados */
     .reservation-step {
         display: none;
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
     }
     
     .reservation-step.active {
         display: block;
     }
     
-    .step-indicator {
-        background-color: #e9ecef;
-        color: #6c757d;
+    .reservation-step h5 {
+        color: #2c3e50;
+        font-weight: 600;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e9ecef;
     }
     
-    .step-indicator.active {
-        background-color: #0d6efd;
+    /* Tarjetas de servicio mejoradas */
+    .service-card-enhanced {
+        border: none;
+        border-radius: 15px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        background: white;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+    
+    .service-card-enhanced:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+    }
+    
+    .service-card-enhanced.selected {
+        border: 2px solid #667eea;
+        background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
+        transform: translateY(-5px);
+    }
+    
+    .service-card-enhanced .card-body {
+        padding: 25px;
+    }
+    
+    .service-card-enhanced .card-title {
+        color: #2c3e50;
+        font-weight: 600;
+        margin-bottom: 15px;
+    }
+    
+    .service-card-enhanced .card-text {
+        color: #6c757d;
+        line-height: 1.6;
+    }
+    
+    .service-card-enhanced .card-footer {
+        background: #f8f9fa;
+        border-top: 1px solid #e9ecef;
+        padding: 20px 25px;
+    }
+    
+    /* Botones mejorados */
+    .btn-enhanced {
+        border-radius: 25px;
+        padding: 12px 30px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .btn-primary-enhanced {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
     }
     
-    .horario-card, .bahia-card, .lavador-card {
+    .btn-primary-enhanced:hover {
+        background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102,126,234,0.4);
+    }
+    
+    .btn-outline-secondary-enhanced {
+        border: 2px solid #6c757d;
+        color: #6c757d;
+        background: transparent;
+    }
+    
+    .btn-outline-secondary-enhanced:hover {
+        background: #6c757d;
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    .btn-success-enhanced {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+    }
+    
+    .btn-success-enhanced:hover {
+        background: linear-gradient(135deg, #218838 0%, #1ea085 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(40,167,69,0.4);
+    }
+    
+    /* Formularios mejorados */
+    .form-control-enhanced {
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        padding: 12px 15px;
+        transition: all 0.3s ease;
+        background: white;
+    }
+    
+    .form-control-enhanced:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102,126,234,0.25);
+        background: white;
+    }
+    
+    .form-select-enhanced {
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        padding: 12px 15px;
+        transition: all 0.3s ease;
+        background: white;
+    }
+    
+    .form-select-enhanced:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102,126,234,0.25);
+    }
+    
+    /* Tarjetas de horario mejoradas */
+    .horario-card-enhanced, .bahia-card-enhanced, .lavador-card-enhanced {
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        padding: 15px;
         cursor: pointer;
         transition: all 0.3s ease;
+        background: white;
+        text-align: center;
     }
     
-    .horario-card:hover, .bahia-card:hover, .lavador-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    .horario-card-enhanced:hover, .bahia-card-enhanced:hover, .lavador-card-enhanced:hover {
+        border-color: #667eea;
+        background: #f8f9ff;
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(102,126,234,0.2);
     }
     
-    .rating {
-        color: #ffc107;
+    .horario-card-enhanced.selected, .bahia-card-enhanced.selected, .lavador-card-enhanced.selected {
+        border-color: #667eea;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        transform: translateY(-3px);
+    }
+    
+    /* Resumen de reserva mejorado */
+    .resumen-card-enhanced {
+        border: none;
+        border-radius: 15px;
+        background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    }
+    
+    .resumen-card-enhanced .card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 15px 15px 0 0;
+        padding: 20px 25px;
+    }
+    
+    .resumen-card-enhanced .card-body {
+        padding: 25px;
+    }
+    
+    /* Alertas mejoradas */
+    .alert-enhanced {
+        border: none;
+        border-radius: 10px;
+        padding: 15px 20px;
+        margin-bottom: 20px;
+    }
+    
+    .alert-info-enhanced {
+        background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+        color: #0c5460;
+    }
+    
+    /* Checkbox mejorado */
+    .form-check-enhanced .form-check-input {
+        width: 1.2em;
+        height: 1.2em;
+        border: 2px solid #667eea;
+        border-radius: 4px;
+    }
+    
+    .form-check-enhanced .form-check-input:checked {
+        background-color: #667eea;
+        border-color: #667eea;
+    }
+    
+    .form-check-enhanced .form-check-label {
+        margin-left: 10px;
+        color: #495057;
     }
 </style>
 {% endblock %}
@@ -59,16 +288,19 @@
     <div class="row">
         <!-- Menú lateral -->
         <div class="col-md-3 mb-4">
-            <div class="card shadow">
-                <div class="card-header bg-dark text-white">
-                    <h5 class="mb-0">Mi Cuenta</h5>
+            <div class="card sidebar-enhanced">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user-circle me-2"></i>
+                        Mi Cuenta
+                    </h5>
                 </div>
                 <div class="list-group list-group-flush">
                     <a href="{% url 'autenticacion:perfil' %}" class="list-group-item list-group-item-action">
                         <i class="fas fa-user-circle me-2"></i> Mi Perfil
                     </a>
                     {% if not user.is_staff %}
-                    <a href="{% url 'reservas:mis_turnos' %}" class="list-group-item list-group-item-action active">
+                    <a href="{% url 'reservas:mis_turnos' %}" class="list-group-item list-group-item-action">
                         <i class="fas fa-calendar-alt me-2"></i> Mis Turnos
                     </a>
                     <a href="{% url 'clientes:historial_servicios' %}" class="list-group-item list-group-item-action">
@@ -87,14 +319,17 @@
         
         <!-- Contenido principal -->
         <div class="col-md-9">
-            <div class="card shadow">
-                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">Reservar Turno</h4>
+            <div class="card main-card-enhanced">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-calendar-plus me-2"></i>
+                        Reservar Turno
+                    </h4>
                 </div>
                 <div class="card-body">
                     {% if messages %}
                         {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            <div class="alert alert-{{ message.tags }} alert-enhanced alert-dismissible fade show" role="alert">
                                 {{ message }}
                                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                             </div>
@@ -109,22 +344,35 @@
                         
                         <!-- Paso 1: Selección de Servicio -->
                         <div class="reservation-step active" id="step1">
-                            <h5 class="border-bottom pb-2 mb-4">Paso 1: Selecciona el Servicio</h5>
+                            <h5>
+                                <i class="fas fa-concierge-bell me-2"></i>
+                                Paso 1: Selecciona el Servicio
+                            </h5>
                             
                             <div class="row row-cols-1 row-cols-md-3 g-4 mb-4">
                                 {% for servicio in servicios %}
                                 <div class="col">
-                                    <div class="card h-100 service-card" data-service-id="{{ servicio.id }}">
+                                    <div class="card h-100 service-card-enhanced" data-service-id="{{ servicio.id }}">
                                         <div class="card-body">
-                                            <h5 class="card-title">{{ servicio.nombre }}</h5>
+                                            <h5 class="card-title">
+                                                <i class="fas fa-car-wash me-2"></i>
+                                                {{ servicio.nombre }}
+                                            </h5>
                                             <p class="card-text">{{ servicio.descripcion }}</p>
-                                            <p class="card-text"><strong>Duración:</strong> {{ servicio.duracion_minutos }} minutos</p>
-                                            <p class="card-text"><strong>Precio:</strong> ${{ servicio.precio }}</p>
+                                            <p class="card-text">
+                                                <i class="fas fa-clock me-1"></i>
+                                                <strong>Duración:</strong> {{ servicio.duracion_minutos }} minutos
+                                            </p>
+                                            <p class="card-text">
+                                                <i class="fas fa-dollar-sign me-1"></i>
+                                                <strong>Precio:</strong> ${{ servicio.precio }}
+                                            </p>
                                         </div>
-                                        <div class="card-footer bg-transparent">
-                                            <div class="form-check">
+                                        <div class="card-footer">
+                                            <div class="form-check form-check-enhanced">
                                                 <input class="form-check-input service-radio" type="radio" name="servicio" id="servicio{{ servicio.id }}" value="{{ servicio.id }}">
                                                 <label class="form-check-label" for="servicio{{ servicio.id }}">
+                                                    <i class="fas fa-check-circle me-1"></i>
                                                     Seleccionar
                                                 </label>
                                             </div>
@@ -135,7 +383,7 @@
                             </div>
                             
                             <div class="d-flex justify-content-end mt-4">
-                                <button type="button" class="btn btn-primary" id="nextToStep2">
+                                <button type="button" class="btn btn-primary-enhanced btn-enhanced" id="nextToStep2">
                                     Siguiente <i class="fas fa-arrow-right ms-2"></i>
                                 </button>
                             </div>
@@ -143,20 +391,30 @@
                         
                         <!-- Paso 2: Selección de Fecha y Hora -->
                         <div class="reservation-step" id="step2" style="display: none;">
-                            <h5 class="border-bottom pb-2 mb-4">Paso 2: Selecciona Fecha y Hora</h5>
+                            <h5>
+                                <i class="fas fa-calendar-alt me-2"></i>
+                                Paso 2: Selecciona Fecha y Hora
+                            </h5>
                             
                             <div class="row mb-4">
                                 <div class="col-md-6">
-                                    <label for="fecha" class="form-label">Fecha</label>
-                                    <input type="date" class="form-control" id="fecha" name="fecha" required>
+                                    <label for="fecha" class="form-label">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        Fecha
+                                    </label>
+                                    <input type="date" class="form-control form-control-enhanced" id="fecha" name="fecha" required>
                                 </div>
                             </div>
                             
                             <div class="row mb-4">
                                 <div class="col-md-12">
-                                    <label class="form-label">Horarios Disponibles</label>
+                                    <label class="form-label">
+                                        <i class="fas fa-clock me-1"></i>
+                                        Horarios Disponibles
+                                    </label>
                                     <div id="horariosDisponibles" class="d-flex flex-wrap gap-2">
-                                        <div class="alert alert-info w-100">
+                                        <div class="alert alert-info-enhanced alert-enhanced w-100">
+                                            <i class="fas fa-info-circle me-2"></i>
                                             Selecciona una fecha para ver los horarios disponibles.
                                         </div>
                                     </div>
@@ -164,10 +422,10 @@
                             </div>
                             
                             <div class="d-flex justify-content-between mt-4">
-                                <button type="button" class="btn btn-outline-secondary" id="backToStep1">
+                                <button type="button" class="btn btn-outline-secondary-enhanced btn-enhanced" id="backToStep1">
                                     <i class="fas fa-arrow-left me-2"></i> Anterior
                                 </button>
-                                <button type="button" class="btn btn-primary" id="nextToStep3">
+                                <button type="button" class="btn btn-primary-enhanced btn-enhanced" id="nextToStep3">
                                     Siguiente <i class="fas fa-arrow-right ms-2"></i>
                                 </button>
                             </div>
@@ -175,13 +433,19 @@
                         
                         <!-- Paso 3: Información del Vehículo -->
         <div class="reservation-step" id="step3" style="display: none;">
-            <h5 class="border-bottom pb-2 mb-4">Paso 3: Información del Vehículo</h5>
+            <h5>
+                <i class="fas fa-car me-2"></i>
+                Paso 3: Información del Vehículo
+            </h5>
             
             <!-- Selección de vehículo existente -->
             <div class="row mb-4">
                 <div class="col-md-12">
-                    <label for="vehiculo" class="form-label">Seleccionar vehículo existente</label>
-                    <select class="form-select" id="vehiculo" name="vehiculo">
+                    <label for="vehiculo" class="form-label">
+                        <i class="fas fa-list me-1"></i>
+                        Seleccionar vehículo existente
+                    </label>
+                    <select class="form-select form-select-enhanced" id="vehiculo" name="vehiculo">
                         <option value="" selected>-- Seleccionar vehículo o ingresar uno nuevo --</option>
                         {% for vehiculo in vehiculos %}
                             <option value="{{ vehiculo.id }}">{{ vehiculo.marca }} {{ vehiculo.modelo }} ({{ vehiculo.placa }})</option>
@@ -191,34 +455,52 @@
             </div>
             
             <div id="nuevoVehiculoForm">
-                <h6 class="mb-3">O ingresa un nuevo vehículo</h6>
+                <h6 class="mb-3">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    O ingresa un nuevo vehículo
+                </h6>
                 
                 <div class="row mb-3">
                     <div class="col-md-6 mb-3">
-                        <label for="marca" class="form-label">Marca</label>
-                        <input type="text" class="form-control" id="marca" name="marca">
+                        <label for="marca" class="form-label">
+                            <i class="fas fa-tag me-1"></i>
+                            Marca
+                        </label>
+                        <input type="text" class="form-control form-control-enhanced" id="marca" name="marca">
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label for="modelo" class="form-label">Modelo</label>
-                        <input type="text" class="form-control" id="modelo" name="modelo">
+                        <label for="modelo" class="form-label">
+                            <i class="fas fa-car-side me-1"></i>
+                            Modelo
+                        </label>
+                        <input type="text" class="form-control form-control-enhanced" id="modelo" name="modelo">
                     </div>
                 </div>
                 
                 <div class="row mb-3">
                     <div class="col-md-6 mb-3">
-                        <label for="anio" class="form-label">Año</label>
-                        <input type="number" class="form-control" id="anio" name="anio" min="1900" max="2099">
+                        <label for="anio" class="form-label">
+                            <i class="fas fa-calendar-alt me-1"></i>
+                            Año
+                        </label>
+                        <input type="number" class="form-control form-control-enhanced" id="anio" name="anio" min="1900" max="2099">
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label for="placa" class="form-label">Placa</label>
-                        <input type="text" class="form-control" id="placa" name="placa">
+                        <label for="placa" class="form-label">
+                            <i class="fas fa-id-card me-1"></i>
+                            Placa
+                        </label>
+                        <input type="text" class="form-control form-control-enhanced" id="placa" name="placa">
                     </div>
                 </div>
                 
                 <div class="row mb-3">
                     <div class="col-md-6 mb-3">
-                        <label for="tipo_vehiculo" class="form-label">Tipo de Vehículo</label>
-                        <select class="form-select" id="tipo_vehiculo" name="tipo_vehiculo">
+                        <label for="tipo_vehiculo" class="form-label">
+                            <i class="fas fa-car me-1"></i>
+                            Tipo de Vehículo
+                        </label>
+                        <select class="form-select form-select-enhanced" id="tipo_vehiculo" name="tipo_vehiculo">
                             <option value="" disabled selected>Seleccione...</option>
                             <option value="AU">Automóvil</option>
                             <option value="CA">Camioneta</option>
@@ -228,24 +510,30 @@
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label for="color" class="form-label">Color</label>
-                        <input type="text" class="form-control" id="color" name="color">
+                        <label for="color" class="form-label">
+                            <i class="fas fa-palette me-1"></i>
+                            Color
+                        </label>
+                        <input type="text" class="form-control form-control-enhanced" id="color" name="color">
                     </div>
                 </div>
             </div>
             
             <div class="row mb-3">
                 <div class="col-md-12">
-                    <label for="observaciones" class="form-label">Observaciones (opcional)</label>
-                    <textarea class="form-control" id="observaciones" name="observaciones" rows="3" placeholder="Indique cualquier detalle importante sobre su vehículo o el servicio que necesita"></textarea>
+                    <label for="observaciones" class="form-label">
+                        <i class="fas fa-comment me-1"></i>
+                        Observaciones (opcional)
+                    </label>
+                    <textarea class="form-control form-control-enhanced" id="observaciones" name="observaciones" rows="3" placeholder="Indique cualquier detalle importante sobre su vehículo o el servicio que necesita"></textarea>
                 </div>
             </div>
                             
                             <div class="d-flex justify-content-between mt-4">
-                                <button type="button" class="btn btn-outline-secondary" id="backToStep2">
+                                <button type="button" class="btn btn-outline-secondary-enhanced btn-enhanced" id="backToStep2">
                                     <i class="fas fa-arrow-left me-2"></i> Anterior
                                 </button>
-                                <button type="button" class="btn btn-primary" id="nextToStep4">
+                                <button type="button" class="btn btn-primary-enhanced btn-enhanced" id="nextToStep4">
                                     Siguiente <i class="fas fa-arrow-right ms-2"></i>
                                 </button>
                             </div>
@@ -253,9 +541,12 @@
                         
                         <!-- Paso 4: Selección de Bahía -->
                         <div class="reservation-step" id="step4" style="display: none;">
-                            <h5 class="border-bottom pb-2 mb-4">Paso 4: Selecciona tu Bahía</h5>
+                            <h5>
+                                <i class="fas fa-warehouse me-2"></i>
+                                Paso 4: Selecciona tu Bahía
+                            </h5>
                             
-                            <div class="alert alert-info mb-4">
+                            <div class="alert alert-info-enhanced alert-enhanced mb-4">
                                 <i class="fas fa-info-circle me-2"></i> Selecciona la bahía donde deseas que se realice tu servicio. Las bahías con cámara te permiten ver tu vehículo durante el proceso.
                             </div>
                             
@@ -268,10 +559,10 @@
                             </div>
                             
                             <div class="d-flex justify-content-between mt-4">
-                                <button type="button" class="btn btn-outline-secondary" id="backToStep3">
-                                    <i class="fas fa-arrow-left me-2"></i> Anterior
-                                </button>
-                                <button type="button" class="btn btn-primary" id="nextToStep5">
+                                <button type="button" class="btn btn-outline-secondary-enhanced btn-enhanced" id="backToStep3">
+                    <i class="fas fa-arrow-left me-2"></i>Anterior
+                </button>
+                <button type="button" class="btn btn-primary-enhanced btn-enhanced" id="nextToStep5">
                                     Siguiente <i class="fas fa-arrow-right ms-2"></i>
                                 </button>
                             </div>
@@ -279,9 +570,12 @@
                         
                         <!-- Paso 5: Selección de Lavador -->
                         <div class="reservation-step" id="step5" style="display: none;">
-                            <h5 class="border-bottom pb-2 mb-4">Paso 5: Selecciona tu Lavador</h5>
+                            <h5>
+                                <i class="fas fa-user-tie me-2"></i>
+                                Paso 5: Selecciona tu Lavador
+                            </h5>
                             
-                            <div class="alert alert-info mb-4">
+                            <div class="alert alert-info-enhanced alert-enhanced mb-4">
                                 <i class="fas fa-info-circle me-2"></i> Selecciona el lavador que deseas que realice tu servicio. Puedes ver su calificación promedio y experiencia.
                             </div>
                             
@@ -292,7 +586,7 @@
                                 {% if lavadores_disponibles %}
                                     {% for lavador in lavadores_disponibles %}
                                         <div class="col">
-                                            <div class="card h-100 lavador-card" data-lavador-id="{{ lavador.id }}">
+                                            <div class="card card-enhanced h-100 lavador-card" data-lavador-id="{{ lavador.id }}">
                                                 <div class="card-body text-center">
                                                     <div class="lavador-icon mb-3">
                                                         {% if lavador.fotografia %}
@@ -317,9 +611,10 @@
                                                     </div>
                                                 </div>
                                                 <div class="card-footer bg-transparent">
-                                                    <div class="form-check">
+                                                    <div class="form-check form-check-enhanced">
                                                         <input class="form-check-input lavador-radio" type="radio" name="lavador" id="lavador{{ lavador.id }}" value="{{ lavador.id }}">
                                                         <label class="form-check-label" for="lavador{{ lavador.id }}">
+                                                            <i class="fas fa-check-circle me-1"></i>
                                                             Seleccionar
                                                         </label>
                                                     </div>
@@ -329,7 +624,7 @@
                                     {% endfor %}
                                 {% else %}
                                     <div class="col-12">
-                                        <div class="alert alert-warning">
+                                        <div class="alert alert-warning-enhanced alert-enhanced">
                                             <i class="fas fa-exclamation-triangle me-2"></i> No hay lavadores disponibles en este momento. Se asignará uno automáticamente cuando se confirme tu reserva.
                                         </div>
                                     </div>
@@ -337,10 +632,10 @@
                             </div>
                             
                             <div class="d-flex justify-content-between mt-4">
-                                <button type="button" class="btn btn-outline-secondary" id="backToStep5">
+                                <button type="button" class="btn btn-outline-secondary-enhanced btn-enhanced" id="backToStep4">
                                     <i class="fas fa-arrow-left me-2"></i> Anterior
                                 </button>
-                                <button type="button" class="btn btn-primary" id="nextToStep6">
+                                <button type="button" class="btn btn-primary-enhanced btn-enhanced" id="nextToStep6">
                                     Siguiente <i class="fas fa-arrow-right ms-2"></i>
                                 </button>
                             </div>
@@ -348,19 +643,25 @@
                         
                         <!-- Paso 6: Medio de Pago -->
                         <div class="reservation-step" id="step6" style="display: none;">
-                            <h5 class="border-bottom pb-2 mb-4">Paso 6: Seleccionar Medio de Pago</h5>
+                            <h5>
+                                <i class="fas fa-credit-card me-2"></i>
+                                Paso 6: Seleccionar Medio de Pago
+                            </h5>
                             
                             <!-- Sección de puntos disponibles -->
                             {% if request.user.is_authenticated and request.user.cliente %}
-                            <div class="card mb-4">
+                            <div class="card card-enhanced mb-4">
                                 <div class="card-body">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
-                                            <h5 class="mb-1">Puntos disponibles: <span class="badge bg-success">{{ request.user.cliente.saldo_puntos }}</span></h5>
+                                            <h5 class="mb-1">
+                                                <i class="fas fa-star me-2 text-warning"></i>
+                                                Puntos disponibles: <span class="badge bg-success">{{ request.user.cliente.saldo_puntos }}</span>
+                                            </h5>
                                             <p class="text-muted mb-0">Puedes usar tus puntos para obtener descuentos o servicios gratuitos</p>
                                         </div>
                                         <div class="d-grid gap-2">
-                                            <button type="button" class="btn btn-outline-primary" id="btnRedimirPuntos" data-bs-toggle="modal" data-bs-target="#redimirPuntosModal">
+                                            <button type="button" class="btn btn-outline-primary-enhanced btn-enhanced" id="btnRedimirPuntos" data-bs-toggle="modal" data-bs-target="#redimirPuntosModal">
                                                 <i class="fas fa-gift me-2"></i> Redimir puntos
                                             </button>
                                             <input type="hidden" id="usarPuntos" name="usar_puntos" value="false">
@@ -374,7 +675,10 @@
                             {% endif %}
                             
                             <div class="form-group mb-4">
-                                <label class="form-label">Medio de Pago</label>
+                                <label class="form-label">
+                                    <i class="fas fa-wallet me-1"></i>
+                                    Medio de Pago
+                                </label>
                                 
                                 <!-- Campo oculto para almacenar el medio de pago seleccionado -->
                                 <input type="hidden" id="medioPagoInput" name="medio_pago_hidden">
@@ -383,7 +687,7 @@
                                 <div id="mediosPagoContainer" class="row row-cols-1 row-cols-md-3 g-4 mt-2">
                                     {% for medio in medios_pago %}
                                         <div class="col">
-                                            <div class="card h-100 medio-pago-card" data-medio-id="{{ medio.id }}">
+                                            <div class="card card-enhanced h-100 medio-pago-card" data-medio-id="{{ medio.id }}">
                                                 <div class="card-body text-center">
                                                     <div class="medio-pago-icon mb-3">
                                                         <i class="fas fa-qrcode fa-3x text-dark"></i>
@@ -391,9 +695,10 @@
                                                     <h5 class="card-title">{{ medio.nombre }}</h5>
                                                 </div>
                                                 <div class="card-footer bg-transparent">
-                                                    <div class="form-check">
+                                                    <div class="form-check form-check-enhanced">
                                                         <input class="form-check-input medio-pago-radio" type="radio" name="medio_pago" id="medio{{ medio.id }}" value="{{ medio.id }}">
                                                         <label class="form-check-label" for="medio{{ medio.id }}">
+                                                            <i class="fas fa-check-circle me-1"></i>
                                                             Seleccionar
                                                         </label>
                                                     </div>
@@ -404,7 +709,7 @@
                                 </div>
                                 
                                 <div class="mt-3" id="medioPagoSeleccionado" style="display: none;">
-                                    <div class="alert alert-success">
+                                    <div class="alert alert-success-enhanced alert-enhanced">
                                         <i class="fas fa-check-circle me-2"></i> Medio de pago seleccionado: <strong id="medioPagoNombre"></strong>
                                     </div>
                                 </div>
@@ -543,10 +848,10 @@
                             </script>
                             
                             <div class="d-flex justify-content-between mt-4">
-                                <button type="button" class="btn btn-outline-secondary" id="backToStep5">
+                                <button type="button" class="btn btn-outline-secondary-enhanced btn-enhanced" id="backToStep5">
                                     <i class="fas fa-arrow-left me-2"></i> Anterior
                                 </button>
-                                <button type="button" class="btn btn-primary" id="nextToStep7">
+                                <button type="button" class="btn btn-primary-enhanced btn-enhanced" id="nextToStep7">
                                     Siguiente <i class="fas fa-arrow-right ms-2"></i>
                                 </button>
                             </div>
@@ -554,49 +859,56 @@
                         
                         <!-- Paso 7: Confirmación -->
                         <div class="reservation-step" id="step7" style="display: none;">
-                            <h5 class="border-bottom pb-2 mb-4">Paso 7: Confirmar Reserva</h5>
+                            <h5>
+                                <i class="fas fa-check-circle me-2"></i>
+                                Paso 7: Confirmar Reserva
+                            </h5>
                             
-                            <div class="card mb-4">
+                            <div class="card card-enhanced mb-4">
                                 <div class="card-header bg-light">
-                                    <h5 class="mb-0">Resumen de la Reserva</h5>
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-clipboard-list me-2"></i>
+                                        Resumen de la Reserva
+                                    </h5>
                                 </div>
                                 <div class="card-body">
                                     <div class="row mb-3">
                                         <div class="col-md-6">
-                                            <p><strong>Servicio:</strong> <span id="resumen-servicio"></span></p>
-                                            <p><strong>Fecha:</strong> <span id="resumen-fecha"></span></p>
-                                            <p><strong>Hora:</strong> <span id="resumen-hora"></span></p>
-                                            <p><strong>Bahía:</strong> <span id="resumen-bahia"></span></p>
-                                <p><strong>Lavador:</strong> <span id="resumen-lavador"></span></p>
+                                            <p><strong><i class="fas fa-cogs me-1"></i> Servicio:</strong> <span id="resumen-servicio"></span></p>
+                                            <p><strong><i class="fas fa-calendar me-1"></i> Fecha:</strong> <span id="resumen-fecha"></span></p>
+                                            <p><strong><i class="fas fa-clock me-1"></i> Hora:</strong> <span id="resumen-hora"></span></p>
+                                            <p><strong><i class="fas fa-warehouse me-1"></i> Bahía:</strong> <span id="resumen-bahia"></span></p>
+                                <p><strong><i class="fas fa-user-tie me-1"></i> Lavador:</strong> <span id="resumen-lavador"></span></p>
                                         </div>
                                         <div class="col-md-6">
-                                            <p><strong>Vehículo:</strong> <span id="resumen-vehiculo"></span></p>
-                                            <p><strong>Placa:</strong> <span id="resumen-placa"></span></p>
-                                            <p><strong>Precio:</strong> <span id="resumen-precio"></span></p>
-                                            <p><strong>Medio de Pago:</strong> <span id="resumen-medio-pago"></span></p>
+                                            <p><strong><i class="fas fa-car me-1"></i> Vehículo:</strong> <span id="resumen-vehiculo"></span></p>
+                                            <p><strong><i class="fas fa-id-card me-1"></i> Placa:</strong> <span id="resumen-placa"></span></p>
+                                            <p><strong><i class="fas fa-dollar-sign me-1"></i> Precio:</strong> <span id="resumen-precio"></span></p>
+                                            <p><strong><i class="fas fa-credit-card me-1"></i> Medio de Pago:</strong> <span id="resumen-medio-pago"></span></p>
                                         </div>
                                     </div>
                                     <div class="row">
                                         <div class="col-md-12">
-                                            <p><strong>Observaciones:</strong> <span id="resumen-observaciones">-</span></p>
+                                            <p><strong><i class="fas fa-comment me-1"></i> Observaciones:</strong> <span id="resumen-observaciones">-</span></p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             
-                            <div class="form-check mb-4">
+                            <div class="form-check form-check-enhanced mb-4">
                 <input class="form-check-input" type="checkbox" id="terminos" name="terminos" required>
                 <label class="form-check-label" for="terminos">
+                    <i class="fas fa-file-contract me-1"></i>
                     Acepto los <a href="#" data-bs-toggle="modal" data-bs-target="#terminosModal">Términos y Condiciones</a> del servicio
                 </label>
                 <div class="invalid-feedback">Debes aceptar los términos y condiciones para continuar.</div>
             </div>
                             
                             <div class="d-flex justify-content-between mt-4">
-                                <button type="button" class="btn btn-outline-secondary" id="backToStep5">
+                                <button type="button" class="btn btn-outline-secondary-enhanced btn-enhanced" id="backToStep6">
                                     <i class="fas fa-arrow-left me-2"></i> Anterior
                                 </button>
-                                <button type="submit" class="btn btn-success" id="submitBtn">
+                                <button type="submit" class="btn btn-success-enhanced btn-enhanced" id="submitBtn">
                                     <i class="fas fa-check me-2"></i> Confirmar Reserva
                                 </button>
                             </div>
@@ -611,29 +923,34 @@
 <!-- Modal Términos y Condiciones -->
 <div class="modal fade" id="terminosModal" tabindex="-1" aria-labelledby="terminosModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content">
+        <div class="modal-content modal-content-enhanced">
             <div class="modal-header">
-                <h5 class="modal-title" id="terminosModalLabel">Términos y Condiciones de Reserva</h5>
+                <h5 class="modal-title" id="terminosModalLabel">
+                    <i class="fas fa-file-contract me-2"></i>
+                    Términos y Condiciones de Reserva
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <h5>1. Política de Reservas</h5>
+                <h5><i class="fas fa-calendar-check me-2"></i>1. Política de Reservas</h5>
                 <p>Al realizar una reserva, usted se compromete a asistir en la fecha y hora programada. Si necesita cancelar o reprogramar su cita, debe hacerlo con al menos 24 horas de anticipación.</p>
                 
-                <h5>2. Política de Cancelación</h5>
+                <h5><i class="fas fa-times-circle me-2"></i>2. Política de Cancelación</h5>
                 <p>Las cancelaciones realizadas con menos de 24 horas de anticipación pueden estar sujetas a un cargo por cancelación equivalente al 30% del valor del servicio.</p>
                 
-                <h5>3. Llegada Tardía</h5>
+                <h5><i class="fas fa-clock me-2"></i>3. Llegada Tardía</h5>
                 <p>Si llega más de 15 minutos tarde a su cita, es posible que debamos reprogramarla para garantizar un servicio de calidad a todos nuestros clientes.</p>
                 
-                <h5>4. Condiciones del Vehículo</h5>
+                <h5><i class="fas fa-car me-2"></i>4. Condiciones del Vehículo</h5>
                 <p>Por favor, retire todos los objetos personales de valor de su vehículo antes del servicio. No nos hacemos responsables por objetos perdidos o dañados que hayan sido dejados en el vehículo.</p>
                 
-                <h5>5. Pago</h5>
+                <h5><i class="fas fa-credit-card me-2"></i>5. Pago</h5>
                 <p>El pago se realizará al finalizar el servicio. Aceptamos efectivo, tarjetas de crédito/débito y transferencias bancarias.</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendido</button>
+                <button type="button" class="btn btn-primary-enhanced btn-enhanced" data-bs-dismiss="modal">
+                    <i class="fas fa-check me-2"></i>Entendido
+                </button>
             </div>
         </div>
     </div>
@@ -642,15 +959,19 @@
 <!-- Modal para redimir puntos -->
 <div class="modal fade" id="redimirPuntosModal" tabindex="-1" aria-labelledby="redimirPuntosModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-        <div class="modal-content">
+        <div class="modal-content modal-content-enhanced">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="redimirPuntosModalLabel">Redimir Puntos</h5>
+                <h5 class="modal-title" id="redimirPuntosModalLabel">
+                    <i class="fas fa-gift me-2"></i>Redimir Puntos
+                </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label for="recompensaSelect" class="form-label">Selecciona una recompensa</label>
-                    <select class="form-select" id="recompensaSelect" name="recompensa" required>
+                    <label for="recompensaSelect" class="form-label">
+                        <i class="fas fa-star me-1"></i>Selecciona una recompensa
+                    </label>
+                    <select class="form-select form-select-enhanced" id="recompensaSelect" name="recompensa" required>
                         <option value="" selected disabled>Selecciona una opción</option>
                         <option value="descuento_10" data-puntos="100">Descuento 10% (100 puntos)</option>
                         <option value="lavado_basico" data-puntos="200">Lavado Básico Gratis (200 puntos)</option>
@@ -659,20 +980,29 @@
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label for="puntosRedimir" class="form-label">Puntos a redimir</label>
-                    <input type="number" class="form-control" id="puntosRedimir" name="puntos" readonly>
+                    <label for="puntosRedimir" class="form-label">
+                        <i class="fas fa-coins me-1"></i>Puntos a redimir
+                    </label>
+                    <input type="number" class="form-control form-control-enhanced" id="puntosRedimir" name="puntos" readonly>
                 </div>
                 <div class="mb-3">
-                    <label for="puntosDisponibles" class="form-label">Puntos disponibles</label>
-                    <input type="text" class="form-control" id="puntosDisponibles" value="{% if request.user.is_authenticated and request.user.cliente %}{{ request.user.cliente.saldo_puntos }}{% else %}0{% endif %}" readonly>
+                    <label for="puntosDisponibles" class="form-label">
+                        <i class="fas fa-wallet me-1"></i>Puntos disponibles
+                    </label>
+                    <input type="text" class="form-control form-control-enhanced" id="puntosDisponibles" value="{% if request.user.is_authenticated and request.user.cliente %}{{ request.user.cliente.saldo_puntos }}{% else %}0{% endif %}" readonly>
                 </div>
-                <div class="alert alert-warning" id="alertaPuntos" style="display: none;">
+                <div class="alert alert-warning-enhanced alert-enhanced" id="alertaPuntos" style="display: none;">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
                     No tienes suficientes puntos para esta recompensa.
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="btnConfirmarRecompensa">Confirmar</button>
+                <button type="button" class="btn btn-outline-secondary-enhanced btn-enhanced" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </button>
+                <button type="button" class="btn btn-primary-enhanced btn-enhanced" id="btnConfirmarRecompensa">
+                    <i class="fas fa-check me-2"></i>Confirmar
+                </button>
             </div>
         </div>
     </div>
@@ -716,7 +1046,7 @@
         let availableBahias = [];
         
         // Seleccion de servicio
-        const serviceCards = document.querySelectorAll('.service-card');
+        const serviceCards = document.querySelectorAll('.service-card-enhanced');
         const serviceRadios = document.querySelectorAll('.service-radio');
         
         serviceCards.forEach(card => {
@@ -766,6 +1096,25 @@
         
         // Definir el elemento de medio de pago para usarlo en todo el script
         const medioPagoElement = document.querySelector('#medioPago');
+        
+        // Función para mostrar alertas - definida al inicio para estar disponible
+        function showAlert(message, type = 'warning') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-' + type + ' alert-dismissible fade show';
+            alertDiv.role = 'alert';
+            alertDiv.innerHTML = message + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+            
+            const cardBody = document.querySelector('.card-body');
+            if (cardBody) {
+                cardBody.insertBefore(alertDiv, cardBody.firstChild);
+            }
+            
+            // Auto dismiss after 5 seconds
+            setTimeout(() => {
+                alertDiv.classList.remove('show');
+                setTimeout(() => alertDiv.remove(), 150);
+            }, 5000);
+        }
         
         // Agregar event listeners solo si los elementos existen
         if (nextToStep2) {
@@ -1079,7 +1428,7 @@
                 document.querySelector('#terminos').checked = true;
                 
                 // Actualizar resumen
-                const servicioNombre = document.querySelector('#servicio' + selectedService).closest('.service-card').querySelector('.card-title').textContent;
+                const servicioNombre = document.querySelector('#servicio' + selectedService).closest('.service-card-enhanced').querySelector('.card-title').textContent;
                 document.querySelector('#resumen-servicio').textContent = servicioNombre;
                 document.querySelector('#resumen-fecha').textContent = formatDate(selectedDate);
                 document.querySelector('#resumen-hora').textContent = selectedTime;
@@ -1663,23 +2012,9 @@
         }
         
         function mostrarAlerta(message, type) {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = 'alert alert-' + type + ' alert-dismissible fade show';
-            alertDiv.role = 'alert';
-            alertDiv.innerHTML = message + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
-            
-            const cardBody = document.querySelector('.card-body');
-            cardBody.insertBefore(alertDiv, cardBody.firstChild);
-            
-            // Auto dismiss after 5 seconds
-            setTimeout(() => {
-                alertDiv.classList.remove('show');
-                setTimeout(() => alertDiv.remove(), 150);
-            }, 5000);
+            // Esta función ya no es necesaria, usar showAlert directamente
+            showAlert(message, type);
         }
-        
-        // Alias para compatibilidad
-        const showAlert = mostrarAlerta;
         
         // Inicializar el modal de redención de puntos
         const redimirPuntosModal = document.getElementById('redimirPuntosModal');

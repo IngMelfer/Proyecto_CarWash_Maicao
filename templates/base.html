@@ -15,11 +15,252 @@
     <link href="/static/css/modal-fix.css" rel="stylesheet">
     <!-- DataTables CSS -->
     <link href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    
+    <!-- Header & Footer Styles -->
+    <style>
+        /* Header Styles */
+        .navbar-premium {
+            background: linear-gradient(135deg, #056a96 0%, #085173 50%, #05334c 100%);
+            box-shadow: 0 4px 20px rgba(5, 106, 150, 0.3);
+            border-bottom: 3px solid #06a7cf;
+            padding: 0.8rem 0;
+            position: relative;
+            overflow: visible;
+            z-index: 1000;
+        }
+        
+        .navbar-premium::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(6, 167, 207, 0.1), transparent);
+            animation: shimmer 3s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+        
+        .navbar-premium .navbar-brand {
+            position: relative;
+            z-index: 2;
+            transition: transform 0.3s ease;
+        }
+        
+        .navbar-premium .navbar-brand:hover {
+            transform: scale(1.05);
+        }
+        
+        .navbar-premium .navbar-brand img {
+            filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+            transition: filter 0.3s ease;
+        }
+        
+        .navbar-premium .navbar-brand:hover img {
+            filter: drop-shadow(0 4px 12px rgba(6, 167, 207, 0.4));
+        }
+        
+        .navbar-premium .nav-link {
+            color: #cacaca !important;
+            font-weight: 500;
+            padding: 0.7rem 1rem !important;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            position: relative;
+            margin: 0 0.2rem;
+        }
+        
+        .navbar-premium .nav-link:hover {
+            color: #06a7cf !important;
+            background: rgba(6, 167, 207, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(6, 167, 207, 0.2);
+        }
+        
+        .navbar-premium .nav-link i {
+            color: #06a7cf;
+            transition: transform 0.3s ease;
+        }
+        
+        .navbar-premium .nav-link:hover i {
+            transform: scale(1.2);
+        }
+        
+        .navbar-premium .nav-item.dropdown {
+            position: relative;
+            z-index: 1001;
+        }
+        
+        .navbar-premium .dropdown-menu {
+            background: linear-gradient(135deg, #303030 0%, #666666 100%);
+            border: 2px solid #06a7cf;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            margin-top: 0.5rem;
+            z-index: 9999 !important;
+            position: absolute !important;
+            top: 100% !important;
+            left: auto !important;
+            right: 0 !important;
+            min-width: 200px;
+        }
+        
+        .navbar-premium .dropdown-item {
+            color: #cacaca;
+            padding: 0.7rem 1.2rem;
+            transition: all 0.3s ease;
+            border-radius: 8px;
+            margin: 0.2rem;
+        }
+        
+        .navbar-premium .dropdown-item:hover {
+            background: linear-gradient(135deg, #056a96, #06a7cf);
+            color: white;
+            transform: translateX(5px);
+        }
+        
+        .navbar-premium .dropdown-item i {
+            color: #06a7cf;
+            width: 20px;
+        }
+        
+        .navbar-premium .navbar-toggler {
+            border: 2px solid #06a7cf;
+            border-radius: 8px;
+        }
+        
+        .navbar-premium .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='%2306a7cf' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+        
+        /* Footer Styles */
+        .footer-premium {
+            background: linear-gradient(135deg, #040404 0%, #303030 50%, #666666 100%);
+            color: #cacaca;
+            padding: 3rem 0 1rem;
+            margin-top: 4rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .footer-premium::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #056a96, #06a7cf, #085173, #05334c);
+        }
+        
+        .footer-premium h5 {
+            color: #06a7cf;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+        
+        .footer-premium h5::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 2px;
+            background: linear-gradient(90deg, #06a7cf, #056a96);
+            border-radius: 2px;
+        }
+        
+        .footer-premium p {
+            color: #889084;
+            line-height: 1.6;
+        }
+        
+        .footer-premium .list-unstyled li {
+            margin-bottom: 0.8rem;
+            transition: all 0.3s ease;
+        }
+        
+        .footer-premium .list-unstyled li:hover {
+            transform: translateX(5px);
+        }
+        
+        .footer-premium .list-unstyled a {
+            color: #cacaca;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .footer-premium .list-unstyled a:hover {
+            color: #06a7cf;
+        }
+        
+        .footer-premium .list-unstyled a::before {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #06a7cf;
+            transition: width 0.3s ease;
+        }
+        
+        .footer-premium .list-unstyled a:hover::before {
+            width: 100%;
+        }
+        
+        .footer-premium i {
+            color: #06a7cf;
+            margin-right: 0.5rem;
+            width: 20px;
+        }
+        
+        .footer-premium hr {
+            border-color: #666666;
+            margin: 2rem 0 1.5rem;
+        }
+        
+        .footer-premium .text-center p {
+            color: #848484;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .navbar-premium {
+                padding: 0.5rem 0;
+            }
+            
+            .navbar-premium .navbar-brand img {
+                height: 60px !important;
+                max-width: 200px !important;
+            }
+            
+            .footer-premium {
+                padding: 2rem 0 1rem;
+                text-align: center;
+            }
+            
+            .footer-premium h5::after {
+                left: 50%;
+                transform: translateX(-50%);
+            }
+        }
+    </style>
+    
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-premium">
         <div class="container">
             <a class="navbar-brand" href="{% url 'home' %}">
                 <img src="/static/img/logo.png" alt="Premium Car Detailing" height="100" class="d-inline-block align-text-top me-2" style="max-width: 350px;">
@@ -90,35 +331,59 @@
     </main>
 
     <!-- Footer -->
-    <footer class="footer">
+    <footer class="footer-premium">
         <div class="container">
             <div class="row">
                 <div class="col-md-4">
-                    <h5>Autolavados App</h5>
-                    <p>La mejor plataforma para gestionar tus servicios de autolavado.</p>
+                    <h5><i class="fas fa-car me-2"></i>Premium Car Detailing</h5>
+                    <p>La mejor plataforma para gestionar tus servicios de autolavado con tecnología de vanguardia y atención personalizada.</p>
+                    <div class="social-links mt-3">
+                        <a href="#" class="me-3" style="color: #06a7cf; font-size: 1.2rem;"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="me-3" style="color: #06a7cf; font-size: 1.2rem;"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="me-3" style="color: #06a7cf; font-size: 1.2rem;"><i class="fab fa-twitter"></i></a>
+                        <a href="#" style="color: #06a7cf; font-size: 1.2rem;"><i class="fab fa-whatsapp"></i></a>
+                    </div>
                 </div>
                 <div class="col-md-4">
-                    <h5>Enlaces rápidos</h5>
+                    <h5><i class="fas fa-link me-2"></i>Enlaces Rápidos</h5>
                     <ul class="list-unstyled">
-                        <li><a href="{% url 'home' %}">Inicio</a></li>
-                        <li><a href="#">Servicios</a></li>
-                        <li><a href="#">Contacto</a></li>
-                        <li><a href="#">Términos y condiciones</a></li>
+                        <li><a href="{% url 'home' %}"><i class="fas fa-home me-2"></i>Inicio</a></li>
+                        <li><a href="#"><i class="fas fa-tools me-2"></i>Servicios</a></li>
+                        <li><a href="#"><i class="fas fa-star me-2"></i>Promociones</a></li>
+                        <li><a href="#"><i class="fas fa-envelope me-2"></i>Contacto</a></li>
+                        <li><a href="#"><i class="fas fa-file-contract me-2"></i>Términos y Condiciones</a></li>
+                        <li><a href="#"><i class="fas fa-shield-alt me-2"></i>Política de Privacidad</a></li>
                     </ul>
                 </div>
                 <div class="col-md-4">
-                    <h5>Contacto</h5>
+                    <h5><i class="fas fa-map-marker-alt me-2"></i>Información de Contacto</h5>
                     <ul class="list-unstyled">
-                        <li><i class="fas fa-map-marker-alt me-2"></i>Calle Principal #123, Ciudad</li>
-                        <li><i class="fas fa-phone me-2"></i>(123) 456-7890</li>
-                        <li><i class="fas fa-envelope me-2"></i>info@autolavadosapp.com</li>
+                        <li><i class="fas fa-map-marker-alt me-2"></i>Calle Principal #123, Maicao, La Guajira</li>
+                        <li><i class="fas fa-phone me-2"></i>(+57) 300 123-4567</li>
+                        <li><i class="fas fa-envelope me-2"></i>info@premiumcardetailing.com</li>
+                        <li><i class="fas fa-clock me-2"></i>Lun - Sáb: 7:00 AM - 6:00 PM</li>
+                        <li><i class="fas fa-calendar-times me-2"></i>Dom: 8:00 AM - 4:00 PM</li>
                     </ul>
+                    <div class="mt-3">
+                        <small style="color: #889084;">
+                            <i class="fas fa-award me-1"></i>
+                            Certificados en calidad y excelencia
+                        </small>
+                    </div>
                 </div>
             </div>
             <hr>
             <div class="row">
-                <div class="col-md-12 text-center">
-                    <p>&copy; {% now "Y" %} Autolavados App. Todos los derechos reservados.</p>
+                <div class="col-md-6">
+                    <p><i class="fas fa-copyright me-1"></i>{% now "Y" %} Premium Car Detailing. Todos los derechos reservados.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p>
+                        <small>
+                            Desarrollado con <i class="fas fa-heart" style="color: #06a7cf;"></i> 
+                            para brindar la mejor experiencia
+                        </small>
+                    </p>
                 </div>
             </div>
         </div>

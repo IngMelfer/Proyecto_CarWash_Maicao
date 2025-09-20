@@ -5,18 +5,23 @@
 {% block extra_css %}
 <style>
     .dashboard-header {
-        background-color: #007bff;
+        background: linear-gradient(135deg, #056a96, #06a7cf);
         color: white;
         padding: 2rem 0;
         margin-bottom: 2rem;
     }
     .dashboard-card {
         margin-bottom: 1.5rem;
-        transition: transform 0.3s;
+        transition: all 0.3s ease;
         height: 100%;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        overflow: hidden;
+        position: relative;
     }
     .dashboard-card:hover {
-        transform: translateY(-5px);
+        transform: translateY(-8px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
     }
     .dashboard-icon {
         font-size: 2rem;
@@ -24,13 +29,741 @@
         color: #007bff;
     }
     .stats-value {
-        font-size: 1.8rem;
+        font-size: 2.2rem;
         font-weight: bold;
-        color: #007bff;
+        margin-bottom: 0.5rem;
     }
     .stats-label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        margin-bottom: 0;
+    }
+    .stats-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        opacity: 0.9;
+    }
+    
+    /* Tarjeta de Turnos Pendientes - Azul */
+    .card-turnos {
+        border-left: 5px solid #056a96;
+        background: linear-gradient(135deg, #ffffff, #f8fbff);
+    }
+    .card-turnos .stats-value {
+        color: #056a96;
+    }
+    .card-turnos .stats-label {
+        color: #085173;
+    }
+    .card-turnos .stats-icon {
+        color: #056a96;
+    }
+    
+    /* Tarjeta de Servicios Completados - Verde */
+    .card-servicios {
+        border-left: 5px solid #085173;
+        background: linear-gradient(135deg, #ffffff, #f0f8ff);
+    }
+    .card-servicios .stats-value {
+        color: #085173;
+    }
+    .card-servicios .stats-label {
+        color: #056a96;
+    }
+    .card-servicios .stats-icon {
+        color: #085173;
+    }
+    
+    /* Tarjeta de Puntos Disponibles - Cyan */
+    .card-puntos {
+        border-left: 5px solid #06a7cf;
+        background: linear-gradient(135deg, #ffffff, #f0fcff);
+    }
+    .card-puntos .stats-value {
+        color: #06a7cf;
+    }
+    .card-puntos .stats-label {
+        color: #056a96;
+    }
+    .card-puntos .stats-icon {
+        color: #06a7cf;
+    }
+    
+    /* Tarjeta de Vehículos Registrados - Gris Azul */
+    .card-vehiculos {
+        border-left: 5px solid #666666;
+        background: linear-gradient(135deg, #ffffff, #f8f9fa);
+    }
+    .card-vehiculos .stats-value {
+        color: #666666;
+    }
+    .card-vehiculos .stats-label {
+        color: #484848;
+    }
+    .card-vehiculos .stats-icon {
+        color: #666666;
+    }
+    
+    /* Efectos adicionales */
+    .card-body {
+        padding: 2rem 1.5rem;
+        position: relative;
+    }
+    
+    .stats-container {
+        text-align: center;
+        position: relative;
+        z-index: 2;
+    }
+    
+    /* Decoración de fondo sutil */
+    .dashboard-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        z-index: 1;
+    }
+    
+    /* Estilos para Accesos Rápidos */
+    .acceso-rapido {
+        transition: all 0.3s ease;
+        text-decoration: none !important;
+    }
+    
+    .acceso-rapido:hover {
+        text-decoration: none !important;
+    }
+    
+    /* Tarjeta Mi Perfil - Azul principal */
+    .card-perfil {
+        border-left: 5px solid #056a96;
+        background: linear-gradient(135deg, #ffffff, #f8fbff);
+    }
+    .card-perfil .dashboard-icon {
+        color: #056a96;
+    }
+    .card-perfil .card-title {
+        color: #056a96;
+        font-weight: 600;
+    }
+    .card-perfil .card-text {
+        color: #085173;
+    }
+    
+    /* Tarjeta Mis Turnos - Azul oscuro */
+    .card-turnos-acceso {
+        border-left: 5px solid #085173;
+        background: linear-gradient(135deg, #ffffff, #f0f8ff);
+    }
+    .card-turnos-acceso .dashboard-icon {
+        color: #085173;
+    }
+    .card-turnos-acceso .card-title {
+        color: #085173;
+        font-weight: 600;
+    }
+    .card-turnos-acceso .card-text {
+        color: #056a96;
+    }
+    
+    /* Tarjeta Historial - Cyan */
+    .card-historial {
+        border-left: 5px solid #06a7cf;
+        background: linear-gradient(135deg, #ffffff, #f0fcff);
+    }
+    .card-historial .dashboard-icon {
+        color: #06a7cf;
+    }
+    .card-historial .card-title {
+        color: #06a7cf;
+        font-weight: 600;
+    }
+    .card-historial .card-text {
+        color: #056a96;
+    }
+    
+    /* Tarjeta Puntos y Recompensas - Gris azul */
+    .card-recompensas {
+        border-left: 5px solid #666666;
+        background: linear-gradient(135deg, #ffffff, #f8f9fa);
+    }
+    .card-recompensas .dashboard-icon {
+        color: #666666;
+    }
+    .card-recompensas .card-title {
+        color: #666666;
+        font-weight: 600;
+    }
+    .card-recompensas .card-text {
+        color: #484848;
+    }
+    
+    /* Estilos mejorados para las secciones */
+    .section-header-enhanced {
+        margin-bottom: 2rem;
+    }
+    
+    .section-icon-enhanced {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #056a96, #06a7cf);
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        box-shadow: 0 4px 15px rgba(5, 106, 150, 0.3);
+    }
+    
+    .section-title-enhanced {
+        color: #056a96;
+        font-weight: 700;
+        font-size: 1.8rem;
+        margin-bottom: 0.25rem;
+    }
+    
+    .section-subtitle-enhanced {
+        color: #666;
+        font-size: 0.95rem;
+        font-weight: 500;
+    }
+    
+    .card-enhanced {
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        background: linear-gradient(135deg, #ffffff, #fafbfc);
+    }
+    
+    .card-enhanced:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.12);
+    }
+    
+    .table-enhanced {
+        border: none;
+        margin-bottom: 0;
+    }
+    
+    .table-header-enhanced th {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border: none;
+        color: #056a96;
+        font-weight: 600;
         font-size: 0.9rem;
+        padding: 1rem 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .table-row-enhanced {
+        transition: all 0.2s ease;
+        border: none;
+    }
+    
+    .table-row-enhanced:hover {
+        background-color: rgba(5, 106, 150, 0.05);
+        transform: scale(1.01);
+    }
+    
+    .table-row-enhanced td {
+        border: none;
+        padding: 1rem 0.75rem;
+        vertical-align: middle;
+    }
+    
+    .service-info .service-name {
+        font-weight: 600;
+        color: #056a96;
+    }
+    
+    .vehicle-info .vehicle-name {
+        font-weight: 600;
+        color: #333;
+        display: block;
+    }
+    
+    .vehicle-info .vehicle-plate {
+        color: #666;
+        font-size: 0.85rem;
+    }
+    
+    .amount-info .amount-value {
+        font-weight: 700;
+        color: #28a745;
+        font-size: 1.1rem;
+    }
+    
+    .badge-enhanced {
+        padding: 0.5rem 0.75rem;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.8rem;
+        display: inline-flex;
+        align-items: center;
+    }
+    
+    .badge-warning {
+        background: linear-gradient(135deg, #ffc107, #ffb300);
+        color: #333;
+    }
+    
+    .badge-success {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+    }
+    
+    .badge-info {
+        background: linear-gradient(135deg, #17a2b8, #06a7cf);
+        color: white;
+    }
+    
+    .badge-secondary {
+        background: linear-gradient(135deg, #6c757d, #5a6268);
+        color: white;
+    }
+    
+    .btn-enhanced {
+        border-radius: 12px;
+        font-weight: 600;
+        padding: 0.6rem 1.2rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .btn-enhanced:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .empty-state-enhanced {
+        padding: 3rem 2rem;
+    }
+    
+    .empty-icon-enhanced {
+        font-size: 4rem;
+        color: #dee2e6;
+        margin-bottom: 1.5rem;
+    }
+    
+    .empty-title-enhanced {
         color: #6c757d;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+    }
+    
+    .empty-text-enhanced {
+        color: #adb5bd;
+        font-size: 1rem;
+    }
+    
+    /* Estilos para la sección de servicios completados */
+    .services-summary-enhanced {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-radius: 15px;
+        padding: 1.5rem;
+        border-left: 4px solid #28a745;
+    }
+    
+    .summary-title {
+        color: #056a96;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .summary-count .count-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #28a745;
+        display: block;
+        line-height: 1;
+    }
+    
+    .summary-count .count-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .summary-icon {
+        font-size: 3rem;
+        color: #28a745;
+        opacity: 0.7;
+    }
+    
+    .recent-services-header {
+        border-bottom: 2px solid #e9ecef;
+        padding-bottom: 0.5rem;
+    }
+    
+    .recent-title {
+        color: #056a96;
+        font-weight: 600;
+        margin: 0;
+    }
+    
+    /* Animaciones */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .card-enhanced {
+        animation: fadeInUp 0.6s ease-out;
+    }
+    
+    .section-header-enhanced {
+        animation: fadeInUp 0.4s ease-out;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .section-icon-enhanced {
+            width: 50px;
+            height: 50px;
+            font-size: 1.2rem;
+        }
+        
+        .section-title-enhanced {
+            font-size: 1.5rem;
+        }
+        
+        .table-responsive {
+            font-size: 0.9rem;
+        }
+        
+        .services-summary-enhanced {
+            text-align: center;
+        }
+        
+        .summary-icon {
+            display: none;
+        }
+    }
+    
+    /* Efectos hover para accesos rápidos */
+    .acceso-rapido .dashboard-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .acceso-rapido .dashboard-card:hover .dashboard-icon {
+        transform: scale(1.1);
+        transition: transform 0.3s ease;
+    }
+
+    /* Estilos para la sección de vehículos mejorada */
+    .vehicles-section-enhanced {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    .btn-add-vehicle-enhanced {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 50px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    }
+
+    .btn-add-vehicle-enhanced:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        color: white;
+    }
+
+    .vehicle-card-enhanced {
+        background: white;
+        border-radius: 20px;
+        padding: 0;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        border: 1px solid rgba(0,0,0,0.05);
+        height: 100%;
+    }
+
+    .vehicle-card-enhanced:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+    }
+
+    .vehicle-card-header {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        padding: 1.5rem;
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .vehicle-icon-container {
+        background: rgba(255,255,255,0.2);
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(10px);
+    }
+
+    .vehicle-type-icon {
+        font-size: 1.8rem;
+        color: white;
+    }
+
+    .vehicle-status-badge {
+        background: rgba(40, 167, 69, 0.9);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .vehicle-card-body {
+        padding: 1.5rem;
+    }
+
+    .vehicle-main-info {
+        margin-bottom: 1.5rem;
+    }
+
+    .vehicle-name {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+    }
+
+    .vehicle-plate {
+        display: flex;
+        align-items: center;
+        color: #6c757d;
+        font-weight: 600;
+        background: #f8f9fa;
+        padding: 8px 12px;
+        border-radius: 10px;
+        display: inline-flex;
+    }
+
+    .vehicle-details-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .vehicle-detail-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .vehicle-detail-item:hover {
+        background: #e9ecef;
+        transform: translateX(5px);
+    }
+
+    .detail-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1rem;
+    }
+
+    .detail-content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .detail-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    .detail-value {
+        font-size: 1rem;
+        color: #2c3e50;
+        font-weight: 600;
+    }
+
+    .vehicle-card-actions {
+        padding: 1rem 1.5rem 1.5rem;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .btn-vehicle-action {
+        flex: 1;
+        min-width: 120px;
+        padding: 10px 16px;
+        border-radius: 10px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        text-align: center;
+        font-size: 0.9rem;
+    }
+
+    .btn-vehicle-action.btn-outline {
+        background: transparent;
+        border: 2px solid #007bff;
+        color: #007bff;
+    }
+
+    .btn-vehicle-action.btn-outline:hover {
+        background: #007bff;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .btn-vehicle-action.btn-primary {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        color: white;
+    }
+
+    .btn-vehicle-action.btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        color: white;
+    }
+
+    /* Estado vacío de vehículos */
+    .empty-vehicles-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+    }
+
+    .empty-vehicles-icon {
+        width: 120px;
+        height: 120px;
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 2rem;
+    }
+
+    .empty-vehicles-icon i {
+        font-size: 3rem;
+        color: white;
+    }
+
+    .empty-vehicles-title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+    }
+
+    .empty-vehicles-text {
+        font-size: 1.1rem;
+        color: #6c757d;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+    }
+
+    .btn-add-first-vehicle {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 50px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 20px rgba(0, 123, 255, 0.3);
+        font-size: 1.1rem;
+    }
+
+    .btn-add-first-vehicle:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 25px rgba(0, 123, 255, 0.4);
+        color: white;
+    }
+
+    .empty-vehicles-features {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        margin-top: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .feature-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+        color: #495057;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .vehicles-section-enhanced {
+            padding: 1rem;
+        }
+        
+        .section-header-enhanced {
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+        }
+        
+        .vehicle-card-actions {
+            flex-direction: column;
+        }
+        
+        .btn-vehicle-action {
+            min-width: auto;
+        }
+        
+        .empty-vehicles-features {
+            flex-direction: column;
+            gap: 1rem;
+        }
     }
 </style>
 {% endblock %}
@@ -52,34 +785,54 @@
     <div class="row mb-4">
         {% if not user.is_staff %}
         <div class="col-md-3">
-            <div class="card text-center dashboard-card">
+            <div class="card text-center dashboard-card card-turnos">
                 <div class="card-body">
-                    <div class="stats-value">{{ turnos_pendientes }}</div>
-                    <div class="stats-label">TURNOS PENDIENTES</div>
+                    <div class="stats-container">
+                        <div class="stats-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stats-value">{{ turnos_pendientes }}</div>
+                        <div class="stats-label">TURNOS PENDIENTES</div>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card text-center dashboard-card">
+            <div class="card text-center dashboard-card card-servicios">
                 <div class="card-body">
-                    <div class="stats-value">{{ servicios_completados }}</div>
-                    <div class="stats-label">SERVICIOS COMPLETADOS</div>
+                    <div class="stats-container">
+                        <div class="stats-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stats-value">{{ servicios_completados }}</div>
+                        <div class="stats-label">SERVICIOS COMPLETADOS</div>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card text-center dashboard-card">
+            <div class="card text-center dashboard-card card-puntos">
                 <div class="card-body">
-                    <div class="stats-value">{{ puntos_disponibles }}</div>
-                    <div class="stats-label">PUNTOS DISPONIBLES</div>
+                    <div class="stats-container">
+                        <div class="stats-icon">
+                            <i class="fas fa-star"></i>
+                        </div>
+                        <div class="stats-value">{{ puntos_disponibles }}</div>
+                        <div class="stats-label">PUNTOS DISPONIBLES</div>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card text-center dashboard-card">
+            <div class="card text-center dashboard-card card-vehiculos">
                 <div class="card-body">
-                    <div class="stats-value">{{ vehiculos_registrados }}</div>
-                    <div class="stats-label">VEHÍCULOS REGISTRADOS</div>
+                    <div class="stats-container">
+                        <div class="stats-icon">
+                            <i class="fas fa-car"></i>
+                        </div>
+                        <div class="stats-value">{{ vehiculos_registrados }}</div>
+                        <div class="stats-label">VEHÍCULOS REGISTRADOS</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -96,11 +849,21 @@
     </div>
 
     <!-- Accesos rápidos -->
-    <h2 class="mb-4">Accesos Rápidos</h2>
+    <div class="section-header-enhanced mb-4">
+        <div class="d-flex align-items-center">
+            <div class="section-icon-enhanced me-3">
+                <i class="fas fa-rocket"></i>
+            </div>
+            <div>
+                <h2 class="section-title-enhanced mb-0">Accesos Rápidos</h2>
+                <p class="section-subtitle-enhanced mb-0">Accede rápidamente a las funciones más utilizadas</p>
+            </div>
+        </div>
+    </div>
     <div class="row mb-5">
         <div class="col-md-3">
-            <a href="{% url 'autenticacion:perfil' %}" class="text-decoration-none">
-                <div class="card text-center dashboard-card">
+            <a href="{% url 'autenticacion:perfil' %}" class="text-decoration-none acceso-rapido">
+                <div class="card text-center dashboard-card card-perfil">
                     <div class="card-body">
                         <div class="dashboard-icon">
                             <i class="fas fa-user-circle"></i>
@@ -113,8 +876,8 @@
         </div>
         {% if not user.is_staff %}
         <div class="col-md-3">
-            <a href="{% url 'reservas:mis_turnos' %}" class="text-decoration-none">
-                <div class="card text-center dashboard-card">
+            <a href="{% url 'reservas:mis_turnos' %}" class="text-decoration-none acceso-rapido">
+                <div class="card text-center dashboard-card card-turnos-acceso">
                     <div class="card-body">
                         <div class="dashboard-icon">
                             <i class="fas fa-calendar-alt"></i>
@@ -126,8 +889,8 @@
             </a>
         </div>
         <div class="col-md-3">
-            <a href="{% url 'clientes:historial_servicios' %}" class="text-decoration-none">
-                <div class="card text-center dashboard-card">
+            <a href="{% url 'clientes:historial_servicios' %}" class="text-decoration-none acceso-rapido">
+                <div class="card text-center dashboard-card card-historial">
                     <div class="card-body">
                         <div class="dashboard-icon">
                             <i class="fas fa-history"></i>
@@ -139,8 +902,8 @@
             </a>
         </div>
         <div class="col-md-3">
-            <a href="{% url 'clientes:puntos_recompensas' %}" class="text-decoration-none">
-                <div class="card text-center dashboard-card">
+            <a href="{% url 'clientes:puntos_recompensas' %}" class="text-decoration-none acceso-rapido">
+                <div class="card text-center dashboard-card card-recompensas">
                     <div class="card-body">
                         <div class="dashboard-icon">
                             <i class="fas fa-star"></i>
@@ -156,38 +919,59 @@
 
     <!-- Próximos turnos -->
     {% if not user.is_staff %}
-    <h2 class="mb-4">Próximos Turnos</h2>
+    <div class="section-header-enhanced mb-4">
+        <div class="d-flex align-items-center">
+            <div class="section-icon-enhanced me-3">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div>
+                <h2 class="section-title-enhanced mb-0">Próximos Turnos</h2>
+                <p class="section-subtitle-enhanced mb-0">Gestiona tus citas programadas</p>
+            </div>
+        </div>
+    </div>
     <div class="row mb-5">
         <div class="col-md-12">
-            <div class="card">
+            <div class="card card-enhanced">
                 <div class="card-body">
                     {% if proximos_turnos %}
                     <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
+                        <table class="table table-hover table-enhanced">
+                            <thead class="table-header-enhanced">
                                 <tr>
-                                    <th>Fecha</th>
-                                    <th>Hora</th>
-                                    <th>Servicio</th>
-                                    <th>Vehículo</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
+                                    <th><i class="fas fa-calendar me-2"></i>Fecha</th>
+                                    <th><i class="fas fa-clock me-2"></i>Hora</th>
+                                    <th><i class="fas fa-car-wash me-2"></i>Servicio</th>
+                                    <th><i class="fas fa-car me-2"></i>Vehículo</th>
+                                    <th><i class="fas fa-info-circle me-2"></i>Estado</th>
+                                    <th><i class="fas fa-cog me-2"></i>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for turno in proximos_turnos %}
-                                <tr>
-                                    <td>{{ turno.fecha_hora|date:"d/m/Y" }}</td>
-                                    <td>{{ turno.fecha_hora|time:"H:i" }}</td>
-                                    <td>{{ turno.servicio.nombre }}</td>
-                                    <td>{{ turno.vehiculo.marca }} {{ turno.vehiculo.modelo }} ({{ turno.vehiculo.placa }})</td>
+                                <tr class="table-row-enhanced">
+                                    <td class="fw-medium">{{ turno.fecha_hora|date:"d/m/Y" }}</td>
+                                    <td class="fw-medium">{{ turno.fecha_hora|time:"H:i" }}</td>
                                     <td>
-                                        <span class="badge {% if turno.estado == 'PENDIENTE' %}bg-warning{% elif turno.estado == 'CONFIRMADA' %}bg-success{% elif turno.estado == 'EN_PROCESO' %}bg-info{% else %}bg-secondary{% endif %}">
-                                            {{ turno.get_estado_display }}
+                                        <div class="service-info">
+                                            <span class="service-name">{{ turno.servicio.nombre }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="vehicle-info">
+                                            <span class="vehicle-name">{{ turno.vehiculo.marca }} {{ turno.vehiculo.modelo }}</span>
+                                            <small class="vehicle-plate">({{ turno.vehiculo.placa }})</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-enhanced {% if turno.estado == 'PENDIENTE' %}badge-warning{% elif turno.estado == 'CONFIRMADA' %}badge-success{% elif turno.estado == 'EN_PROCESO' %}badge-info{% else %}badge-secondary{% endif %}">
+                                            <i class="fas fa-circle me-1"></i>{{ turno.get_estado_display }}
                                         </span>
                                     </td>
                                     <td>
-                                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#detalleModal{{ turno.id }}">Ver detalles</button>
+                                        <button type="button" class="btn btn-sm btn-outline-primary btn-enhanced" data-bs-toggle="modal" data-bs-target="#detalleModal{{ turno.id }}">
+                                            <i class="fas fa-eye me-1"></i>Ver detalles
+                                        </button>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -195,9 +979,13 @@
                         </table>
                     </div>
                     {% else %}
-                    <div class="text-center py-4">
-                        <p class="mb-0">No tienes turnos programados.</p>
-                        <a href="{% url 'reservas:reservar_turno' %}" class="btn btn-primary mt-3">
+                    <div class="empty-state-enhanced text-center py-5">
+                        <div class="empty-icon-enhanced mb-3">
+                            <i class="fas fa-calendar-times"></i>
+                        </div>
+                        <h4 class="empty-title-enhanced">No tienes turnos programados</h4>
+                        <p class="empty-text-enhanced mb-4">¡Reserva tu próximo servicio de lavado!</p>
+                        <a href="{% url 'reservas:reservar_turno' %}" class="btn btn-primary btn-enhanced">
                             <i class="fas fa-plus-circle me-2"></i> Reservar un turno
                         </a>
                     </div>
@@ -210,38 +998,85 @@
 
     <!-- Servicios Completados -->
     {% if not user.is_staff %}
-    <h2 class="mb-4">Servicios Completados</h2>
+    <div class="section-header-enhanced mb-4">
+        <div class="d-flex align-items-center">
+            <div class="section-icon-enhanced me-3">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div>
+                <h2 class="section-title-enhanced mb-0">Servicios Completados</h2>
+                <p class="section-subtitle-enhanced mb-0">Historial de servicios realizados</p>
+            </div>
+        </div>
+    </div>
     <div class="row mb-5">
         <div class="col-md-12">
-            <div class="card">
+            <div class="card card-enhanced">
                 <div class="card-body">
                     {% if servicios_completados > 0 %}
-                    <p>Has completado <strong>{{ servicios_completados }}</strong> servicios en total.</p>
+                    <div class="services-summary-enhanced mb-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="summary-info">
+                                <h5 class="summary-title">Total de servicios completados</h5>
+                                <div class="summary-count">
+                                    <span class="count-number">{{ servicios_completados }}</span>
+                                    <span class="count-label">servicios</span>
+                                </div>
+                            </div>
+                            <div class="summary-icon">
+                                <i class="fas fa-trophy"></i>
+                            </div>
+                        </div>
+                    </div>
                     
                     {% with ultimos_servicios=historial|slice:":3" %}
                     {% if ultimos_servicios %}
+                    <div class="recent-services-header mb-3">
+                        <h6 class="recent-title">
+                            <i class="fas fa-history me-2"></i>Servicios recientes
+                        </h6>
+                    </div>
                     <div class="table-responsive mb-3">
-                        <table class="table table-hover">
-                            <thead>
+                        <table class="table table-hover table-enhanced">
+                            <thead class="table-header-enhanced">
                                 <tr>
-                                    <th>Fecha</th>
-                                    <th>Hora</th>
-                                    <th>Servicio</th>
-                                    <th>Vehículo</th>
-                                    <th>Monto</th>
-                                    <th>Puntos</th>
+                                    <th><i class="fas fa-calendar me-2"></i>Fecha</th>
+                                    <th><i class="fas fa-clock me-2"></i>Hora</th>
+                                    <th><i class="fas fa-car-wash me-2"></i>Servicio</th>
+                                    <th><i class="fas fa-car me-2"></i>Vehículo</th>
+                                    <th><i class="fas fa-dollar-sign me-2"></i>Monto</th>
+                                    <th><i class="fas fa-star me-2"></i>Puntos</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for servicio in ultimos_servicios %}
-                                <tr>
-                                    <td>{{ servicio.fecha_servicio|date:"l, j \d\e F \d\e Y" }}</td>
-                                    <td>{{ servicio.fecha_servicio|time:"h:i A" }}</td>
-                                    <td>{{ servicio.servicio }}</td>
-                                    <td>{% if servicio.vehiculo %}{{ servicio.vehiculo.marca }} {{ servicio.vehiculo.modelo }} ({{ servicio.vehiculo.placa }}){% else %}No especificado{% endif %}</td>
-                                    <td>${{ servicio.monto|floatformat:2 }}</td>
+                                <tr class="table-row-enhanced">
+                                    <td class="fw-medium">{{ servicio.fecha_servicio|date:"d/m/Y" }}</td>
+                                    <td class="fw-medium">{{ servicio.fecha_servicio|time:"h:i A" }}</td>
                                     <td>
-                                        <span class="badge bg-success">+{{ servicio.puntos_ganados }}</span>
+                                        <div class="service-info">
+                                            <span class="service-name">{{ servicio.servicio }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="vehicle-info">
+                                            {% if servicio.vehiculo %}
+                                                <span class="vehicle-name">{{ servicio.vehiculo.marca }} {{ servicio.vehiculo.modelo }}</span>
+                                                <small class="vehicle-plate">({{ servicio.vehiculo.placa }})</small>
+                                            {% else %}
+                                                <span class="text-muted">No especificado</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="amount-info">
+                                            <span class="amount-value">${{ servicio.monto|floatformat:2 }}</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-enhanced badge-success">
+                                            <i class="fas fa-plus me-1"></i>{{ servicio.puntos_ganados }}
+                                        </span>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -251,12 +1086,21 @@
                     {% endif %}
                     {% endwith %}
                     
-                    <a href="{% url 'clientes:historial_servicios' %}" class="btn btn-primary">
-                        <i class="fas fa-history me-2"></i> Ver historial completo
-                    </a>
+                    <div class="text-center">
+                        <a href="{% url 'clientes:historial_servicios' %}" class="btn btn-primary btn-enhanced">
+                            <i class="fas fa-history me-2"></i> Ver historial completo
+                        </a>
+                    </div>
                     {% else %}
-                    <div class="text-center py-4">
-                        <p class="mb-0">Aún no tienes servicios completados.</p>
+                    <div class="empty-state-enhanced text-center py-5">
+                        <div class="empty-icon-enhanced mb-3">
+                            <i class="fas fa-clipboard-list"></i>
+                        </div>
+                        <h4 class="empty-title-enhanced">Aún no tienes servicios completados</h4>
+                        <p class="empty-text-enhanced mb-4">¡Reserva tu primer servicio y comienza a acumular puntos!</p>
+                        <a href="{% url 'reservas:reservar_turno' %}" class="btn btn-primary btn-enhanced">
+                            <i class="fas fa-plus-circle me-2"></i> Reservar servicio
+                        </a>
                     </div>
                     {% endif %}
                 </div>
@@ -265,40 +1109,140 @@
     </div>
     
     <!-- Mis vehículos -->
-    <h2 class="mb-4">Mis Vehículos</h2>
-    <div class="row">
-        {% if vehiculos %}
-            {% for vehiculo in vehiculos %}
-            <div class="col-md-4 mb-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ vehiculo.marca }} {{ vehiculo.modelo }}</h5>
-                        <h6 class="card-subtitle mb-2 text-muted">{{ vehiculo.placa }}</h6>
-                        <ul class="list-unstyled">
-                            <li><strong>Año:</strong> {{ vehiculo.anio }}</li>
-                            <li><strong>Color:</strong> {{ vehiculo.color }}</li>
-                            <li><strong>Tipo:</strong> {{ vehiculo.get_tipo_display }}</li>
-                        </ul>
-                    </div>
-                    <div class="card-footer bg-transparent">
-                        <a href="#" class="btn btn-sm btn-outline-primary">Ver historial</a>
-                        <a href="{% url 'reservas:reservar_turno' %}" class="btn btn-sm btn-outline-success">Reservar turno</a>
-                    </div>
+    <div class="vehicles-section-enhanced mb-5">
+        <div class="section-header-enhanced d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex align-items-center">
+                <div class="section-icon-enhanced me-3">
+                    <i class="fas fa-car-side"></i>
+                </div>
+                <div>
+                    <h2 class="section-title-enhanced mb-1">Mis Vehículos</h2>
+                    <p class="section-subtitle-enhanced mb-0">Gestiona tu flota de vehículos registrados</p>
                 </div>
             </div>
-            {% endfor %}
-        {% else %}
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-body text-center py-4">
-                    <p class="mb-0">No tienes vehículos registrados.</p>
-                    <a href="#" class="btn btn-primary mt-3">
-                        <i class="fas fa-car me-2"></i> Registrar vehículo
-                    </a>
-                </div>
+            <div class="add-vehicle-btn-container">
+                <a href="{% url 'reservas:crear_vehiculo' %}" class="btn btn-add-vehicle-enhanced">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    <span>Agregar Vehículo</span>
+                </a>
             </div>
         </div>
-        {% endif %}
+
+        <div class="row">
+            {% if vehiculos %}
+                {% for vehiculo in vehiculos %}
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="vehicle-card-enhanced">
+                        <div class="vehicle-card-header">
+                            <div class="vehicle-icon-container">
+                                {% if vehiculo.get_tipo_display == 'Automóvil' %}
+                                    <i class="fas fa-car vehicle-type-icon"></i>
+                                {% elif vehiculo.get_tipo_display == 'SUV' %}
+                                    <i class="fas fa-truck-pickup vehicle-type-icon"></i>
+                                {% elif vehiculo.get_tipo_display == 'Camioneta' %}
+                                    <i class="fas fa-truck vehicle-type-icon"></i>
+                                {% elif vehiculo.get_tipo_display == 'Motocicleta' %}
+                                    <i class="fas fa-motorcycle vehicle-type-icon"></i>
+                                {% else %}
+                                    <i class="fas fa-car vehicle-type-icon"></i>
+                                {% endif %}
+                            </div>
+                            <div class="vehicle-status-badge">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Activo</span>
+                            </div>
+                        </div>
+                        
+                        <div class="vehicle-card-body">
+                            <div class="vehicle-main-info">
+                                <h3 class="vehicle-name">{{ vehiculo.marca }} {{ vehiculo.modelo }}</h3>
+                                <div class="vehicle-plate">
+                                    <i class="fas fa-id-card me-2"></i>
+                                    <span>{{ vehiculo.placa }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="vehicle-details-grid">
+                                <div class="vehicle-detail-item">
+                                    <div class="detail-icon">
+                                        <i class="fas fa-calendar-alt"></i>
+                                    </div>
+                                    <div class="detail-content">
+                                        <span class="detail-label">Año</span>
+                                        <span class="detail-value">{{ vehiculo.anio }}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="vehicle-detail-item">
+                                    <div class="detail-icon">
+                                        <i class="fas fa-palette"></i>
+                                    </div>
+                                    <div class="detail-content">
+                                        <span class="detail-label">Color</span>
+                                        <span class="detail-value">{{ vehiculo.color }}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="vehicle-detail-item">
+                                    <div class="detail-icon">
+                                        <i class="fas fa-cogs"></i>
+                                    </div>
+                                    <div class="detail-content">
+                                        <span class="detail-label">Tipo</span>
+                                        <span class="detail-value">{{ vehiculo.get_tipo_display }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="vehicle-card-actions">
+                            <a href="#" class="btn btn-vehicle-action btn-outline">
+                                <i class="fas fa-history me-2"></i>
+                                Ver Historial
+                            </a>
+                            <a href="{% url 'reservas:reservar_turno' %}" class="btn btn-vehicle-action btn-primary">
+                                <i class="fas fa-calendar-plus me-2"></i>
+                                Reservar Turno
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-12">
+                    <div class="empty-vehicles-state">
+                        <div class="empty-vehicles-icon">
+                            <i class="fas fa-car-side"></i>
+                        </div>
+                        <h3 class="empty-vehicles-title">¡Agrega tu primer vehículo!</h3>
+                        <p class="empty-vehicles-text">
+                            Registra tus vehículos para una experiencia personalizada.<br>
+                            Podrás hacer reservas más rápidas y llevar un historial completo de servicios.
+                        </p>
+                        <div class="empty-vehicles-actions">
+                            <a href="#" class="btn btn-add-first-vehicle">
+                                <i class="fas fa-plus-circle me-2"></i>
+                                Registrar mi primer vehículo
+                            </a>
+                        </div>
+                        <div class="empty-vehicles-features">
+                            <div class="feature-item">
+                                <i class="fas fa-check text-success me-2"></i>
+                                <span>Reservas más rápidas</span>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-check text-success me-2"></i>
+                                <span>Historial personalizado</span>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-check text-success me-2"></i>
+                                <span>Recordatorios de mantenimiento</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
     </div>
     {% endif %}
 

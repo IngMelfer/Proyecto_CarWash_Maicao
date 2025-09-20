@@ -3,32 +3,413 @@
 
 {% block title %}Mis Turnos - Premium Car Detailing{% endblock %}
 
+{% block extra_css %}
+<style>
+    .dashboard-header {
+        background: linear-gradient(135deg, #056a96, #06a7cf);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+    }
+    
+    .sidebar-enhanced {
+        background: linear-gradient(135deg, #ffffff, #f8fbff);
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        overflow: hidden;
+        border: none;
+    }
+    
+    .sidebar-header-enhanced {
+        background: linear-gradient(135deg, #056a96, #085173);
+        color: white;
+        padding: 1.5rem;
+        border: none;
+    }
+    
+    .sidebar-header-enhanced h5 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    
+    .sidebar-menu-enhanced {
+        padding: 0;
+    }
+    
+    .sidebar-item-enhanced {
+        border: none;
+        padding: 1rem 1.5rem;
+        transition: all 0.3s ease;
+        color: #333;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+    }
+    
+    .sidebar-item-enhanced:hover {
+        background: linear-gradient(135deg, #f0f8ff, #e6f3ff);
+        color: #056a96;
+        transform: translateX(5px);
+    }
+    
+    .sidebar-item-enhanced.active {
+        background: linear-gradient(135deg, #056a96, #085173);
+        color: white;
+        border-left: 4px solid #06a7cf;
+    }
+    
+    .sidebar-item-enhanced i {
+        width: 20px;
+        margin-right: 12px;
+        font-size: 1rem;
+    }
+    
+    .main-content-enhanced {
+        background: linear-gradient(135deg, #ffffff, #f8fbff);
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        overflow: hidden;
+        border: none;
+    }
+    
+    .content-header-enhanced {
+        background: linear-gradient(135deg, #056a96, #085173);
+        color: white;
+        padding: 1.5rem 2rem;
+        border: none;
+    }
+    
+    .content-header-enhanced h4 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 1.4rem;
+    }
+    
+    .btn-nuevo-turno {
+        background: linear-gradient(135deg, #06a7cf, #0891b3);
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-nuevo-turno:hover {
+        background: linear-gradient(135deg, #0891b3, #06a7cf);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(6, 167, 207, 0.3);
+    }
+    
+    .tabs-enhanced {
+        border: none;
+        background: transparent;
+        margin-bottom: 2rem;
+    }
+    
+    .tab-enhanced {
+        border: none;
+        background: transparent;
+        color: #666;
+        padding: 1rem 1.5rem;
+        font-weight: 500;
+        border-radius: 10px 10px 0 0;
+        transition: all 0.3s ease;
+        margin-right: 0.5rem;
+    }
+    
+    .tab-enhanced:hover {
+        background: linear-gradient(135deg, #f0f8ff, #e6f3ff);
+        color: #056a96;
+    }
+    
+    .tab-enhanced.active {
+        background: linear-gradient(135deg, #056a96, #085173);
+        color: white;
+        border-bottom: 3px solid #06a7cf;
+    }
+    
+    .turno-card-enhanced {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+    
+    .turno-card-enhanced:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .turno-card-header-proximo {
+        background: linear-gradient(135deg, #056a96, #085173);
+        color: white;
+        padding: 1rem 1.5rem;
+        border: none;
+    }
+    
+    .turno-card-header-pasado {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 1rem 1.5rem;
+        border: none;
+    }
+    
+    .turno-card-header-cancelado {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        color: white;
+        padding: 1rem 1.5rem;
+        border: none;
+    }
+    
+    .turno-card-header-proceso {
+        background: linear-gradient(135deg, #ffc107, #fd7e14);
+        color: white;
+        padding: 1rem 1.5rem;
+        border: none;
+    }
+    
+    .turno-badge-proximo {
+        background: linear-gradient(135deg, #06a7cf, #0891b3);
+        border: none;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+    
+    .turno-badge-pasado {
+        background: linear-gradient(135deg, #20c997, #17a2b8);
+        border: none;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+    
+    .turno-badge-cancelado {
+        background: linear-gradient(135deg, #fd7e14, #e83e8c);
+        border: none;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+    
+    .turno-badge-proceso {
+        background: linear-gradient(135deg, #ffc107, #fd7e14);
+        border: none;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+    
+    .turno-info-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding: 0.5rem;
+        background: rgba(5, 106, 150, 0.05);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .turno-info-item:hover {
+        background: rgba(5, 106, 150, 0.1);
+    }
+    
+    .turno-info-item i {
+        width: 20px;
+        margin-right: 12px;
+        color: #056a96;
+        font-size: 1.1rem;
+    }
+    
+    .turno-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+    }
+    
+    .btn-action-enhanced {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        border: none;
+    }
+    
+    .btn-cancelar-enhanced {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        color: white;
+    }
+    
+    .btn-cancelar-enhanced:hover {
+        background: linear-gradient(135deg, #c82333, #dc3545);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+    }
+    
+    .btn-calificar-enhanced {
+        background: linear-gradient(135deg, #ffc107, #e0a800);
+        color: #333;
+    }
+    
+    .btn-calificar-enhanced:hover {
+        background: linear-gradient(135deg, #e0a800, #ffc107);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+    }
+    
+    .empty-state-enhanced {
+        text-align: center;
+        padding: 3rem 2rem;
+        color: #666;
+    }
+    
+    .empty-state-enhanced i {
+        font-size: 4rem;
+        color: #056a96;
+        margin-bottom: 1rem;
+        opacity: 0.7;
+    }
+    
+    .empty-state-enhanced h5 {
+        color: #056a96;
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+    
+    .empty-state-enhanced p {
+        margin-bottom: 2rem;
+        font-size: 1.1rem;
+    }
+    
+    .btn-reservar-enhanced {
+        background: linear-gradient(135deg, #056a96, #085173);
+        color: white;
+        padding: 0.8rem 2rem;
+        border-radius: 25px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: inline-block;
+    }
+    
+    .btn-reservar-enhanced:hover {
+        background: linear-gradient(135deg, #085173, #056a96);
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(5, 106, 150, 0.3);
+        color: white;
+    }
+    
+    .alert-enhanced {
+        border: none;
+        border-radius: 10px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .alert-success-enhanced {
+        background: linear-gradient(135deg, #d4edda, #c3e6cb);
+        color: #155724;
+        border-left: 4px solid #28a745;
+    }
+    
+    .alert-danger-enhanced {
+        background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+        color: #721c24;
+        border-left: 4px solid #dc3545;
+    }
+    
+    .alert-info-enhanced {
+        background: linear-gradient(135deg, #d1ecf1, #bee5eb);
+        color: #0c5460;
+        border-left: 4px solid #17a2b8;
+    }
+
+    /* Estilos para la sección de Servicios en Proceso */
+    .turno-badge-proceso {
+        background: linear-gradient(135deg, #ff6b35, #f7931e);
+        color: white;
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .turno-card-header-proceso {
+        background: linear-gradient(135deg, #ff6b35, #f7931e);
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 15px 15px 0 0;
+        box-shadow: 0 2px 10px rgba(255, 107, 53, 0.2);
+    }
+
+    .cronometro-dashboard {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .cronometro-dashboard:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .cronometro-dashboard .tiempo-restante {
+        font-size: 1.1rem;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+    .cronometro-dashboard.tiempo-agotado {
+        background: linear-gradient(135deg, #ff416c, #ff4b2b);
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container py-5">
     <div class="row">
         <!-- Menú lateral -->
         <div class="col-md-3 mb-4">
-            <div class="card shadow">
-                <div class="card-header bg-dark text-white">
-                    <h5 class="mb-0">Mi Cuenta</h5>
+            <div class="card sidebar-enhanced">
+                <div class="sidebar-header-enhanced">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user-circle me-2"></i>
+                        Mi Cuenta
+                    </h5>
                 </div>
-                <div class="list-group list-group-flush">
-                    <a href="{% url 'autenticacion:perfil' %}" class="list-group-item list-group-item-action">
-                        <i class="fas fa-user-circle me-2"></i> Mi Perfil
+                <div class="sidebar-menu-enhanced">
+                    <a href="{% url 'autenticacion:perfil' %}" class="sidebar-item-enhanced">
+                        <i class="fas fa-user-circle"></i> Mi Perfil
                     </a>
                     {% if not user.is_staff %}
-                    <a href="#" class="list-group-item list-group-item-action active">
-                        <i class="fas fa-calendar-alt me-2"></i> Mis Turnos
+                    <a href="#" class="sidebar-item-enhanced active">
+                        <i class="fas fa-calendar-alt"></i> Mis Turnos
                     </a>
-                    <a href="{% url 'clientes:historial_servicios' %}" class="list-group-item list-group-item-action">
-                        <i class="fas fa-history me-2"></i> Historial de Servicios
+                    <a href="{% url 'clientes:historial_servicios' %}" class="sidebar-item-enhanced">
+                        <i class="fas fa-history"></i> Historial de Servicios
                     </a>
-                    <a href="{% url 'clientes:puntos_recompensas' %}" class="list-group-item list-group-item-action">
-                        <i class="fas fa-star me-2"></i> Puntos y Recompensas
+                    <a href="{% url 'clientes:puntos_recompensas' %}" class="sidebar-item-enhanced">
+                        <i class="fas fa-star"></i> Puntos y Recompensas
                     </a>
                     {% endif %}
-                    <a href="{% url 'autenticacion:logout' %}" class="list-group-item list-group-item-action text-danger">
-                        <i class="fas fa-sign-out-alt me-2"></i> Cerrar Sesión
+                    <a href="{% url 'autenticacion:logout' %}" class="sidebar-item-enhanced text-danger">
+                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
                     </a>
                 </div>
             </div>
@@ -36,17 +417,21 @@
         
         <!-- Contenido principal -->
         <div class="col-md-9">
-            <div class="card shadow">
-                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0">Mis Turnos</h4>
-                    <a href="{% url 'reservas:reservar_turno' %}" class="btn btn-primary btn-sm">
+            <div class="card main-content-enhanced">
+                <div class="content-header-enhanced d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="fas fa-calendar-check me-2"></i>
+                        Mis Turnos
+                    </h4>
+                    <a href="{% url 'reservas:reservar_turno' %}" class="btn btn-nuevo-turno">
                         <i class="fas fa-plus me-1"></i> Nuevo Turno
                     </a>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-4">
                     {% if messages %}
                         {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            <div class="alert alert-{{ message.tags }}-enhanced alert-dismissible fade show" role="alert">
+                                <i class="fas fa-info-circle me-2"></i>
                                 {{ message }}
                                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                             </div>
@@ -54,24 +439,121 @@
                     {% endif %}
                     
                     <!-- Pestañas para filtrar turnos -->
-                    <ul class="nav nav-tabs mb-4" id="turnosTabs" role="tablist">
+                    <ul class="nav tabs-enhanced mb-4" id="turnosTabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link {% if not active_tab or active_tab == 'proximas' %}active{% endif %}" id="proximas-tab" data-bs-toggle="tab" data-bs-target="#proximas" type="button" role="tab" aria-controls="proximas" aria-selected="{% if not active_tab or active_tab == 'proximas' %}true{% else %}false{% endif %}">
-                                Próximas
+                            <button class="nav-link tab-enhanced {% if not active_tab or active_tab == 'proximas' %}active{% endif %}" id="proximas-tab" data-bs-toggle="tab" data-bs-target="#proximas" type="button" role="tab" aria-controls="proximas" aria-selected="{% if not active_tab or active_tab == 'proximas' %}true{% else %}false{% endif %}">
+                                <i class="fas fa-clock me-2"></i>Próximas
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link {% if active_tab == 'pasadas' %}active{% endif %}" id="pasadas-tab" data-bs-toggle="tab" data-bs-target="#pasadas" type="button" role="tab" aria-controls="pasadas" aria-selected="{% if active_tab == 'pasadas' %}true{% else %}false{% endif %}">
-                                Pasadas
+                            <button class="nav-link tab-enhanced {% if active_tab == 'en_proceso' %}active{% endif %}" id="en-proceso-tab" data-bs-toggle="tab" data-bs-target="#en-proceso" type="button" role="tab" aria-controls="en-proceso" aria-selected="{% if active_tab == 'en_proceso' %}true{% else %}false{% endif %}">
+                                <i class="fas fa-spinner me-2"></i>En Proceso
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link {% if active_tab == 'canceladas' %}active{% endif %}" id="canceladas-tab" data-bs-toggle="tab" data-bs-target="#canceladas" type="button" role="tab" aria-controls="canceladas" aria-selected="{% if active_tab == 'canceladas' %}true{% else %}false{% endif %}">
-                                Canceladas
+                            <button class="nav-link tab-enhanced {% if active_tab == 'pasadas' %}active{% endif %}" id="pasadas-tab" data-bs-toggle="tab" data-bs-target="#pasadas" type="button" role="tab" aria-controls="pasadas" aria-selected="{% if active_tab == 'pasadas' %}true{% else %}false{% endif %}">
+                                <i class="fas fa-check-circle me-2"></i>Pasadas
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link tab-enhanced {% if active_tab == 'canceladas' %}active{% endif %}" id="canceladas-tab" data-bs-toggle="tab" data-bs-target="#canceladas" type="button" role="tab" aria-controls="canceladas" aria-selected="{% if active_tab == 'canceladas' %}true{% else %}false{% endif %}">
+                                <i class="fas fa-times-circle me-2"></i>Canceladas
                             </button>
                         </li>
                     </ul>
                     
+                    <!-- Sección de Servicios en Proceso -->
+                    {% if en_proceso %}
+                    <div class="mb-5">
+                        <div class="content-header-enhanced d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-0">
+                                    <i class="fas fa-spinner me-2"></i>
+                                    Servicios en Proceso
+                                </h4>
+                                <p class="mb-0 mt-1 opacity-75">Monitorea tus servicios activos en tiempo real</p>
+                            </div>
+                        </div>
+                        <div class="p-4">
+                            <div class="row row-cols-1 row-cols-md-2 g-4">
+                                {% for cita in en_proceso %}
+                                    <div class="col">
+                                        <div class="card turno-card-enhanced h-100">
+                                            <div class="turno-card-header-proceso d-flex justify-content-between align-items-center">
+                                                <h5 class="mb-0 fw-bold">
+                                                    <i class="fas fa-car-wash me-2"></i>
+                                                    {{ cita.servicio.nombre }}
+                                                </h5>
+                                                <span class="badge turno-badge-proceso">En Proceso</span>
+                                            </div>
+                                            <div class="card-body p-4">
+                                                <div class="turno-info-item">
+                                                    <i class="fas fa-calendar-day"></i>
+                                                    <div>
+                                                        <strong>Fecha:</strong><br>
+                                                        <span class="text-muted">{{ cita.fecha_hora|date:"l, j \d\e F \d\e Y" }}</span>
+                                                    </div>
+                                                </div>
+                                                <div class="turno-info-item">
+                                                    <i class="fas fa-clock"></i>
+                                                    <div>
+                                                        <strong>Hora:</strong><br>
+                                                        <span class="text-muted">{{ cita.fecha_hora|time:"h:i A" }}</span>
+                                                    </div>
+                                                </div>
+                                                <div class="turno-info-item">
+                                                    <i class="fas fa-car"></i>
+                                                    <div>
+                                                        <strong>Vehículo:</strong><br>
+                                                        <span class="text-muted">{% if cita.vehiculo %}{{ cita.vehiculo.marca }} {{ cita.vehiculo.modelo }} ({{ cita.vehiculo.placa }}){% else %}No especificado{% endif %}</span>
+                                                    </div>
+                                                </div>
+                                                <div class="turno-info-item">
+                                                    <i class="fas fa-map-marker-alt"></i>
+                                                    <div>
+                                                        <strong>Bahía:</strong><br>
+                                                        <span class="text-muted">{% if cita.bahia %}{{ cita.bahia.nombre }}{% else %}No asignada{% endif %}</span>
+                                                    </div>
+                                                </div>
+                                                <div class="turno-info-item">
+                                                    <i class="fas fa-tag"></i>
+                                                    <div>
+                                                        <strong>Precio:</strong><br>
+                                                        <span class="text-muted fw-bold">${{ cita.servicio.precio }}</span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Cronómetro del Dashboard del Administrador -->
+                                                <div class="cronometro-dashboard mt-3 p-3 rounded" 
+                                                     id="cronometro-dashboard-{{ cita.id }}" 
+                                                     data-inicio="{{ cita.fecha_inicio_servicio|date:'Y-m-d H:i:s' }}" 
+                                                     data-duracion="{{ cita.servicio.duracion_estimada }}">
+                                                    <div class="d-flex align-items-center justify-content-center">
+                                                        <i class="fas fa-clock me-2"></i>
+                                                        <span class="tiempo-restante fw-bold">Calculando...</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="card-footer bg-transparent p-4">
+                                                <div class="turno-actions">
+                                                    <button type="button" class="btn btn-action-enhanced btn-outline-primary" data-bs-toggle="modal" data-bs-target="#detalleModalProceso{{ cita.id }}">
+                                                        <i class="fas fa-eye me-1"></i> Ver Detalles
+                                                    </button>
+                                                    {% if cita.bahia and cita.bahia.tiene_camara and cita.bahia.ip_camara and cita.stream_token %}
+                                                    <a href="{% url 'reservas:ver_camara' token=cita.stream_token %}" class="btn btn-action-enhanced btn-outline-info">
+                                                        <i class="fas fa-video me-1"></i> Ver Cámara en Vivo
+                                                    </a>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <!-- Contenido de las pestañas -->
                     <div class="tab-content" id="turnosTabsContent">
                         <!-- Turnos Próximos -->
@@ -80,55 +562,175 @@
                                 <div class="row row-cols-1 row-cols-md-2 g-4">
                                     {% for cita in proximas %}
                                         <div class="col">
-                                            <div class="card h-100 border-primary">
-                                                <div class="card-header bg-primary bg-opacity-10 d-flex justify-content-between align-items-center">
-                                                    <h5 class="card-title mb-0">{{ cita.servicio.nombre }}</h5>
-                                                    <span class="badge bg-primary">{{ cita.estado }}</span>
+                                            <div class="card turno-card-enhanced h-100">
+                                                <div class="turno-card-header-proximo d-flex justify-content-between align-items-center">
+                                                    <h5 class="mb-0 fw-bold">
+                                                        <i class="fas fa-car-wash me-2"></i>
+                                                        {{ cita.servicio.nombre }}
+                                                    </h5>
+                                                    <span class="badge turno-badge-proximo">{{ cita.estado }}</span>
                                                 </div>
-                                                <div class="card-body">
-                                                    <div class="mb-3">
-                                                        <i class="fas fa-calendar-day me-2 text-primary"></i>
-                                                        <strong>Fecha:</strong> {{ cita.fecha_hora|date:"l, j \d\e F \d\e Y" }}
+                                                <div class="card-body p-4">
+                                                    <div class="turno-info-item">
+                                                        <i class="fas fa-calendar-day"></i>
+                                                        <div>
+                                                            <strong>Fecha:</strong><br>
+                                                            <span class="text-muted">{{ cita.fecha_hora|date:"l, j \d\e F \d\e Y" }}</span>
+                                                        </div>
                                                     </div>
-                                                    <div class="mb-3">
-                                                        <i class="fas fa-clock me-2 text-primary"></i>
-                                                        <strong>Hora:</strong> {{ cita.fecha_hora|time:"h:i A" }}
+                                                    <div class="turno-info-item">
+                                                        <i class="fas fa-clock"></i>
+                                                        <div>
+                                                            <strong>Hora:</strong><br>
+                                                            <span class="text-muted">{{ cita.fecha_hora|time:"h:i A" }}</span>
+                                                        </div>
                                                     </div>
-                                                    <div class="mb-3">
-                                                        <i class="fas fa-car me-2 text-primary"></i>
-                                                        <strong>Vehículo:</strong> {% if cita.vehiculo %}{{ cita.vehiculo.marca }} {{ cita.vehiculo.modelo }} ({{ cita.vehiculo.placa }}){% else %}No especificado{% endif %}
+                                                    <div class="turno-info-item">
+                                                        <i class="fas fa-car"></i>
+                                                        <div>
+                                                            <strong>Vehículo:</strong><br>
+                                                            <span class="text-muted">{% if cita.vehiculo %}{{ cita.vehiculo.marca }} {{ cita.vehiculo.modelo }} ({{ cita.vehiculo.placa }}){% else %}No especificado{% endif %}</span>
+                                                        </div>
                                                     </div>
-                                                    <div class="mb-3">
-                                                        <i class="fas fa-tag me-2 text-primary"></i>
-                                                        <strong>Precio:</strong> ${{ cita.servicio.precio }}
+                                                    <div class="turno-info-item">
+                                                        <i class="fas fa-tag"></i>
+                                                        <div>
+                                                            <strong>Precio:</strong><br>
+                                                            <span class="text-muted fw-bold">${{ cita.servicio.precio }}</span>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Cronómetro de tiempo restante -->
+                                                    <div class="cronometro-container mt-3 p-3 bg-light rounded" 
+                                                         data-reserva-id="{{ cita.id }}" 
+                                                         data-duracion="{{ cita.servicio.duracion_minutos }}" 
+                                                         data-inicio="{{ cita.fecha_inicio_servicio|date:'c' }}">
+                                                        <div class="d-flex align-items-center">
+                                                            <i class="fas fa-stopwatch me-2 text-warning"></i>
+                                                            <strong class="me-2">Tiempo restante:</strong>
+                                                            <div class="cronometro-tiempo text-warning fw-bold">
+                                                                <span class="minutos">--</span>:<span class="segundos">--</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Cronómetro de tiempo restante -->
+                                                    <div class="cronometro-container mt-3 p-3 bg-light rounded" 
+                                                         data-reserva-id="{{ cita.id }}" 
+                                                         data-duracion="{{ cita.servicio.duracion_minutos }}" 
+                                                         data-inicio="{{ cita.fecha_inicio_servicio|date:'c' }}">
+                                                        <div class="d-flex align-items-center">
+                                                            <i class="fas fa-stopwatch me-2 text-warning"></i>
+                                                            <strong class="me-2">Tiempo restante:</strong>
+                                                            <div class="cronometro-tiempo text-warning fw-bold">
+                                                                <span class="minutos">--</span>:<span class="segundos">--</span>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <div class="card-footer bg-transparent">
-                                                    <div class="d-flex justify-content-between flex-wrap">
-                                                        <button type="button" class="btn btn-outline-primary btn-sm mb-1" data-bs-toggle="modal" data-bs-target="#detalleModal{{ cita.id }}">
+                                                <div class="card-footer bg-transparent p-4">
+                                                    <div class="turno-actions">
+                                                        <button type="button" class="btn btn-action-enhanced btn-outline-primary" data-bs-toggle="modal" data-bs-target="#detalleModal{{ cita.id }}">
                                                             <i class="fas fa-eye me-1"></i> Ver Detalles
                                                         </button>
                                                         {% if cita.bahia and cita.bahia.tiene_camara and cita.bahia.ip_camara and cita.estado != 'CA' and cita.stream_token %}
-                                                        <a href="{% url 'reservas:ver_camara' token=cita.stream_token %}" class="btn btn-outline-info btn-sm mb-1">
+                                                        <a href="{% url 'reservas:ver_camara' token=cita.stream_token %}" class="btn btn-action-enhanced btn-outline-info">
                                                             <i class="fas fa-video me-1"></i> Ver Cámara
                                                         </a>
                                                         {% endif %}
-                                                        <button type="button" class="btn btn-outline-danger btn-sm mb-1" data-bs-toggle="modal" data-bs-target="#cancelarModal{{ cita.id }}">
+                                                        <button type="button" class="btn btn-cancelar-enhanced" data-bs-toggle="modal" data-bs-target="#cancelarModal{{ cita.id }}">
                                                             <i class="fas fa-times me-1"></i> Cancelar
                                                         </button>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-                                        
-
                                     {% endfor %}
                                 </div>
                             {% else %}
-                                <div class="alert alert-info">
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    No tienes turnos próximos programados.
-                                    <a href="{% url 'reservas:reservar_turno' %}" class="alert-link">¡Reserva uno ahora!</a>
+                                <div class="empty-state-enhanced">
+                                    <i class="fas fa-calendar-times"></i>
+                                    <h5>No tienes turnos próximos</h5>
+                                    <p>No tienes turnos próximos programados. ¡Reserva uno ahora!</p>
+                                    <a href="{% url 'reservas:reservar_turno' %}" class="btn-reservar-enhanced">
+                                        <i class="fas fa-plus me-2"></i>Reserva uno ahora
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Turnos En Proceso -->
+                        <div class="tab-pane fade {% if active_tab == 'en_proceso' %}show active{% endif %}" id="en-proceso" role="tabpanel" aria-labelledby="en-proceso-tab">
+                            {% if en_proceso %}
+                                <div class="row row-cols-1 row-cols-md-2 g-4">
+                                    {% for cita in en_proceso %}
+                                        <div class="col">
+                                            <div class="card turno-card-enhanced h-100">
+                                                <div class="turno-card-header-proceso d-flex justify-content-between align-items-center">
+                                                    <h5 class="mb-0 fw-bold">
+                                                        <i class="fas fa-spinner me-2"></i>
+                                                        {{ cita.servicio.nombre }}
+                                                    </h5>
+                                                    <span class="badge turno-badge-proceso">En Proceso</span>
+                                                </div>
+                                                <div class="card-body p-4">
+                                                    <div class="turno-info-item">
+                                                        <i class="fas fa-calendar-day"></i>
+                                                        <div>
+                                                            <strong>Fecha:</strong><br>
+                                                            <span class="text-muted">{{ cita.fecha_hora|date:"l, j \d\e F \d\e Y" }}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="turno-info-item">
+                                                        <i class="fas fa-clock"></i>
+                                                        <div>
+                                                            <strong>Hora:</strong><br>
+                                                            <span class="text-muted">{{ cita.fecha_hora|time:"h:i A" }}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="turno-info-item">
+                                                        <i class="fas fa-car"></i>
+                                                        <div>
+                                                            <strong>Vehículo:</strong><br>
+                                                            <span class="text-muted">{% if cita.vehiculo %}{{ cita.vehiculo.marca }} {{ cita.vehiculo.modelo }} ({{ cita.vehiculo.placa }}){% else %}No especificado{% endif %}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="turno-info-item">
+                                                        <i class="fas fa-map-marker-alt"></i>
+                                                        <div>
+                                                            <strong>Bahía:</strong><br>
+                                                            <span class="text-muted">{% if cita.bahia %}{{ cita.bahia.nombre }}{% else %}No asignada{% endif %}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="turno-info-item">
+                                                        <i class="fas fa-tag"></i>
+                                                        <div>
+                                                            <strong>Precio:</strong><br>
+                                                            <span class="text-muted fw-bold">${{ cita.servicio.precio }}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="card-footer bg-transparent p-4">
+                                                    <div class="turno-actions">
+                                                        <button type="button" class="btn btn-action-enhanced btn-outline-primary" data-bs-toggle="modal" data-bs-target="#detalleModalProceso{{ cita.id }}">
+                                                            <i class="fas fa-eye me-1"></i> Ver Detalles
+                                                        </button>
+                                                        {% if cita.bahia and cita.bahia.tiene_camara and cita.bahia.ip_camara and cita.stream_token %}
+                                                        <a href="{% url 'reservas:ver_camara' token=cita.stream_token %}" class="btn btn-action-enhanced btn-outline-info">
+                                                            <i class="fas fa-video me-1"></i> Ver Cámara en Vivo
+                                                        </a>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="empty-state-enhanced">
+                                    <i class="fas fa-spinner"></i>
+                                    <h5>No tienes turnos en proceso</h5>
+                                    <p>Actualmente no tienes ningún servicio siendo realizado.</p>
                                 </div>
                             {% endif %}
                         </div>
@@ -139,49 +741,68 @@
                                 <div class="row row-cols-1 row-cols-md-2 g-4">
                                     {% for cita in pasadas %}
                                         <div class="col">
-                                            <div class="card h-100">
-                                                <div class="card-header bg-light d-flex justify-content-between align-items-center">
-                                                    <h5 class="card-title mb-0">{{ cita.servicio.nombre }}</h5>
-                                                    <span class="badge bg-success">Completada</span>
+                                            <div class="card turno-card-enhanced h-100">
+                                                <div class="turno-card-header-pasado d-flex justify-content-between align-items-center">
+                                                    <h5 class="mb-0 fw-bold">
+                                                        <i class="fas fa-check-circle me-2"></i>
+                                                        {{ cita.servicio.nombre }}
+                                                    </h5>
+                                                    <span class="badge turno-badge-pasado">Completada</span>
                                                 </div>
-                                                <div class="card-body">
-                                                    <div class="mb-3">
-                                                        <i class="fas fa-calendar-day me-2 text-secondary"></i>
-                                                        <strong>Fecha:</strong> {{ cita.fecha_hora|date:"l, j \d\e F \d\e Y" }}
+                                                <div class="card-body p-4">
+                                                    <div class="turno-info-item">
+                                                        <i class="fas fa-calendar-day"></i>
+                                                        <div>
+                                                            <strong>Fecha:</strong><br>
+                                                            <span class="text-muted">{{ cita.fecha_hora|date:"l, j \d\e F \d\e Y" }}</span>
+                                                        </div>
                                                     </div>
-                                                    <div class="mb-3">
-                                                        <i class="fas fa-clock me-2 text-secondary"></i>
-                                                        <strong>Hora:</strong> {{ cita.fecha_hora|time:"h:i A" }}
+                                                    <div class="turno-info-item">
+                                                        <i class="fas fa-clock"></i>
+                                                        <div>
+                                                            <strong>Hora:</strong><br>
+                                                            <span class="text-muted">{{ cita.fecha_hora|time:"h:i A" }}</span>
+                                                        </div>
                                                     </div>
-                                                    <div class="mb-3">
-                                                        <i class="fas fa-car me-2 text-secondary"></i>
-                                                        <strong>Vehículo:</strong> {% if cita.vehiculo %}{{ cita.vehiculo.marca }} {{ cita.vehiculo.modelo }} ({{ cita.vehiculo.placa }}){% else %}No especificado{% endif %}
+                                                    <div class="turno-info-item">
+                                                        <i class="fas fa-car"></i>
+                                                        <div>
+                                                            <strong>Vehículo:</strong><br>
+                                                            <span class="text-muted">{% if cita.vehiculo %}{{ cita.vehiculo.marca }} {{ cita.vehiculo.modelo }} ({{ cita.vehiculo.placa }}){% else %}No especificado{% endif %}</span>
+                                                        </div>
                                                     </div>
-                                                    <div class="mb-3">
-                                                        <i class="fas fa-tag me-2 text-secondary"></i>
-                                                        <strong>Precio:</strong> ${{ cita.servicio.precio|floatformat:2 }}
+                                                    <div class="turno-info-item">
+                                                        <i class="fas fa-tag"></i>
+                                                        <div>
+                                                            <strong>Precio:</strong><br>
+                                                            <span class="text-muted fw-bold">${{ cita.servicio.precio|floatformat:2 }}</span>
+                                                        </div>
                                                     </div>
-                                                    <div class="mb-3">
-                                                        <i class="fas fa-award me-2 text-secondary"></i>
-                                                        <strong>Puntos ganados:</strong> {{ cita.servicio.puntos_otorgados }}
+                                                    <div class="turno-info-item">
+                                                        <i class="fas fa-award"></i>
+                                                        <div>
+                                                            <strong>Puntos ganados:</strong><br>
+                                                            <span class="text-muted fw-bold">{{ cita.servicio.puntos_otorgados }}</span>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <div class="card-footer bg-transparent">
-                                                    <div class="d-flex justify-content-between">
-                                                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#detalleModalPasada{{ cita.id }}">
+                                                <div class="card-footer bg-transparent p-4">
+                                                    <div class="turno-actions">
+                                                        <button type="button" class="btn btn-action-enhanced btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#detalleModalPasada{{ cita.id }}">
                                                             <i class="fas fa-eye me-1"></i> Ver Detalles
                                                         </button>
                                                         {% if not cita.calificacion %}
-                                                            <a href="{% url 'reservas:calificar_turno' cita.id %}" class="btn btn-outline-primary btn-sm">
+                                                            <a href="{% url 'reservas:calificar_turno' cita.id %}" class="btn btn-calificar-enhanced">
                                                                 <i class="fas fa-star me-1"></i> Calificar
                                                             </a>
                                                         {% else %}
-                                                            <span class="text-warning">
-                                                                {% for i in "12345"|make_list %}
-                                                                    {% if forloop.counter <= cita.calificacion %}
-                                                                        <i class="fas fa-star"></i>
+                                                            <span class="text-warning fw-bold">
+                                                                <i class="fas fa-star me-1"></i>
+                                                                {% for i in "12345" %}
+                                                                    {% if forloop.counter <= cita.calificacion.puntuacion %}
+                                                                        <i class="fas fa-star text-warning"></i>
                                                                     {% else %}
-                                                                        <i class="far fa-star"></i>
+                                                                        <i class="far fa-star text-warning"></i>
                                                                     {% endif %}
                                                                 {% endfor %}
                                                             </span>
@@ -190,17 +811,13 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        
-
-                                        
-
-
                                     {% endfor %}
                                 </div>
                             {% else %}
-                                <div class="alert alert-info">
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    No tienes turnos pasados.
+                                <div class="empty-state-enhanced">
+                                    <i class="fas fa-history"></i>
+                                    <h5>No tienes turnos pasados</h5>
+                                    <p>Aún no has completado ningún servicio con nosotros.</p>
                                 </div>
                             {% endif %}
                         </div>
@@ -211,33 +828,48 @@
                                 <div class="row row-cols-1 row-cols-md-2 g-4">
                                     {% for cita in canceladas %}
                                         <div class="col">
-                                            <div class="card h-100 border-danger border-opacity-25">
-                                                <div class="card-header {% if cita.estado == 'IN' %}bg-warning{% else %}bg-danger{% endif %} bg-opacity-10 d-flex justify-content-between align-items-center">
-                                                    <h5 class="card-title mb-0">{{ cita.servicio.nombre }}</h5>
-                                                    <span class="badge {% if cita.estado == 'IN' %}bg-warning{% else %}bg-danger{% endif %}">{% if cita.estado == 'IN' %}Incumplida{% else %}Cancelada{% endif %}</span>
+                                            <div class="card turno-card-enhanced h-100">
+                                                <div class="turno-card-header-cancelado d-flex justify-content-between align-items-center">
+                                                    <h5 class="mb-0 fw-bold">
+                                                        <i class="fas fa-times-circle me-2"></i>
+                                                        {{ cita.servicio.nombre }}
+                                                    </h5>
+                                                    <span class="badge turno-badge-cancelado">{% if cita.estado == 'IN' %}Incumplida{% else %}Cancelada{% endif %}</span>
                                                 </div>
-                                                <div class="card-body">
-                                                    <div class="mb-3">
-                                                        <i class="fas fa-calendar-day me-2 text-danger"></i>
-                                                        <strong>Fecha:</strong> {{ cita.fecha_hora|date:"l, j \d\e F \d\e Y" }}
+                                                <div class="card-body p-4">
+                                                    <div class="turno-info-item">
+                                                        <i class="fas fa-calendar-day"></i>
+                                                        <div>
+                                                            <strong>Fecha:</strong><br>
+                                                            <span class="text-muted">{{ cita.fecha_hora|date:"l, j \d\e F \d\e Y" }}</span>
+                                                        </div>
                                                     </div>
-                                                    <div class="mb-3">
-                                                        <i class="fas fa-clock me-2 text-danger"></i>
-                                                        <strong>Hora:</strong> {{ cita.fecha_hora|time:"h:i A" }}
+                                                    <div class="turno-info-item">
+                                                        <i class="fas fa-clock"></i>
+                                                        <div>
+                                                            <strong>Hora:</strong><br>
+                                                            <span class="text-muted">{{ cita.fecha_hora|time:"h:i A" }}</span>
+                                                        </div>
                                                     </div>
-                                                    <div class="mb-3">
-                                                        <i class="fas fa-car me-2 text-danger"></i>
-                                                        <strong>Vehículo:</strong> {% if cita.vehiculo %}{{ cita.vehiculo.marca }} {{ cita.vehiculo.modelo }} ({{ cita.vehiculo.placa }}){% else %}No especificado{% endif %}
+                                                    <div class="turno-info-item">
+                                                        <i class="fas fa-car"></i>
+                                                        <div>
+                                                            <strong>Vehículo:</strong><br>
+                                                            <span class="text-muted">{% if cita.vehiculo %}{{ cita.vehiculo.marca }} {{ cita.vehiculo.modelo }} ({{ cita.vehiculo.placa }}){% else %}No especificado{% endif %}</span>
+                                                        </div>
                                                     </div>
-                                                    <div class="mb-3">
-                                                        <i class="fas fa-info-circle me-2 text-danger"></i>
-                                                        <strong>Motivo:</strong> {% if cita.notas and "Motivo de cancelación:" in cita.notas %}{{ cita.notas|split:"Motivo de cancelación:"|last }}{% else %}No especificado{% endif %}
+                                                    <div class="turno-info-item">
+                                                        <i class="fas fa-info-circle"></i>
+                                                        <div>
+                                                            <strong>Motivo:</strong><br>
+                                                            <span class="text-muted">{% if cita.notas and "Motivo de cancelación:" in cita.notas %}{{ cita.notas|split:"Motivo de cancelación:"|last }}{% else %}No especificado{% endif %}</span>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <div class="card-footer bg-transparent">
-                                                    <div class="d-flex justify-content-between">
+                                                <div class="card-footer bg-transparent p-4">
+                                                    <div class="d-flex justify-content-between align-items-center">
                                                         <small class="text-muted">Cancelada el {{ cita.fecha_actualizacion|date:"j/m/Y h:i A" }}</small>
-                                                        <a href="{% url 'reservas:reservar_turno' %}" class="btn btn-outline-primary btn-sm">
+                                                        <a href="{% url 'reservas:reservar_turno' %}" class="btn btn-action-enhanced btn-outline-primary">
                                                             <i class="fas fa-redo me-1"></i> Reservar de nuevo
                                                         </a>
                                                     </div>
@@ -247,9 +879,10 @@
                                     {% endfor %}
                                 </div>
                             {% else %}
-                                <div class="alert alert-info">
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    No tienes turnos cancelados.
+                                <div class="empty-state-enhanced">
+                                    <i class="fas fa-ban"></i>
+                                    <h5>No tienes turnos cancelados</h5>
+                                    <p>No has cancelado ningún turno hasta el momento.</p>
                                 </div>
                             {% endif %}
                         </div>
@@ -538,6 +1171,121 @@
             
             card.addEventListener('mouseleave', function(e) {
                 e.stopPropagation();
+            });
+        });
+        
+        // Cronómetro para turnos en proceso
+        function inicializarCronometros() {
+            const cronometros = document.querySelectorAll('.cronometro-container');
+            
+            cronometros.forEach(cronometro => {
+                const duracionMinutos = parseInt(cronometro.dataset.duracion);
+                const fechaInicio = cronometro.dataset.inicio;
+                
+                if (!fechaInicio || fechaInicio === 'None') {
+                    cronometro.querySelector('.cronometro-tiempo').innerHTML = '<i class="fas fa-clock me-1"></i>No iniciado';
+                    return;
+                }
+                
+                const inicioServicio = new Date(fechaInicio);
+                const duracionMs = duracionMinutos * 60 * 1000;
+                
+                function actualizarCronometro() {
+                    const ahora = new Date();
+                    const tiempoTranscurrido = ahora - inicioServicio;
+                    const tiempoRestante = duracionMs - tiempoTranscurrido;
+                    
+                    if (tiempoRestante <= 0) {
+                        cronometro.querySelector('.cronometro-tiempo').innerHTML = '<i class="fas fa-check me-1 text-success"></i>Completado';
+                        cronometro.querySelector('.cronometro-tiempo').classList.remove('text-warning');
+                        cronometro.querySelector('.cronometro-tiempo').classList.add('text-success');
+                        return;
+                    }
+                    
+                    const minutosRestantes = Math.floor(tiempoRestante / (1000 * 60));
+                    const segundosRestantes = Math.floor((tiempoRestante % (1000 * 60)) / 1000);
+                    
+                    const minutosStr = minutosRestantes.toString().padStart(2, '0');
+                    const segundosStr = segundosRestantes.toString().padStart(2, '0');
+                    
+                    cronometro.querySelector('.minutos').textContent = minutosStr;
+                    cronometro.querySelector('.segundos').textContent = segundosStr;
+                    
+                    // Cambiar color cuando queden menos de 5 minutos
+                    if (minutosRestantes < 5) {
+                        cronometro.querySelector('.cronometro-tiempo').classList.remove('text-warning');
+                        cronometro.querySelector('.cronometro-tiempo').classList.add('text-danger');
+                    }
+                }
+                
+                // Actualizar inmediatamente
+                actualizarCronometro();
+                
+                // Actualizar cada segundo
+                setInterval(actualizarCronometro, 1000);
+            });
+        }
+        
+        // Inicializar cronómetros cuando se carga la página
+        inicializarCronometros();
+        
+        // Cronómetro del Dashboard del Administrador para Servicios en Proceso
+        function inicializarCronometrosDashboard() {
+            const cronometrosDashboard = document.querySelectorAll('.cronometro-dashboard');
+            
+            cronometrosDashboard.forEach(cronometro => {
+                const duracionMinutos = parseInt(cronometro.dataset.duracion);
+                const fechaInicio = cronometro.dataset.inicio;
+                
+                if (!fechaInicio || fechaInicio === 'None') {
+                    cronometro.querySelector('.tiempo-restante').innerHTML = 'No iniciado';
+                    return;
+                }
+                
+                const inicioServicio = new Date(fechaInicio);
+                const duracionMs = duracionMinutos * 60 * 1000;
+                
+                function actualizarCronometroDashboard() {
+                    const ahora = new Date();
+                    const tiempoTranscurrido = ahora - inicioServicio;
+                    const tiempoRestante = duracionMs - tiempoTranscurrido;
+                    
+                    if (tiempoRestante <= 0) {
+                        cronometro.classList.add('tiempo-agotado');
+                        cronometro.querySelector('.tiempo-restante').innerHTML = '¡Tiempo agotado!';
+                        return;
+                    }
+                    
+                    const minutosRestantes = Math.floor(tiempoRestante / (1000 * 60));
+                    const segundosRestantes = Math.floor((tiempoRestante % (1000 * 60)) / 1000);
+                    
+                    const minutosStr = minutosRestantes.toString().padStart(2, '0');
+                    const segundosStr = segundosRestantes.toString().padStart(2, '0');
+                    
+                    cronometro.querySelector('.tiempo-restante').innerHTML = `${minutosStr}:${segundosStr}`;
+                    
+                    // Cambiar a rojo cuando queden menos de 5 minutos
+                    if (minutosRestantes < 5) {
+                        cronometro.classList.add('tiempo-agotado');
+                    }
+                }
+                
+                // Actualizar inmediatamente
+                actualizarCronometroDashboard();
+                
+                // Actualizar cada segundo
+                setInterval(actualizarCronometroDashboard, 1000);
+            });
+        }
+        
+        // Inicializar cronómetros del dashboard
+        inicializarCronometrosDashboard();
+        
+        // Reinicializar cronómetros cuando se cambia de pestaña
+        document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+            tab.addEventListener('shown.bs.tab', function() {
+                setTimeout(inicializarCronometros, 100);
+                setTimeout(inicializarCronometrosDashboard, 100);
             });
         });
         

@@ -2,32 +2,235 @@
 
 {% block title %}Mi Perfil - Premium Car Detailing{% endblock %}
 
+{% block extra_css %}
+<style>
+    .dashboard-header {
+        background: linear-gradient(135deg, #056a96, #06a7cf);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+    }
+    
+    .sidebar-enhanced {
+        background: linear-gradient(135deg, #ffffff, #f8fbff);
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        overflow: hidden;
+        border: none;
+    }
+    
+    .sidebar-header-enhanced {
+        background: linear-gradient(135deg, #056a96, #085173);
+        color: white;
+        padding: 1.5rem;
+        border: none;
+    }
+    
+    .sidebar-header-enhanced h5 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    
+    .sidebar-menu-enhanced {
+        padding: 0;
+    }
+    
+    .sidebar-item-enhanced {
+        border: none;
+        padding: 1rem 1.5rem;
+        transition: all 0.3s ease;
+        color: #333;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+    }
+    
+    .sidebar-item-enhanced:hover {
+        background: linear-gradient(135deg, #f0f8ff, #e6f3ff);
+        color: #056a96;
+        transform: translateX(5px);
+    }
+    
+    .sidebar-item-enhanced.active {
+        background: linear-gradient(135deg, #056a96, #085173);
+        color: white;
+        border-left: 4px solid #06a7cf;
+    }
+    
+    .sidebar-item-enhanced i {
+        width: 20px;
+        margin-right: 12px;
+        font-size: 1rem;
+    }
+    
+    .main-content-enhanced {
+        background: linear-gradient(135deg, #ffffff, #f8fbff);
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        overflow: hidden;
+        border: none;
+    }
+    
+    .content-header-enhanced {
+        background: linear-gradient(135deg, #056a96, #085173);
+        color: white;
+        padding: 1.5rem 2rem;
+        border: none;
+    }
+    
+    .content-header-enhanced h4 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 1.4rem;
+    }
+    
+    .profile-card-enhanced {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+    
+    .profile-card-enhanced:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .profile-info-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding: 0.5rem;
+        background: rgba(5, 106, 150, 0.05);
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .profile-info-item:hover {
+        background: rgba(5, 106, 150, 0.1);
+    }
+    
+    .profile-info-item i {
+        width: 20px;
+        margin-right: 12px;
+        color: #056a96;
+        font-size: 1.1rem;
+    }
+    
+    .btn-action-enhanced {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        border: none;
+    }
+    
+    .btn-editar-enhanced {
+        background: linear-gradient(135deg, #06a7cf, #0891b3);
+        color: white;
+    }
+    
+    .btn-editar-enhanced:hover {
+        background: linear-gradient(135deg, #0891b3, #06a7cf);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(6, 167, 207, 0.3);
+        color: white;
+    }
+    
+    .alert-enhanced {
+        border: none;
+        border-radius: 10px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .alert-success-enhanced {
+        background: linear-gradient(135deg, #d4edda, #c3e6cb);
+        color: #155724;
+        border-left: 4px solid #28a745;
+    }
+    
+    .alert-danger-enhanced {
+        background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+        color: #721c24;
+        border-left: 4px solid #dc3545;
+    }
+    
+    .alert-info-enhanced {
+        background: linear-gradient(135deg, #d1ecf1, #bee5eb);
+        color: #0c5460;
+        border-left: 4px solid #17a2b8;
+    }
+    
+    .form-control-enhanced {
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        padding: 12px 15px;
+        transition: all 0.3s ease;
+        background: white;
+    }
+    
+    .form-control-enhanced:focus {
+        border-color: #056a96;
+        box-shadow: 0 0 0 0.2rem rgba(5, 106, 150, 0.25);
+        background: white;
+    }
+    
+    .btn-guardar-enhanced {
+        background: linear-gradient(135deg, #056a96, #085173);
+        color: white;
+        padding: 0.8rem 2rem;
+        border-radius: 25px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        display: inline-block;
+        border: none;
+    }
+    
+    .btn-guardar-enhanced:hover {
+        background: linear-gradient(135deg, #085173, #056a96);
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(5, 106, 150, 0.3);
+        color: white;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container py-5">
     <div class="row">
         <!-- Menú lateral -->
         <div class="col-md-3 mb-4">
-            <div class="card shadow">
-                <div class="card-header bg-dark text-white">
-                    <h5 class="mb-0">Mi Cuenta</h5>
+            <div class="card sidebar-enhanced">
+                <div class="sidebar-header-enhanced">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user-circle me-2"></i>
+                        Mi Cuenta
+                    </h5>
                 </div>
-                <div class="list-group list-group-flush">
-                    <a href="{% url 'autenticacion:perfil' %}" class="list-group-item list-group-item-action active">
-                        <i class="fas fa-user-circle me-2"></i> Mi Perfil
+                <div class="sidebar-menu-enhanced">
+                    <a href="{% url 'autenticacion:perfil' %}" class="sidebar-item-enhanced active">
+                        <i class="fas fa-user-circle"></i> Mi Perfil
                     </a>
                     {% if not user.is_staff %}
-                    <a href="{% url 'reservas:mis_turnos' %}" class="list-group-item list-group-item-action">
-                        <i class="fas fa-calendar-alt me-2"></i> Mis Turnos
+                    <a href="{% url 'reservas:mis_turnos' %}" class="sidebar-item-enhanced">
+                        <i class="fas fa-calendar-alt"></i> Mis Turnos
                     </a>
-                    <a href="{% url 'clientes:historial_servicios' %}" class="list-group-item list-group-item-action">
-                        <i class="fas fa-history me-2"></i> Historial de Servicios
+                    <a href="{% url 'clientes:historial_servicios' %}" class="sidebar-item-enhanced">
+                        <i class="fas fa-history"></i> Historial de Servicios
                     </a>
-                    <a href="{% url 'clientes:puntos_recompensas' %}" class="list-group-item list-group-item-action">
-                        <i class="fas fa-star me-2"></i> Puntos y Recompensas
+                    <a href="{% url 'clientes:puntos_recompensas' %}" class="sidebar-item-enhanced">
+                        <i class="fas fa-star"></i> Puntos y Recompensas
                     </a>
                     {% endif %}
-                    <a href="{% url 'autenticacion:logout' %}" class="list-group-item list-group-item-action text-danger">
-                        <i class="fas fa-sign-out-alt me-2"></i> Cerrar Sesión
+                    <a href="{% url 'autenticacion:logout' %}" class="sidebar-item-enhanced text-danger">
+                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
                     </a>
                 </div>
             </div>
@@ -35,14 +238,16 @@
         
         <!-- Contenido principal -->
         <div class="col-md-9">
-            <div class="card shadow">
-                <div class="card-header bg-dark text-white">
-                    <h4 class="mb-0">Mi Perfil</h4>
+            <div class="card shadow-lg border-0 profile-card">
+                <div class="card-header profile-header">
+                    <h4 class="mb-0 text-white fw-bold">
+                        <i class="fas fa-user-edit me-2"></i>Mi Perfil
+                    </h4>
                 </div>
-                <div class="card-body">
+                <div class="card-body profile-body">
                     {% if messages %}
                         {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show premium-alert" role="alert">
                                 {{ message }}
                                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                             </div>
@@ -54,76 +259,117 @@
                         
                         <div class="row mb-4">
                             <div class="col-md-12 text-center">
-                                <div class="mb-3">
+                                <div class="mb-3 avatar-container">
                                     {% if usuario.foto_perfil %}
-                                        <img src="{{ usuario.foto_perfil.url }}" alt="Foto de perfil" class="rounded-circle img-thumbnail" style="width: 150px; height: 150px; object-fit: cover;">
+                                        <img src="{{ usuario.foto_perfil.url }}" alt="Foto de perfil" class="profile-photo">
                                     {% else %}
-                                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white" style="width: 150px; height: 150px; margin: 0 auto;">
+                                        <div class="profile-photo-placeholder">
                                             <i class="fas fa-user fa-4x"></i>
                                         </div>
                                     {% endif %}
+                                    <div class="avatar-overlay">
+                                        <i class="fas fa-camera fa-2x"></i>
+                                    </div>
                                 </div>
-                                <div class="mb-3">
-                                    <label for="foto_perfil" class="form-label btn btn-outline-primary btn-sm">
-                                        <i class="fas fa-camera me-1"></i> Cambiar foto
-                                    </label>
+                                <div class="mb-4 text-center">
+                                    <button type="button" class="btn btn-change-photo" onclick="document.getElementById('foto_perfil').click()">
+                                        <i class="fas fa-camera me-2"></i>
+                                        <span>Cambiar Foto</span>
+                                    </button>
                                     <input type="file" class="form-control d-none" id="foto_perfil" name="foto_perfil" accept="image/*">
                                 </div>
                             </div>
                         </div>
                         
-                        <div class="row mb-4">
+                        <div class="row mb-5">
                             <div class="col-md-12">
-                                <h5 class="border-bottom pb-2">Información Personal</h5>
+                                <div class="section-header">
+                                    <h4 class="section-title-enhanced">
+                                        <i class="fas fa-user-circle me-3 text-primary"></i>
+                                        <span>Información Personal</span>
+                                    </h4>
+                                    <div class="section-divider"></div>
+                                </div>
                             </div>
                         </div>
                         
-                        <div class="row mb-3">
-                            <div class="col-md-6 mb-3">
-                                <label for="nombre" class="form-label">Nombre</label>
-                                <input type="text" class="form-control" id="nombre" name="nombre" value="{% if form_data.nombre %}{{ form_data.nombre }}{% elif cliente and cliente.nombre %}{{ cliente.nombre }}{% else %}{{ usuario.first_name }}{% endif %}" required>
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-4">
+                                <div class="form-group-enhanced">
+                                    <label for="nombre" class="form-label-enhanced">
+                                        <i class="fas fa-user me-2 text-muted"></i>Nombre
+                                    </label>
+                                    <input type="text" class="form-control premium-input-enhanced" id="nombre" name="nombre" value="{% if form_data.nombre %}{{ form_data.nombre }}{% elif cliente and cliente.nombre %}{{ cliente.nombre }}{% else %}{{ usuario.first_name }}{% endif %}" required>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="apellido" class="form-label">Apellido</label>
-                                <input type="text" class="form-control" id="apellido" name="apellido" value="{% if form_data.apellido %}{{ form_data.apellido }}{% elif cliente and cliente.apellido %}{{ cliente.apellido }}{% else %}{{ usuario.last_name }}{% endif %}" required>
+                            <div class="col-md-6 mb-4">
+                                <div class="form-group-enhanced">
+                                    <label for="apellido" class="form-label-enhanced">
+                                        <i class="fas fa-user-tag me-2 text-muted"></i>Apellido
+                                    </label>
+                                    <input type="text" class="form-control premium-input-enhanced" id="apellido" name="apellido" value="{% if form_data.apellido %}{{ form_data.apellido }}{% elif cliente and cliente.apellido %}{{ cliente.apellido }}{% else %}{{ usuario.last_name }}{% endif %}" required>
+                                </div>
                             </div>
                         </div>
                         
-                        <div class="row mb-3">
-                            <div class="col-md-6 mb-3">
-                                <label for="email" class="form-label">Correo Electrónico</label>
-                                <input type="email" class="form-control" id="email" value="{{ usuario.email }}" disabled>
-                                <div class="form-text">El correo electrónico no se puede cambiar.</div>
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-4">
+                                <div class="form-group-enhanced">
+                                    <label for="email" class="form-label-enhanced">
+                                        <i class="fas fa-envelope me-2 text-muted"></i>Correo Electrónico
+                                    </label>
+                                    <input type="email" class="form-control premium-input-enhanced disabled-input-enhanced" id="email" value="{{ usuario.email }}" disabled>
+                                    <div class="form-text-enhanced">
+                                        <i class="fas fa-info-circle me-1"></i>El correo electrónico no se puede cambiar.
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="telefono" class="form-label">Teléfono</label>
-                                <input type="tel" class="form-control" id="telefono" name="telefono" value="{% if form_data.telefono %}{{ form_data.telefono }}{% elif cliente and cliente.telefono %}{{ cliente.telefono }}{% else %}{% endif %}">
+                            <div class="col-md-6 mb-4">
+                                <div class="form-group-enhanced">
+                                    <label for="telefono" class="form-label-enhanced">
+                                        <i class="fas fa-phone me-2 text-muted"></i>Teléfono
+                                    </label>
+                                    <input type="tel" class="form-control premium-input-enhanced" id="telefono" name="telefono" value="{% if form_data.telefono %}{{ form_data.telefono }}{% elif cliente and cliente.telefono %}{{ cliente.telefono }}{% else %}{% endif %}">
+                                </div>
                             </div>
                         </div>
                         
                         {% if cliente %}
-                        <div class="row mb-3">
-                            <div class="col-md-6 mb-3">
-                                <label for="tipo_documento" class="form-label">Tipo de Documento</label>
-                                <select class="form-select" id="tipo_documento" disabled>
-                                    <option value="CC" {% if cliente.tipo_documento == 'CC' %}selected{% endif %}>Cédula de Ciudadanía</option>
-                                    <option value="CE" {% if cliente.tipo_documento == 'CE' %}selected{% endif %}>Cédula de Extranjería</option>
-                                    <option value="PA" {% if cliente.tipo_documento == 'PA' %}selected{% endif %}>Pasaporte</option>
-                                    <option value="NI" {% if cliente.tipo_documento == 'NI' %}selected{% endif %}>NIT</option>
-                                </select>
-                                <div class="form-text">El tipo de documento no se puede cambiar.</div>
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-4">
+                                <div class="form-group-enhanced">
+                                    <label for="tipo_documento" class="form-label-enhanced">
+                                        <i class="fas fa-id-card me-2 text-muted"></i>Tipo de Documento
+                                    </label>
+                                    <select class="form-select premium-input-enhanced disabled-input-enhanced" id="tipo_documento" disabled>
+                                        <option value="CC" {% if cliente.tipo_documento == 'CC' %}selected{% endif %}>Cédula de Ciudadanía</option>
+                                        <option value="CE" {% if cliente.tipo_documento == 'CE' %}selected{% endif %}>Cédula de Extranjería</option>
+                                        <option value="PA" {% if cliente.tipo_documento == 'PA' %}selected{% endif %}>Pasaporte</option>
+                                        <option value="NI" {% if cliente.tipo_documento == 'NI' %}selected{% endif %}>NIT</option>
+                                    </select>
+                                    <div class="form-text-enhanced">
+                                        <i class="fas fa-info-circle me-1"></i>El tipo de documento no se puede cambiar.
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="numero_documento" class="form-label">Número de Documento</label>
-                                <input type="text" class="form-control" id="numero_documento" value="{{ cliente.numero_documento }}" disabled>
-                                <div class="form-text">El número de documento no se puede cambiar.</div>
+                            <div class="col-md-6 mb-4">
+                                <div class="form-group-enhanced">
+                                    <label for="numero_documento" class="form-label-enhanced">
+                                        <i class="fas fa-hashtag me-2 text-muted"></i>Número de Documento
+                                    </label>
+                                    <input type="text" class="form-control premium-input-enhanced disabled-input-enhanced" id="numero_documento" value="{{ cliente.numero_documento }}" disabled>
+                                    <div class="form-text-enhanced">
+                                        <i class="fas fa-info-circle me-1"></i>El número de documento no se puede cambiar.
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         {% else %}
-                        <div class="row mb-3">
+                        <div class="row mb-4">
                             <div class="col-md-12">
-                                <div class="alert alert-info">
-                                    <i class="fas fa-info-circle me-2"></i> No hay información de documento disponible. Por favor, complete su perfil de cliente.
+                                <div class="alert alert-info-enhanced">
+                                    <i class="fas fa-info-circle me-2"></i> 
+                                    <span>No hay información de documento disponible. Por favor, complete su perfil de cliente.</span>
                                 </div>
                             </div>
                         </div>
@@ -131,52 +377,58 @@
                         
                         <div class="row mb-4">
                             <div class="col-md-12">
-                                <h5 class="border-bottom pb-2">Dirección</h5>
+                                <h5 class="section-title">
+                                    <i class="fas fa-map-marker-alt me-2"></i>Dirección
+                                </h5>
                             </div>
                         </div>
                         
                         <div class="row mb-3">
                             <div class="col-md-8 mb-3">
-                                <label for="direccion" class="form-label">Dirección</label>
-                                <input type="text" class="form-control" id="direccion" name="direccion" value="{% if form_data.direccion %}{{ form_data.direccion }}{% elif cliente %}{{ cliente.direccion }}{% else %}{% endif %}">
+                                <label for="direccion" class="form-label premium-label">Dirección</label>
+                                <input type="text" class="form-control premium-input" id="direccion" name="direccion" value="{% if form_data.direccion %}{{ form_data.direccion }}{% elif cliente %}{{ cliente.direccion }}{% else %}{% endif %}">
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label for="ciudad" class="form-label">Ciudad</label>
-                                <input type="text" class="form-control" id="ciudad" name="ciudad" value="{% if form_data.ciudad %}{{ form_data.ciudad }}{% elif cliente %}{{ cliente.ciudad }}{% else %}{% endif %}">
+                                <label for="ciudad" class="form-label premium-label">Ciudad</label>
+                                <input type="text" class="form-control premium-input" id="ciudad" name="ciudad" value="{% if form_data.ciudad %}{{ form_data.ciudad }}{% elif cliente %}{{ cliente.ciudad }}{% else %}{% endif %}">
                             </div>
                         </div>
                         
                         <div class="row mb-4">
                             <div class="col-md-12">
-                                <h5 class="border-bottom pb-2">Preferencias de Notificación</h5>
+                                <h5 class="section-title">
+                                    <i class="fas fa-bell me-2"></i>Preferencias de Notificación
+                                </h5>
                             </div>
                         </div>
                         
                         <div class="row mb-3">
                             <div class="col-md-12">
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="notificaciones_email" name="notificaciones_email" {% if form_data.notificaciones_email %}checked{% elif cliente and cliente.recibir_notificaciones %}checked{% endif %}>
-                                    <label class="form-check-label" for="notificaciones_email">
-                                        Recibir notificaciones por correo electrónico
-                                    </label>
-                                </div>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="notificaciones_sms" name="notificaciones_sms" {% if form_data.notificaciones_sms|default:False %}checked{% endif %}>
-                                    <label class="form-check-label" for="notificaciones_sms">
-                                        Recibir notificaciones por SMS
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="notificaciones_whatsapp" name="notificaciones_whatsapp" {% if form_data.notificaciones_whatsapp|default:False %}checked{% endif %}>
-                                    <label class="form-check-label" for="notificaciones_whatsapp">
-                                        Recibir notificaciones por WhatsApp
-                                    </label>
+                                <div class="premium-checkbox-group">
+                                    <div class="form-check premium-checkbox mb-3">
+                                        <input class="form-check-input" type="checkbox" id="notificaciones_email" name="notificaciones_email" {% if form_data.notificaciones_email %}checked{% elif cliente and cliente.recibir_notificaciones %}checked{% endif %}>
+                                        <label class="form-check-label premium-checkbox-label" for="notificaciones_email">
+                                            <i class="fas fa-envelope me-2"></i>Recibir notificaciones por correo electrónico
+                                        </label>
+                                    </div>
+                                    <div class="form-check premium-checkbox mb-3">
+                                        <input class="form-check-input" type="checkbox" id="notificaciones_sms" name="notificaciones_sms" {% if form_data.notificaciones_sms|default:False %}checked{% endif %}>
+                                        <label class="form-check-label premium-checkbox-label" for="notificaciones_sms">
+                                            <i class="fas fa-sms me-2"></i>Recibir notificaciones por SMS
+                                        </label>
+                                    </div>
+                                    <div class="form-check premium-checkbox">
+                                        <input class="form-check-input" type="checkbox" id="notificaciones_whatsapp" name="notificaciones_whatsapp" {% if form_data.notificaciones_whatsapp|default:False %}checked{% endif %}>
+                                        <label class="form-check-label premium-checkbox-label" for="notificaciones_whatsapp">
+                                            <i class="fab fa-whatsapp me-2"></i>Recibir notificaciones por WhatsApp
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-premium save-btn">
                                 <i class="fas fa-save me-2"></i> Guardar Cambios
                             </button>
                         </div>
@@ -185,19 +437,21 @@
             </div>
             
             <!-- Sección de cambio de contraseña -->
-            <div class="card shadow mt-4">
-                <div class="card-header bg-dark text-white">
-                    <h4 class="mb-0">Cambiar Contraseña</h4>
+            <div class="card shadow-lg border-0 password-card mt-4">
+                <div class="card-header password-header">
+                    <h4 class="mb-0 text-white fw-bold">
+                        <i class="fas fa-key me-2"></i>Cambiar Contraseña
+                    </h4>
                 </div>
-                <div class="card-body">
+                <div class="card-body password-body">
                     <form method="post" action="{% url 'autenticacion:cambiar_password' %}" id="cambiarPasswordForm">
                         {% csrf_token %}
                         <div class="row mb-3">
                             <div class="col-md-12 mb-3">
-                                <label for="current_password" class="form-label">Contraseña Actual</label>
-                                <div class="input-group">
-                                    <input type="password" class="form-control" id="current_password" name="current_password" required>
-                                    <button class="btn btn-outline-secondary" type="button" id="toggleCurrentPassword">
+                                <label for="current_password" class="form-label premium-label">Contraseña Actual</label>
+                                <div class="input-group premium-input-group">
+                                    <input type="password" class="form-control premium-input" id="current_password" name="current_password" required>
+                                    <button class="btn btn-premium-outline password-toggle" type="button" id="toggleCurrentPassword">
                                         <i class="fas fa-eye"></i>
                                     </button>
                                 </div>
@@ -205,27 +459,27 @@
                         </div>
                         <div class="row mb-3">
                             <div class="col-md-6 mb-3">
-                                <label for="new_password" class="form-label">Nueva Contraseña</label>
-                                <div class="input-group">
-                                    <input type="password" class="form-control" id="new_password" name="new_password" required>
-                                    <button class="btn btn-outline-secondary" type="button" id="toggleNewPassword">
+                                <label for="new_password" class="form-label premium-label">Nueva Contraseña</label>
+                                <div class="input-group premium-input-group">
+                                    <input type="password" class="form-control premium-input" id="new_password" name="new_password" required>
+                                    <button class="btn btn-premium-outline password-toggle" type="button" id="toggleNewPassword">
                                         <i class="fas fa-eye"></i>
                                     </button>
                                 </div>
-                                <div class="form-text">La contraseña debe tener al menos 8 caracteres, incluir letras y números.</div>
+                                <div class="form-text premium-text">La contraseña debe tener al menos 8 caracteres, incluir letras y números.</div>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="new_password_confirm" class="form-label">Confirmar Nueva Contraseña</label>
-                                <div class="input-group">
-                                    <input type="password" class="form-control" id="new_password_confirm" name="new_password_confirm" required>
-                                    <button class="btn btn-outline-secondary" type="button" id="toggleNewPasswordConfirm">
+                                <label for="new_password_confirm" class="form-label premium-label">Confirmar Nueva Contraseña</label>
+                                <div class="input-group premium-input-group">
+                                    <input type="password" class="form-control premium-input" id="new_password_confirm" name="new_password_confirm" required>
+                                    <button class="btn btn-premium-outline password-toggle" type="button" id="toggleNewPasswordConfirm">
                                         <i class="fas fa-eye"></i>
                                     </button>
                                 </div>
                             </div>
                         </div>
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <button type="submit" class="btn btn-warning">
+                            <button type="submit" class="btn btn-warning-premium change-password-btn">
                                 <i class="fas fa-key me-2"></i> Cambiar Contraseña
                             </button>
                         </div>
@@ -245,6 +499,43 @@
         if (fotoPerfilInput) {
             fotoPerfilInput.addEventListener('change', function() {
                 if (this.files && this.files[0]) {
+                    const file = this.files[0];
+                    
+                    // Validar tipo de archivo
+                    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+                    if (!allowedTypes.includes(file.type)) {
+                        alert('Por favor, seleccione un archivo de imagen válido (JPEG, PNG, GIF, WebP).');
+                        this.value = '';
+                        return;
+                    }
+                    
+                    // Validar tamaño del archivo (máximo 5MB)
+                    const maxSize = 5 * 1024 * 1024; // 5MB en bytes
+                    if (file.size > maxSize) {
+                        alert('La imagen es demasiado grande. El tamaño máximo es 5MB.');
+                        this.value = '';
+                        return;
+                    }
+                    
+                    // Mostrar vista previa de la imagen
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const profilePhoto = document.querySelector('.profile-photo');
+                        const placeholder = document.querySelector('.profile-photo-placeholder');
+                        
+                        if (profilePhoto) {
+                            profilePhoto.src = e.target.result;
+                        } else if (placeholder) {
+                            // Crear nueva imagen si no existe
+                            const newImg = document.createElement('img');
+                            newImg.src = e.target.result;
+                            newImg.alt = 'Foto de perfil';
+                            newImg.className = 'profile-photo';
+                            placeholder.parentNode.replaceChild(newImg, placeholder);
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                    
                     // Mostrar indicador de carga
                     const loadingIndicator = document.createElement('div');
                     loadingIndicator.className = 'alert alert-info';
@@ -331,4 +622,517 @@
         }, 5000);
     }
 </script>
+
+<style>
+    /* Estilos premium para el perfil */
+    .sidebar-premium {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px !important;
+        overflow: hidden;
+    }
+    
+    .sidebar-header {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 1.5rem;
+    }
+    
+    /* Estilos mejorados para la sección de información personal */
+    .section-header {
+        margin-bottom: 2rem;
+        position: relative;
+    }
+    
+    .section-title-enhanced {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .section-divider {
+        height: 3px;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        border-radius: 2px;
+        width: 100px;
+    }
+    
+    .form-group-enhanced {
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+    
+    .form-label-enhanced {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        font-size: 0.95rem;
+    }
+    
+    .premium-input-enhanced {
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        padding: 0.875rem 1rem;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        background-color: #fff;
+    }
+    
+    .premium-input-enhanced:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+        background-color: #fff;
+    }
+    
+    .disabled-input-enhanced {
+        background-color: #f8f9fa !important;
+        border-color: #dee2e6 !important;
+        color: #6c757d !important;
+        cursor: not-allowed;
+    }
+    
+    .form-text-enhanced {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .alert-info-enhanced {
+        background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+        border: none;
+        border-radius: 12px;
+        padding: 1.25rem;
+        color: #1565c0;
+        border-left: 4px solid #2196f3;
+    }
+    
+    /* Botón mejorado para cambiar foto */
+    .btn-change-photo {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        padding: 0.75rem 2rem;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .btn-change-photo:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+    
+    .btn-change-photo:active {
+        transform: translateY(0);
+    }
+    
+    /* Mejoras responsive y elementos visuales modernos */
+    @media (max-width: 768px) {
+        .section-title-enhanced {
+            font-size: 1.25rem;
+        }
+        
+        .form-group-enhanced {
+            margin-bottom: 1.25rem;
+        }
+        
+        .premium-input-enhanced {
+            padding: 0.75rem;
+        }
+        
+        .btn-change-photo {
+            padding: 0.625rem 1.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .avatar-container {
+            width: 120px !important;
+            height: 120px !important;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .section-divider {
+            width: 80px;
+        }
+        
+        .avatar-container {
+            width: 100px !important;
+            height: 100px !important;
+        }
+        
+        .btn-change-photo {
+            padding: 0.5rem 1.25rem;
+            font-size: 0.85rem;
+        }
+    }
+    
+    /* Animaciones suaves para mejor UX */
+    .form-group-enhanced {
+        animation: fadeInUp 0.6s ease-out;
+    }
+    
+    .form-group-enhanced:nth-child(1) { animation-delay: 0.1s; }
+    .form-group-enhanced:nth-child(2) { animation-delay: 0.2s; }
+    .form-group-enhanced:nth-child(3) { animation-delay: 0.3s; }
+    .form-group-enhanced:nth-child(4) { animation-delay: 0.4s; }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Efectos hover mejorados */
+    .premium-input-enhanced:hover:not(:disabled) {
+        border-color: #b8c6ea;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+    }
+    
+    .form-group-enhanced:hover .form-label-enhanced i {
+        color: #667eea;
+        transform: scale(1.1);
+        transition: all 0.3s ease;
+    }
+    
+    .sidebar-nav .nav-link {
+        color: rgba(255, 255, 255, 0.9) !important;
+        padding: 0.75rem 1.5rem;
+        margin: 0.25rem 0;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .sidebar-nav .nav-link:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: white !important;
+        transform: translateX(5px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .sidebar-nav .nav-link.active {
+        background: rgba(255, 255, 255, 0.2);
+        color: white !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .sidebar-nav .nav-link i {
+        width: 20px;
+        margin-right: 10px;
+    }
+    
+    .sidebar-nav .nav-link .arrow-icon {
+        transition: transform 0.3s ease;
+    }
+    
+    .sidebar-nav .nav-link:hover .arrow-icon {
+        transform: translateX(5px);
+    }
+    
+    /* Estilos para las tarjetas del perfil */
+    .profile-card {
+        background: white;
+        border-radius: 15px !important;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .profile-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .profile-header {
+        background: linear-gradient(135deg, #056a96, #085173);
+        color: white;
+        padding: 1.5rem;
+    }
+    
+    .password-card {
+        background: white;
+        border-radius: 15px !important;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .password-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    .password-header {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        padding: 1.5rem;
+    }
+    
+    .password-body {
+        padding: 2rem;
+    }
+    
+    /* Estilos para formularios premium */
+    .premium-label {
+        font-weight: 600;
+        color: #4a5568;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .premium-input {
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+        background: #f8fafc;
+    }
+    
+    .premium-input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+        background-color: #fff;
+    }
+    
+    .premium-input-group {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .premium-input-group .premium-input {
+        border-right: none;
+        border-radius: 10px 0 0 10px;
+    }
+    
+    .btn-premium-outline {
+        border: 2px solid #e2e8f0;
+        border-left: none;
+        background: #f8fafc;
+        color: #667eea;
+        border-radius: 0 10px 10px 0;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-premium-outline:hover {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+    
+    .btn-premium {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 10px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        color: white;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.9rem;
+    }
+    
+    .btn-premium:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        color: white;
+    }
+    
+    .btn-warning-premium {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        border: none;
+        border-radius: 10px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        color: white;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.9rem;
+    }
+    
+    .btn-warning-premium:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(245, 87, 108, 0.3);
+        color: white;
+    }
+    
+    .save-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    }
+    
+    .change-password-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(245, 87, 108, 0.3);
+    }
+    
+    /* Estilos para secciones */
+    .section-title {
+        color: #2d3748;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 3px solid #667eea;
+        display: inline-block;
+    }
+    
+    /* Avatar container */
+    .avatar-container {
+        position: relative;
+        display: inline-block;
+        width: 150px;
+        height: 150px;
+        margin: 0 auto 20px;
+        border-radius: 50%;
+        overflow: hidden;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        transition: all 0.3s ease;
+    }
+    
+    .avatar-container:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    }
+    
+    .profile-photo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+    }
+    
+    .profile-photo-placeholder {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        border-radius: 50%;
+    }
+    
+    .avatar-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: all 0.3s ease;
+        border-radius: 50%;
+        cursor: pointer;
+    }
+    
+    .avatar-container:hover .avatar-overlay {
+        opacity: 1;
+    }
+    
+    .avatar-overlay i {
+        color: white;
+        font-size: 2rem;
+    }
+    
+    /* Checkbox premium styles */
+    .premium-checkbox-group {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .premium-checkbox-group:hover {
+        border-color: #667eea;
+        background: white;
+    }
+    
+    .premium-checkbox-group .form-check {
+        margin-bottom: 0.5rem;
+    }
+    
+    .premium-checkbox-group .form-check:last-child {
+        margin-bottom: 0;
+    }
+    
+    .premium-checkbox-group .form-check-input:checked {
+        background-color: #667eea;
+        border-color: #667eea;
+    }
+    
+    .premium-checkbox-group .form-check-label {
+        color: #4a5568;
+        font-weight: 500;
+        margin-left: 0.5rem;
+    }
+    
+    /* Alert styles */
+    .premium-info-alert {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        border: 1px solid rgba(102, 126, 234, 0.2);
+        border-radius: 10px;
+        color: #667eea;
+    }
+    
+    .premium-text {
+        color: #718096;
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+    }
+    
+    /* Password toggle buttons */
+    .password-toggle {
+        transition: all 0.3s ease;
+    }
+    
+    .password-toggle:hover {
+        background: #667eea !important;
+        color: white !important;
+        border-color: #667eea !important;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .sidebar-premium {
+            margin-bottom: 2rem;
+        }
+        
+        .profile-card, .password-card {
+            margin-bottom: 1.5rem;
+        }
+        
+        .btn-premium, .btn-warning-premium {
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+    }
+</style>
 {% endblock %}
