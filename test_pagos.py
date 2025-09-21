@@ -53,7 +53,7 @@ def test_sistema_pagos():
             apellido='Pago',
             email='test_pago_cliente@example.com',
             telefono='3001234567',
-            numero_documento='12345678',
+            numero_documento='12345680',  # Cambiado para evitar conflicto
             direccion='Calle 123 #45-67',
             ciudad='Bogotá'
         )
@@ -81,7 +81,7 @@ def test_sistema_pagos():
             marca='Toyota',
             modelo='Corolla',
             anio=2020,
-            placa='ABC123',
+            placa='PAG123',  # Cambiado para evitar conflicto
             color='Blanco'
         )
         

@@ -75,6 +75,8 @@ def crear_datos_prueba():
         Reserva.objects.filter(cliente__usuario__email__contains='test_empleado').delete()
         Cliente.objects.filter(usuario__email__contains='test_empleado').delete()
         Usuario.objects.filter(email__contains='test_empleado').delete()
+        Usuario.objects.filter(email__contains='test_admin').delete()
+        Usuario.objects.filter(email__contains='test_cliente_empleado').delete()
         Servicio.objects.filter(nombre='Servicio Empleado Test').delete()
         MedioPago.objects.filter(nombre='Efectivo Empleado Test').delete()
         
@@ -113,7 +115,7 @@ def crear_datos_prueba():
             telefono='3001234567',
             direccion='Calle 123',
             email='test_cliente_empleado@example.com',
-            numero_documento='12345678'
+            numero_documento='12345679'  # Cambiado para evitar conflicto
         )
         
         # Crear servicio de prueba

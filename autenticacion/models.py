@@ -65,6 +65,9 @@ class Usuario(AbstractUser):
     ROL_LAVADOR = 'lavador'
     ROL_CLIENTE = 'cliente'
     
+    # Alias para compatibilidad con pruebas
+    ROL_EMPLEADO = ROL_LAVADOR  # Para compatibilidad con las pruebas existentes
+    
     ROL_CHOICES = [
         (ROL_ADMIN_SISTEMA, _('Administrador del Sistema')),
         (ROL_ADMIN_AUTOLAVADO, _('Administrador de Autolavado')),
@@ -72,6 +75,9 @@ class Usuario(AbstractUser):
         (ROL_LAVADOR, _('Lavador')),
         (ROL_CLIENTE, _('Cliente')),
     ]
+    
+    # Alias para compatibilidad con pruebas
+    ROLES_CHOICES = ROL_CHOICES
     
     username = None  # Removemos el campo username
     email = models.EmailField(_('Correo Electrónico'), unique=True)

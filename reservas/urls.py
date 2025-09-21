@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, views_admin, views_csrf
+from . import views, views_admin, views_csrf, views_api
 
 urlpatterns = [
     # Rutas para vistas basadas en plantillas
@@ -15,6 +15,7 @@ urlpatterns = [
     # Rutas para AJAX
     path('obtener_horarios_disponibles/', views.ObtenerHorariosDisponiblesView.as_view(), name='obtener_horarios_disponibles'),
     path('obtener_bahias_disponibles/', views.ObtenerBahiasDisponiblesView.as_view(), name='obtener_bahias_disponibles'),
+    path('api/bahias-disponibles/', views_api.BahiasDisponiblesView.as_view(), name='api_bahias_disponibles'),
     path('obtener_lavadores_disponibles/', views.ObtenerLavadoresDisponiblesView.as_view(), name='obtener_lavadores_disponibles'),
     path('seleccionar_lavador/<int:reserva_id>/<int:lavador_id>/', views.SeleccionarLavadorView.as_view(), name='seleccionar_lavador'),
     path('obtener_medios_pago/', views.ObtenerMediosPagoView.as_view(), name='obtener_medios_pago'),

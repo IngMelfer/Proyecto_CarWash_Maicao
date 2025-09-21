@@ -267,11 +267,17 @@ def test_frontend_system():
         
         # Probar endpoint de bahías disponibles
         response = client.get('/reservas/obtener_bahias_disponibles/', {
-            'fecha': '2024-12-01',
-            'hora': '10:00'
+            'fecha': '2025-12-01',  # Usar fecha futura
+            'hora': '10:00',
+            'servicio_id': servicio.id
         })
         if response.status_code == 200:
             print("✅ Endpoint de bahías disponibles funcional")
+            try:
+                data = response.json()
+                print(f"✅ Respuesta JSON válida: {len(data.get('bahias_disponibles', []))} bahías disponibles")
+            except:
+                print("⚠️ Respuesta no es JSON válido")
         else:
             print(f"❌ Endpoint de bahías disponibles falló: {response.status_code}")
         
