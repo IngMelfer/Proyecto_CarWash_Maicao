@@ -1,0 +1,327 @@
+{% extends 'empleados/dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Editar Perfil - {{ empleado.nombre_completo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h2 class="mb-1"><i class="fas fa-edit me-2"></i>Editar Mi Perfil</h2>
+                            <p class="text-muted mb-0">Actualiza tu información personal</p>
+                        </div>
+                        <a href="{% url 'empleados_dashboard:perfil' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Volver al Perfil
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" id="perfilForm">
+        {% csrf_token %}
+        <div class="row">
+            <!-- Formulario Principal -->
+            <div class="col-lg-8 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-user me-2"></i>Información Personal</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if form.errors %}
+                            <div class="alert alert-danger">
+                                <h6><i class="fas fa-exclamation-triangle me-2"></i>Por favor corrige los siguientes errores:</h6>
+                                <ul class="mb-0">
+                                    {% for field, errors in form.errors.items %}
+                                        {% for error in errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+
+                        <div class="row">
+                            <!-- Nombre -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.nombre.id_for_label }}" class="form-label">
+                                    <i class="fas fa-user me-1"></i>{{ form.nombre.label }}
+                                </label>
+                                {{ form.nombre }}
+                                {% if form.nombre.help_text %}
+                                    <div class="form-text">{{ form.nombre.help_text }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Apellido -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.apellido.id_for_label }}" class="form-label">
+                                    <i class="fas fa-user me-1"></i>{{ form.apellido.label }}
+                                </label>
+                                {{ form.apellido }}
+                                {% if form.apellido.help_text %}
+                                    <div class="form-text">{{ form.apellido.help_text }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Email Personal -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.email_personal.id_for_label }}" class="form-label">
+                                    <i class="fas fa-envelope me-1"></i>{{ form.email_personal.label }}
+                                </label>
+                                {{ form.email_personal }}
+                                {% if form.email_personal.help_text %}
+                                    <div class="form-text">{{ form.email_personal.help_text }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Teléfono -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.telefono.id_for_label }}" class="form-label">
+                                    <i class="fas fa-phone me-1"></i>{{ form.telefono.label }}
+                                </label>
+                                {{ form.telefono }}
+                                {% if form.telefono.help_text %}
+                                    <div class="form-text">{{ form.telefono.help_text }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Dirección -->
+                            <div class="col-12 mb-3">
+                                <label for="{{ form.direccion.id_for_label }}" class="form-label">
+                                    <i class="fas fa-map-marker-alt me-1"></i>{{ form.direccion.label }}
+                                </label>
+                                {{ form.direccion }}
+                                {% if form.direccion.help_text %}
+                                    <div class="form-text">{{ form.direccion.help_text }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Ciudad -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.ciudad.id_for_label }}" class="form-label">
+                                    <i class="fas fa-city me-1"></i>{{ form.ciudad.label }}
+                                </label>
+                                {{ form.ciudad }}
+                                {% if form.ciudad.help_text %}
+                                    <div class="form-text">{{ form.ciudad.help_text }}</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Fecha de Nacimiento -->
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.fecha_nacimiento.id_for_label }}" class="form-label">
+                                    <i class="fas fa-calendar me-1"></i>{{ form.fecha_nacimiento.label }}
+                                </label>
+                                {{ form.fecha_nacimiento }}
+                                {% if form.fecha_nacimiento.help_text %}
+                                    <div class="form-text">{{ form.fecha_nacimiento.help_text }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Foto de Perfil -->
+            <div class="col-lg-4 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-camera me-2"></i>Foto de Perfil</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            {% if empleado.fotografia %}
+                                <img src="{{ empleado.fotografia.url }}" alt="Foto actual" id="preview-image" class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover; border: 4px solid var(--primary-color);">
+                            {% else %}
+                                <div id="preview-placeholder" class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 150px; height: 150px; border: 4px solid var(--primary-color);">
+                                    <i class="fas fa-user text-white fa-4x"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.fotografia }}
+                            {% if form.fotografia.help_text %}
+                                <div class="form-text">{{ form.fotografia.help_text }}</div>
+                            {% endif %}
+                        </div>
+
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="document.getElementById('{{ form.fotografia.id_for_label }}').click()">
+                            <i class="fas fa-upload me-2"></i>Seleccionar Foto
+                        </button>
+
+                        {% if empleado.fotografia %}
+                            <button type="button" class="btn btn-outline-danger btn-sm ms-2" onclick="removePhoto()">
+                                <i class="fas fa-trash me-2"></i>Eliminar
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Información Adicional -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <small>
+                                <i class="fas fa-lightbulb me-2"></i>
+                                <strong>Consejos:</strong>
+                                <ul class="mb-0 mt-2">
+                                    <li>Usa una foto clara y profesional</li>
+                                    <li>Mantén tu información actualizada</li>
+                                    <li>El teléfono es importante para contacto</li>
+                                </ul>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Los cambios se guardarán inmediatamente
+                                </small>
+                            </div>
+                            <div>
+                                <a href="{% url 'empleados_dashboard:perfil' %}" class="btn btn-outline-secondary me-2">
+                                    <i class="fas fa-times me-2"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-primary" id="submitBtn">
+                                    <i class="fas fa-save me-2"></i>Guardar Cambios
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(46, 139, 139, 0.25);
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: var(--dark-blue);
+    }
+
+    #id_fotografia {
+        display: none;
+    }
+
+    .preview-container {
+        position: relative;
+        display: inline-block;
+    }
+
+    .preview-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.7);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        cursor: pointer;
+    }
+
+    .preview-container:hover .preview-overlay {
+        opacity: 1;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Preview de imagen
+    document.getElementById('{{ form.fotografia.id_for_label }}').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('preview-image');
+                const placeholder = document.getElementById('preview-placeholder');
+                
+                if (preview) {
+                    preview.src = e.target.result;
+                } else if (placeholder) {
+                    placeholder.outerHTML = `<img src="${e.target.result}" alt="Vista previa" id="preview-image" class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover; border: 4px solid var(--primary-color);">`;
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Función para eliminar foto
+    function removePhoto() {
+        if (confirm('¿Estás seguro de que quieres eliminar tu foto de perfil?')) {
+            // Crear un input hidden para marcar que se debe eliminar la foto
+            const form = document.getElementById('perfilForm');
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'remove_photo';
+            input.value = 'true';
+            form.appendChild(input);
+            
+            // Limpiar el input de archivo
+            document.getElementById('{{ form.fotografia.id_for_label }}').value = '';
+            
+            // Actualizar preview
+            const preview = document.getElementById('preview-image');
+            if (preview) {
+                preview.outerHTML = `<div id="preview-placeholder" class="rounded-circle bg-secondary d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 150px; height: 150px; border: 4px solid var(--primary-color);">
+                    <i class="fas fa-user text-white fa-4x"></i>
+                </div>`;
+            }
+        }
+    }
+
+    // Validación del formulario
+    document.getElementById('perfilForm').addEventListener('submit', function(e) {
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.innerHTML = '<span class="loading-spinner me-2"></span>Guardando...';
+        submitBtn.disabled = true;
+    });
+
+    // Validación en tiempo real
+    const inputs = document.querySelectorAll('.form-control');
+    inputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            if (this.value.trim() === '' && this.required) {
+                this.classList.add('is-invalid');
+            } else {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            }
+        });
+    });
+</script>
+{% endblock %}

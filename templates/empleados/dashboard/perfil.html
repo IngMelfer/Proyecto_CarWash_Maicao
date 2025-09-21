@@ -1,0 +1,260 @@
+{% extends 'empleados/dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Mi Perfil - {{ empleado.nombre_completo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header del Perfil -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            {% if empleado.fotografia %}
+                                <img src="{{ empleado.fotografia.url }}" alt="Foto de perfil" class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover; border: 4px solid var(--primary-color);">
+                            {% else %}
+                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 100px; height: 100px; border: 4px solid var(--primary-color);">
+                                    <i class="fas fa-user text-white fa-3x"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col">
+                            <h2 class="mb-1">{{ empleado.nombre_completo }}</h2>
+                            <p class="text-muted mb-2">{{ empleado.cargo.nombre }}</p>
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-{{ empleado.disponible|yesno:'success,warning' }} me-2">
+                                    <i class="fas fa-circle me-1"></i>
+                                    {{ empleado.disponible|yesno:'Disponible,No Disponible' }}
+                                </span>
+                                <span class="text-muted">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    Desde {{ empleado.fecha_contratacion|date:"F Y" }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <a href="{% url 'empleados_dashboard:editar_perfil' %}" class="btn btn-primary">
+                                <i class="fas fa-edit me-2"></i>Editar Perfil
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información Personal -->
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-user me-2"></i>Información Personal</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Nombre Completo</label>
+                            <p class="fw-bold">{{ empleado.nombre_completo }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Documento</label>
+                            <p class="fw-bold">{{ empleado.tipo_documento.nombre }} {{ empleado.numero_documento }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Correo Electrónico</label>
+                            <p class="fw-bold">{{ empleado.usuario.email }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Correo Personal</label>
+                            <p class="fw-bold">{{ empleado.email_personal|default:"No especificado" }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Teléfono</label>
+                            <p class="fw-bold">{{ empleado.telefono|default:"No especificado" }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Fecha de Nacimiento</label>
+                            <p class="fw-bold">{{ empleado.fecha_nacimiento|date:"d/m/Y"|default:"No especificado" }}</p>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label text-muted">Dirección</label>
+                            <p class="fw-bold">{{ empleado.direccion|default:"No especificado" }}</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted">Ciudad</label>
+                            <p class="fw-bold">{{ empleado.ciudad|default:"No especificado" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas del Empleado -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Mis Estadísticas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="display-4 text-primary fw-bold">{{ empleado.promedio_calificacion|floatformat:1 }}</div>
+                        <div class="stars mb-2">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= empleado.promedio_calificacion %}
+                                    <i class="fas fa-star text-warning"></i>
+                                {% else %}
+                                    <i class="far fa-star text-muted"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        <p class="text-muted">Calificación Promedio</p>
+                    </div>
+
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <div class="border-end">
+                                <h4 class="text-success mb-1">{{ estadisticas.total_servicios }}</h4>
+                                <small class="text-muted">Servicios Totales</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <h4 class="text-info mb-1">{{ estadisticas.servicios_mes }}</h4>
+                            <small class="text-muted">Este Mes</small>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="border-end">
+                                <h4 class="text-warning mb-1">{{ estadisticas.total_calificaciones }}</h4>
+                                <small class="text-muted">Calificaciones</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <h4 class="text-primary mb-1">${{ estadisticas.bonificaciones_total|floatformat:0 }}</h4>
+                            <small class="text-muted">Bonificaciones</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información Laboral -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-briefcase me-2"></i>Información Laboral</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Cargo</label>
+                        <p class="fw-bold">{{ empleado.cargo.nombre }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Fecha de Contratación</label>
+                        <p class="fw-bold">{{ empleado.fecha_contratacion|date:"d/m/Y" }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Tiempo en la Empresa</label>
+                        <p class="fw-bold">{{ tiempo_empresa }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Estado</label>
+                        <p class="fw-bold">
+                            <span class="badge bg-{{ empleado.activo|yesno:'success,danger' }}">
+                                {{ empleado.activo|yesno:'Activo,Inactivo' }}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actividad Reciente -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Actividad Reciente</h5>
+                    <a href="{% url 'empleados_dashboard:servicios' %}" class="btn btn-sm btn-outline-primary">Ver Todo</a>
+                </div>
+                <div class="card-body">
+                    {% if actividad_reciente %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Servicio</th>
+                                        <th>Cliente</th>
+                                        <th>Vehículo</th>
+                                        <th>Estado</th>
+                                        <th>Calificación</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for reserva in actividad_reciente %}
+                                        <tr>
+                                            <td>{{ reserva.fecha_hora|date:"d/m/Y H:i" }}</td>
+                                            <td>{{ reserva.servicio.nombre }}</td>
+                                            <td>{{ reserva.cliente.nombre_completo }}</td>
+                                            <td>
+                                                <span class="badge bg-light text-dark">{{ reserva.vehiculo.placa }}</span>
+                                            </td>
+                                            <td>
+                                                {% if reserva.estado == 'completado' %}
+                                                    <span class="status-badge status-atendido">Completado</span>
+                                                {% elif reserva.estado == 'cancelado' %}
+                                                    <span class="status-badge status-cancelado">Cancelado</span>
+                                                {% elif reserva.estado == 'confirmado' %}
+                                                    <span class="status-badge status-pendiente">Confirmado</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if reserva.calificacion_empleado %}
+                                                    <div class="stars">
+                                                        {% for i in "12345" %}
+                                                            {% if forloop.counter <= reserva.calificacion_empleado.puntuacion %}
+                                                                <i class="fas fa-star text-warning"></i>
+                                                            {% else %}
+                                                                <i class="far fa-star text-muted"></i>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    </div>
+                                                {% else %}
+                                                    <span class="text-muted">Sin calificar</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-history text-muted fa-3x mb-3"></i>
+                            <p class="text-muted">No hay actividad reciente</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stars i {
+        font-size: 0.9rem;
+    }
+    
+    .table th {
+        border-top: none;
+        font-weight: 600;
+        color: var(--primary-color);
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: var(--light-blue);
+    }
+</style>
+{% endblock %}

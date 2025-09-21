@@ -1,0 +1,326 @@
+{% extends 'empleados/dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Dashboard - {{ empleado.nombre_completo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Bienvenida -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="mb-1">¡Bienvenido, {{ empleado.nombre }}! 👋</h2>
+                    <p class="text-muted mb-0">Aquí tienes un resumen de tu actividad como lavador</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas Principales -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card bg-primary">
+                <div class="stat-number" id="servicios-pendientes">{{ estadisticas.servicios_pendientes }}</div>
+                <div class="stat-label">Servicios Pendientes</div>
+                <i class="fas fa-clock position-absolute" style="top: 15px; right: 15px; font-size: 2rem; opacity: 0.3;"></i>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card bg-success">
+                <div class="stat-number" id="servicios-completados">{{ estadisticas.servicios_completados }}</div>
+                <div class="stat-label">Servicios Completados</div>
+                <i class="fas fa-check-circle position-absolute" style="top: 15px; right: 15px; font-size: 2rem; opacity: 0.3;"></i>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card bg-warning">
+                <div class="stat-number" id="calificacion-promedio">{{ estadisticas.calificacion_promedio|floatformat:1 }}</div>
+                <div class="stat-label">Calificación Promedio</div>
+                <i class="fas fa-star position-absolute" style="top: 15px; right: 15px; font-size: 2rem; opacity: 0.3;"></i>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card bg-info">
+                <div class="stat-number">${{ estadisticas.bonificaciones_mes|floatformat:0 }}</div>
+                <div class="stat-label">Bonificaciones del Mes</div>
+                <i class="fas fa-dollar-sign position-absolute" style="top: 15px; right: 15px; font-size: 2rem; opacity: 0.3;"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos y Actividad Reciente -->
+    <div class="row">
+        <!-- Gráfico de Servicios -->
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Servicios de los Últimos 7 Días</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="serviciosChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estado Actual -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Estado Actual</h5>
+                </div>
+                <div class="card-body text-center">
+                    {% if empleado.disponible %}
+                        <div class="mb-3">
+                            <i class="fas fa-circle text-success fa-3x"></i>
+                            <h4 class="mt-2 text-success">Disponible</h4>
+                            <p class="text-muted">Listo para recibir servicios</p>
+                        </div>
+                        <button class="btn btn-outline-warning" onclick="cambiarDisponibilidad(false)">
+                            <i class="fas fa-pause me-2"></i>Marcar No Disponible
+                        </button>
+                    {% else %}
+                        <div class="mb-3">
+                            <i class="fas fa-circle text-warning fa-3x"></i>
+                            <h4 class="mt-2 text-warning">No Disponible</h4>
+                            <p class="text-muted">Actualmente no recibiendo servicios</p>
+                        </div>
+                        <button class="btn btn-outline-success" onclick="cambiarDisponibilidad(true)">
+                            <i class="fas fa-play me-2"></i>Marcar Disponible
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Servicios Recientes y Próximos -->
+    <div class="row">
+        <!-- Próximos Servicios -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Próximos Servicios</h5>
+                    <a href="{% url 'empleados_dashboard:servicios_pendientes' %}" class="btn btn-sm btn-outline-primary">Ver Todos</a>
+                </div>
+                <div class="card-body">
+                    {% if servicios_proximos %}
+                        {% for servicio in servicios_proximos %}
+                            <div class="d-flex align-items-center mb-3 p-3 bg-light rounded">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-car text-primary fa-2x"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-1">{{ servicio.servicio.nombre }}</h6>
+                                    <p class="mb-1 text-muted">
+                                        <i class="fas fa-clock me-1"></i>{{ servicio.fecha_hora|date:"d/m/Y H:i" }}
+                                    </p>
+                                    <p class="mb-0 text-muted">
+                                        <i class="fas fa-map-marker-alt me-1"></i>Bahía {{ servicio.bahia.numero }}
+                                        <span class="ms-2"><i class="fas fa-car me-1"></i>{{ servicio.vehiculo.placa }}</span>
+                                    </p>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <span class="status-badge status-pendiente">Pendiente</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-calendar-check text-muted fa-3x mb-3"></i>
+                            <p class="text-muted">No tienes servicios programados próximamente</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Actividad Reciente -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Actividad Reciente</h5>
+                    <a href="{% url 'empleados_dashboard:servicios_atendidos' %}" class="btn btn-sm btn-outline-primary">Ver Historial</a>
+                </div>
+                <div class="card-body">
+                    {% if servicios_recientes %}
+                        {% for servicio in servicios_recientes %}
+                            <div class="d-flex align-items-center mb-3 p-3 bg-light rounded">
+                                <div class="flex-shrink-0">
+                                    {% if servicio.estado == 'completado' %}
+                                        <i class="fas fa-check-circle text-success fa-2x"></i>
+                                    {% elif servicio.estado == 'cancelado' %}
+                                        <i class="fas fa-times-circle text-danger fa-2x"></i>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-1">{{ servicio.servicio.nombre }}</h6>
+                                    <p class="mb-1 text-muted">
+                                        <i class="fas fa-clock me-1"></i>{{ servicio.fecha_hora|date:"d/m/Y H:i" }}
+                                    </p>
+                                    <p class="mb-0 text-muted">
+                                        <i class="fas fa-car me-1"></i>{{ servicio.vehiculo.placa }}
+                                    </p>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    {% if servicio.estado == 'completado' %}
+                                        <span class="status-badge status-atendido">Completado</span>
+                                    {% elif servicio.estado == 'cancelado' %}
+                                        <span class="status-badge status-cancelado">Cancelado</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-history text-muted fa-3x mb-3"></i>
+                            <p class="text-muted">No hay actividad reciente</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calificaciones Recientes -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-star me-2"></i>Calificaciones Recientes</h5>
+                    <a href="{% url 'empleados_dashboard:calificaciones' %}" class="btn btn-sm btn-outline-primary">Ver Todas</a>
+                </div>
+                <div class="card-body">
+                    {% if calificaciones_recientes %}
+                        <div class="row">
+                            {% for calificacion in calificaciones_recientes %}
+                                <div class="col-md-6 col-lg-4 mb-3">
+                                    <div class="card border-0 bg-light">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <div class="stars">
+                                                    {% for i in "12345" %}
+                                                        {% if forloop.counter <= calificacion.puntuacion %}
+                                                            <i class="fas fa-star text-warning"></i>
+                                                        {% else %}
+                                                            <i class="far fa-star text-muted"></i>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </div>
+                                                <small class="text-muted">{{ calificacion.fecha_creacion|date:"d/m/Y" }}</small>
+                                            </div>
+                                            {% if calificacion.comentario %}
+                                                <p class="mb-2 small">"{{ calificacion.comentario|truncatechars:100 }}"</p>
+                                            {% endif %}
+                                            <small class="text-muted">- {{ calificacion.cliente.nombre_completo }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-star text-muted fa-3x mb-3"></i>
+                            <p class="text-muted">Aún no tienes calificaciones</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Gráfico de servicios de los últimos 7 días
+    const ctx = document.getElementById('serviciosChart').getContext('2d');
+    const serviciosChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ grafico_labels|safe }},
+            datasets: [{
+                label: 'Servicios Completados',
+                data: {{ grafico_data|safe }},
+                borderColor: '#2E8B8B',
+                backgroundColor: 'rgba(46, 139, 139, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#2E8B8B',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    },
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(0,0,0,0.1)'
+                    }
+                }
+            },
+            elements: {
+                point: {
+                    hoverRadius: 8
+                }
+            }
+        }
+    });
+
+    // Función para cambiar disponibilidad
+    function cambiarDisponibilidad(disponible) {
+        const button = event.target;
+        const originalText = button.innerHTML;
+        
+        // Mostrar loading
+        button.innerHTML = '<span class="loading-spinner me-2"></span>Actualizando...';
+        button.disabled = true;
+        
+        fetch('{% url "empleados_dashboard:api_actualizar_disponibilidad" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                'disponible': disponible
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Recargar la página para mostrar el nuevo estado
+                location.reload();
+            } else {
+                alert('Error al actualizar disponibilidad');
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al actualizar disponibilidad');
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+    }
+</script>
+{% endblock %}

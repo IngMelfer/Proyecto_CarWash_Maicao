@@ -24,9 +24,6 @@
             <h1>Dashboard de Empleados</h1>
         </div>
         <div class="col-md-4 text-end">
-            <a href="{% url 'empleados:registro_tiempo' %}" class="btn btn-primary me-2">
-                <i class="fas fa-clock"></i> Registrar Tiempo
-            </a>
             {% if user.is_staff %}
             <a href="{% url 'empleados:empleado_list' %}" class="btn btn-secondary">
                 <i class="fas fa-users"></i> Gestionar Empleados

@@ -10,7 +10,7 @@
             <h1>Registro de Tiempo</h1>
         </div>
         <div class="col-md-4 text-end">
-            <a href="{% url 'empleados:dashboard' %}" class="btn btn-secondary">
+            <a href="{% url 'empleados:dashboard_empleado' %}" class="btn btn-secondary">
                 <i class="fas fa-tachometer-alt"></i> Dashboard
             </a>
         </div>
@@ -202,18 +202,21 @@
         
         // Mostrar/ocultar campo de servicio según el tipo de registro
         const tipoRegistroSelect = document.getElementById('{{ form.tipo_registro.id_for_label }}');
-        const servicioField = document.getElementById('{{ form.servicio.id_for_label }}').closest('.mb-3');
+        const servicioFieldElement = document.getElementById('{{ form.servicio.id_for_label }}');
+        const servicioField = servicioFieldElement ? servicioFieldElement.closest('.mb-3') : null;
         
         function updateServiceField() {
-            if (tipoRegistroSelect.value === 'inicio_servicio') {
+            if (tipoRegistroSelect && servicioField && tipoRegistroSelect.value === 'inicio_servicio') {
                 servicioField.style.display = 'block';
-            } else {
+            } else if (servicioField) {
                 servicioField.style.display = 'none';
             }
         }
         
-        tipoRegistroSelect.addEventListener('change', updateServiceField);
-        updateServiceField(); // Ejecutar al cargar la página
+        if (tipoRegistroSelect) {
+            tipoRegistroSelect.addEventListener('change', updateServiceField);
+            updateServiceField(); // Ejecutar al cargar la página
+        }
         
         // Reloj en tiempo real
         function updateClock() {

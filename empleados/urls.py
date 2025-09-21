@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from . import views
 
 app_name = 'empleados'
@@ -14,6 +14,9 @@ urlpatterns = [
     # Vistas para empleados
     path('dashboard/', views.dashboard_empleado_view, name='dashboard_empleado'),
     path('<int:empleado_id>/registrar-tiempo/', views.registrar_tiempo_view, name='registrar_tiempo'),
+    path('registro-tiempo/', views.registro_tiempo_empleado_view, name='registro_tiempo'),
+    path('perfil/', views.perfil_empleado, name='perfil'),
+    path('cambiar-password/', views.cambiar_password, name='cambiar_password'),
     
     # APIs para AJAX
     path('api/<int:empleado_id>/calificaciones/', views.api_calificaciones_empleado, name='api_calificaciones_empleado'),
@@ -27,4 +30,7 @@ urlpatterns = [
     path('cargos/crear/', views.CargoCreateView.as_view(), name='cargo_create'),
     path('cargos/<int:pk>/editar/', views.CargoUpdateView.as_view(), name='cargo_update'),
     path('cargos/<int:pk>/eliminar/', views.CargoDeleteView.as_view(), name='cargo_delete'),
+    
+    # Dashboard de empleados
+    path('dashboard/', include('empleados.urls_dashboard')),
 ]

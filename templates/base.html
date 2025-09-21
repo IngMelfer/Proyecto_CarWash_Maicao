@@ -284,8 +284,15 @@
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-user-circle me-1"></i>{% if user.get_full_name %}{{ user.get_full_name }}{% else %}{{ user.email }}{% endif %}
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            {% if user.foto_perfil %}
+                                <img src="{{ user.foto_perfil.url }}" alt="Foto de perfil" class="rounded-circle me-2" style="width: 32px; height: 32px; object-fit: cover; border: 2px solid #06a7cf;">
+                            {% else %}
+                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; border: 2px solid #06a7cf;">
+                                    <i class="fas fa-user text-white" style="font-size: 14px;"></i>
+                                </div>
+                            {% endif %}
+                            <span>{{ user.get_full_name|default:user.email }}</span>
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                             <li><a class="dropdown-item" href="{% url 'autenticacion:perfil' %}"><i class="fas fa-user me-2"></i>Perfil</a></li>

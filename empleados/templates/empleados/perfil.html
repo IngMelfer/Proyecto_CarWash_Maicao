@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mi Perfil - {{ empleado.nombre }} {{ empleado.apellido }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-user mr-2"></i>
+                        Mi Perfil
+                    </h3>
+                    <div class="card-tools">
+                        <a href="{% url 'empleados:cambiar_password' %}" class="btn btn-warning btn-sm">
+                            <i class="fas fa-key"></i> Cambiar Contraseña
+                        </a>
+                        <a href="{% url 'dashboard:dashboard' %}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <div class="row">
+                        <!-- Información del empleado -->
+                        <div class="col-md-4">
+                            <div class="card card-primary card-outline">
+                                <div class="card-body box-profile">
+                                    <div class="text-center">
+                                        {% if empleado.fotografia %}
+                                            <img class="profile-user-img img-fluid img-circle"
+                                                 src="{{ empleado.fotografia.url }}"
+                                                 alt="Foto de {{ empleado.nombre }}">
+                                        {% else %}
+                                            <img class="profile-user-img img-fluid img-circle"
+                                                 src="{% static 'img/default-avatar.png' %}"
+                                                 alt="Avatar por defecto">
+                                        {% endif %}
+                                    </div>
+
+                                    <h3 class="profile-username text-center">{{ empleado.nombre }} {{ empleado.apellido }}</h3>
+
+                                    <p class="text-muted text-center">{{ empleado.get_rol_display }}</p>
+
+                                    <ul class="list-group list-group-unbordered mb-3">
+                                        <li class="list-group-item">
+                                            <b>Documento:</b> <span class="float-right">{{ empleado.numero_documento }}</span>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <b>Cargo:</b> <span class="float-right">{{ empleado.cargo.nombre }}</span>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <b>Email:</b> <span class="float-right">{{ empleado.usuario.email }}</span>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <b>Fecha Contratación:</b> <span class="float-right">{{ empleado.fecha_contratacion|date:"d/m/Y" }}</span>
+                                        </li>
+                                        <li class="list-group-item">
+                                            <b>Estado:</b> 
+                                            <span class="float-right">
+                                                {% if empleado.activo %}
+                                                    <span class="badge badge-success">Activo</span>
+                                                {% else %}
+                                                    <span class="badge badge-danger">Inactivo</span>
+                                                {% endif %}
+                                            </span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Formulario de edición -->
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Editar Información Personal</h3>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post" enctype="multipart/form-data" novalidate>
+                                        {% csrf_token %}
+                                        
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="{{ form.nombre.id_for_label }}" class="form-label">
+                                                        {{ form.nombre.label }}
+                                                    </label>
+                                                    {{ form.nombre }}
+                                                    {% if form.nombre.errors %}
+                                                        <div class="invalid-feedback d-block">
+                                                            {% for error in form.nombre.errors %}
+                                                                {{ error }}
+                                                            {% endfor %}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="{{ form.apellido.id_for_label }}" class="form-label">
+                                                        {{ form.apellido.label }}
+                                                    </label>
+                                                    {{ form.apellido }}
+                                                    {% if form.apellido.errors %}
+                                                        <div class="invalid-feedback d-block">
+                                                            {% for error in form.apellido.errors %}
+                                                                {{ error }}
+                                                            {% endfor %}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="{{ form.email_personal.id_for_label }}" class="form-label">
+                                                        {{ form.email_personal.label }}
+                                                    </label>
+                                                    {{ form.email_personal }}
+                                                    {% if form.email_personal.help_text %}
+                                                        <small class="form-text text-muted">{{ form.email_personal.help_text }}</small>
+                                                    {% endif %}
+                                                    {% if form.email_personal.errors %}
+                                                        <div class="invalid-feedback d-block">
+                                                            {% for error in form.email_personal.errors %}
+                                                                {{ error }}
+                                                            {% endfor %}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="{{ form.telefono.id_for_label }}" class="form-label">
+                                                        {{ form.telefono.label }}
+                                                    </label>
+                                                    {{ form.telefono }}
+                                                    {% if form.telefono.help_text %}
+                                                        <small class="form-text text-muted">{{ form.telefono.help_text }}</small>
+                                                    {% endif %}
+                                                    {% if form.telefono.errors %}
+                                                        <div class="invalid-feedback d-block">
+                                                            {% for error in form.telefono.errors %}
+                                                                {{ error }}
+                                                            {% endfor %}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="{{ form.direccion.id_for_label }}" class="form-label">
+                                                {{ form.direccion.label }}
+                                            </label>
+                                            {{ form.direccion }}
+                                            {% if form.direccion.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {% for error in form.direccion.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="{{ form.ciudad.id_for_label }}" class="form-label">
+                                                        {{ form.ciudad.label }}
+                                                    </label>
+                                                    {{ form.ciudad }}
+                                                    {% if form.ciudad.errors %}
+                                                        <div class="invalid-feedback d-block">
+                                                            {% for error in form.ciudad.errors %}
+                                                                {{ error }}
+                                                            {% endfor %}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="{{ form.fecha_nacimiento.id_for_label }}" class="form-label">
+                                                        {{ form.fecha_nacimiento.label }}
+                                                    </label>
+                                                    {{ form.fecha_nacimiento }}
+                                                    {% if form.fecha_nacimiento.help_text %}
+                                                        <small class="form-text text-muted">{{ form.fecha_nacimiento.help_text }}</small>
+                                                    {% endif %}
+                                                    {% if form.fecha_nacimiento.errors %}
+                                                        <div class="invalid-feedback d-block">
+                                                            {% for error in form.fecha_nacimiento.errors %}
+                                                                {{ error }}
+                                                            {% endfor %}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label for="{{ form.fotografia.id_for_label }}" class="form-label">
+                                                {{ form.fotografia.label }}
+                                            </label>
+                                            {{ form.fotografia }}
+                                            {% if form.fotografia.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {% for error in form.fotografia.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="form-group mt-4">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-save mr-2"></i>
+                                                Guardar Cambios
+                                            </button>
+                                            <a href="{% url 'dashboard:dashboard' %}" class="btn btn-secondary ml-2">
+                                                <i class="fas fa-times mr-2"></i>
+                                                Cancelar
+                                            </a>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Preview de imagen
+    $('#id_fotografia').change(function() {
+        var file = this.files[0];
+        if (file) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                $('.profile-user-img').attr('src', e.target.result);
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+});
+</script>
+{% endblock %}

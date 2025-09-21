@@ -11,8 +11,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 
 from autenticacion.mixins import RolRequiredMixin
 from autenticacion.models import Usuario
+from reservas.models import Reserva
 from .models import Empleado, RegistroTiempo, Calificacion, Incentivo, Cargo
-from .forms import EmpleadoForm, RegistroTiempoForm
+from .forms import EmpleadoPerfilForm, RegistroTiempoForm, EmpleadoRegistroForm, CambiarPasswordForm
 
 # Create your views here.
 
@@ -54,55 +55,41 @@ class EmpleadoDetailView(LoginRequiredMixin, RolRequiredMixin, DetailView):
 class EmpleadoCreateView(LoginRequiredMixin, RolRequiredMixin, CreateView):
     """Vista para crear un nuevo empleado"""
     model = Empleado
-    form_class = EmpleadoForm
+    form_class = EmpleadoRegistroForm
     template_name = 'empleados/empleado_form.html'
     success_url = reverse_lazy('empleados:empleado_list')
     roles_permitidos = [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO, Usuario.ROL_GERENTE]
     
-    def dispatch(self, request, *args, **kwargs):
-        # Verificación adicional para asegurar que los administradores de autolavado tengan acceso
-        if request.user.rol == Usuario.ROL_ADMIN_AUTOLAVADO:
-            return super().dispatch(request, *args, **kwargs)
-        return super().dispatch(request, *args, **kwargs)
-    
     def form_valid(self, form):
-        # Crear un nuevo usuario con el rol de empleado
-        # Usar el correo personal del empleado si está disponible, de lo contrario usar el correo generado
-        if form.cleaned_data.get('email_personal'):
-            email = form.cleaned_data['email_personal']
+        empleado = form.save()
+        
+        # Determinar qué tipo de contraseña se asignó
+        generar_automatico = form.cleaned_data.get('generar_password_automatico', True)
+        
+        if generar_automatico:
+            password_info = f'Contraseña inicial: {empleado.numero_documento}'
         else:
-            email = f"{form.cleaned_data['numero_documento']}@autolavado.com"
-            
-        usuario = Usuario.objects.create(
-            email=email,
-            first_name=form.cleaned_data['nombre'],
-            last_name=form.cleaned_data['apellido'],
-            rol=Usuario.ROL_EMPLEADO,
-            is_active=True
+            password_info = 'Contraseña personalizada asignada'
+        
+        messages.success(
+            self.request, 
+            f'Empleado {empleado.nombre} {empleado.apellido} creado correctamente. '
+            f'Usuario: {empleado.usuario.email}. {password_info}'
         )
-        
-        # Asignar una contraseña temporal basada en el número de documento
-        usuario.set_password(form.cleaned_data['numero_documento'])
-        usuario.save()
-        
-        # Asignar el usuario al empleado y guardar explícitamente para procesar la fotografía
-        empleado = form.save(commit=False)
-        empleado.usuario = usuario
-        
-        # Verificar si hay una fotografía en la solicitud
-        if 'fotografia' in self.request.FILES:
-            empleado.fotografia = self.request.FILES['fotografia']
-            
-        empleado.save()
-        
-        messages.success(self.request, f'Empleado {form.cleaned_data["nombre"]} {form.cleaned_data["apellido"]} creado correctamente')
         return super().form_valid(form)
+    
+    def form_invalid(self, form):
+        messages.error(
+            self.request,
+            'Error al crear el empleado. Por favor, revisa los datos ingresados.'
+        )
+        return super().form_invalid(form)
 
 
 class EmpleadoUpdateView(LoginRequiredMixin, RolRequiredMixin, UpdateView):
     """Vista para actualizar un empleado existente"""
     model = Empleado
-    form_class = EmpleadoForm
+    form_class = EmpleadoPerfilForm
     template_name = 'empleados/empleado_form.html'
     success_url = reverse_lazy('empleados:empleado_list')
     roles_permitidos = [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO, Usuario.ROL_GERENTE]
@@ -193,10 +180,69 @@ def registrar_tiempo_view(request, empleado_id):
 
 
 @login_required
+def registro_tiempo_empleado_view(request):
+    """Vista para que los empleados registren su tiempo de trabajo"""
+    try:
+        empleado = request.user.empleado
+    except Empleado.DoesNotExist:
+        messages.error(request, 'No tienes un perfil de empleado asociado.')
+        return redirect('empleados:dashboard_empleado')
+    
+    # Obtener servicios activos del empleado
+    servicios_activos = Reserva.objects.filter(
+        lavador=empleado,
+        estado__in=[Reserva.CONFIRMADA, Reserva.EN_PROCESO]
+    ).select_related('servicio', 'cliente', 'vehiculo')
+    
+    # Obtener registros de tiempo abiertos
+    registros_abiertos = RegistroTiempo.objects.filter(
+        empleado=empleado,
+        hora_fin__isnull=True
+    ).select_related('servicio')
+    
+    if request.method == 'POST':
+        servicio_id = request.POST.get('servicio_id')
+        accion = request.POST.get('accion')  # 'inicio' o 'fin'
+        
+        if accion == 'inicio':
+            # Crear nuevo registro de tiempo
+            registro = RegistroTiempo.objects.create(
+                empleado=empleado,
+                servicio_id=servicio_id,
+                hora_inicio=timezone.now()
+            )
+            messages.success(request, 'Tiempo de inicio registrado correctamente')
+            
+        elif accion == 'fin':
+            # Buscar el registro de tiempo abierto para este servicio y empleado
+            try:
+                registro = RegistroTiempo.objects.get(
+                    empleado=empleado,
+                    servicio_id=servicio_id,
+                    hora_fin__isnull=True
+                )
+                registro.hora_fin = timezone.now()
+                registro.save()  # El cálculo de duración se hace en el método save
+                messages.success(request, 'Tiempo de finalización registrado correctamente')
+            except RegistroTiempo.DoesNotExist:
+                messages.error(request, 'No se encontró un registro de tiempo abierto para este servicio')
+        
+        return redirect('empleados:registro_tiempo')
+    
+    context = {
+        'empleado': empleado,
+        'servicios_activos': servicios_activos,
+        'registros_abiertos': registros_abiertos,
+    }
+    
+    return render(request, 'empleados/registro_tiempo.html', context)
+
+
+@login_required
 def dashboard_empleado_view(request):
     """Vista del dashboard para empleados"""
     # Verificar que el usuario sea un empleado
-    if request.user.rol != Usuario.ROL_EMPLEADO:
+    if request.user.rol not in [Usuario.ROL_LAVADOR, Usuario.ROL_GERENTE] and not hasattr(request.user, 'empleado'):
         messages.error(request, 'Esta página es solo para empleados')
         return redirect('autenticacion:login_success')
     
@@ -344,3 +390,55 @@ def toggle_estado_empleado(request, pk):
         messages.success(request, f'El empleado {empleado.nombre} {empleado.apellido} ha sido desactivado.')
     
     return redirect('empleados:empleado_list')
+
+
+@login_required
+def cambiar_password(request):
+    """Vista para que los empleados cambien su contraseña"""
+    # Verificar que el usuario tenga un empleado asociado
+    try:
+        empleado = request.user.empleado
+    except Empleado.DoesNotExist:
+        messages.error(request, 'No tienes un perfil de empleado asociado.')
+        return redirect('dashboard:dashboard')
+    
+    if request.method == 'POST':
+        form = CambiarPasswordForm(request.user, request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Tu contraseña ha sido cambiada exitosamente.')
+            # Actualizar la sesión para que no se desconecte
+            from django.contrib.auth import update_session_auth_hash
+            update_session_auth_hash(request, request.user)
+            return redirect('empleados:perfil')
+    else:
+        form = CambiarPasswordForm(request.user)
+    
+    return render(request, 'empleados/cambiar_password.html', {
+        'form': form,
+        'empleado': empleado
+    })
+
+
+@login_required
+def perfil_empleado(request):
+    """Vista para que los empleados vean y editen su perfil"""
+    try:
+        empleado = request.user.empleado
+    except Empleado.DoesNotExist:
+        messages.error(request, 'No tienes un perfil de empleado asociado.')
+        return redirect('dashboard:dashboard')
+    
+    if request.method == 'POST':
+        form = EmpleadoPerfilForm(request.POST, request.FILES, instance=empleado)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Tu perfil ha sido actualizado correctamente.')
+            return redirect('empleados:perfil')
+    else:
+        form = EmpleadoPerfilForm(instance=empleado)
+    
+    return render(request, 'empleados/perfil.html', {
+        'form': form,
+        'empleado': empleado
+    })

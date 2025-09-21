@@ -63,12 +63,12 @@ class RegistroUsuarioSerializer(serializers.ModelSerializer):
         # Eliminar password_confirm
         validated_data.pop('password_confirm')
         
-        # Crear usuario
+        # Crear usuario - mapear nombre/apellido a first_name/last_name
         usuario = Usuario.objects.create_user(
             email=validated_data['email'],
             password=validated_data['password'],
-            first_name=validated_data.get('first_name', ''),
-            last_name=validated_data.get('last_name', ''),
+            first_name=cliente_data['nombre'],
+            last_name=cliente_data['apellido'],
         )
         
         # Crear cliente asociado al usuario

@@ -1928,8 +1928,6 @@
         let servicePrices = {
             {% for servicio in servicios %}
             {{ servicio.id }}: parseFloat({{ servicio.precio|floatformat:2 }}){% if not forloop.last %},{% endif %}
-            {% empty %}
-            // No hay servicios disponibles
             {% endfor %}
         };
         let availableBahias = [];

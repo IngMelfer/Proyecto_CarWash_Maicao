@@ -16,6 +16,10 @@ def home_view(request):
     if hasattr(request.user, 'cliente'):
         return redirect('clientes:dashboard')
     
+    # Si es un empleado, redirigir al dashboard de empleados
+    if hasattr(request.user, 'empleado') or request.user.rol in ['lavador', 'empleado']:
+        return redirect('empleados:dashboard_empleado')
+    
     # Si es administrador (staff o con rol de administrador), redirigir al dashboard de administrador
     if request.user.is_staff or request.user.rol in ['admin_sistema', 'admin_autolavado']:
         return redirect('reservas:dashboard_admin')
