@@ -1,0 +1,374 @@
+{% extends 'base.html' %}
+
+{% block title %}Historial del Vehículo {{ vehiculo.marca }} {{ vehiculo.modelo }} - Premium Car Detailing{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-header {
+        background: linear-gradient(135deg, #056a96, #085173);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .vehicle-info-card {
+        background: linear-gradient(135deg, #ffffff, #f8fbff);
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border: none;
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+    
+    .vehicle-info-header {
+        background: linear-gradient(135deg, #056a96, #085173);
+        color: white;
+        padding: 1.5rem;
+        border: none;
+    }
+    
+    .vehicle-info-body {
+        padding: 1.5rem;
+    }
+    
+    .vehicle-detail {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .vehicle-detail i {
+        width: 30px;
+        color: #056a96;
+        margin-right: 12px;
+        font-size: 1.1rem;
+    }
+    
+    .vehicle-detail-label {
+        font-weight: 600;
+        color: #333;
+        margin-right: 8px;
+    }
+    
+    .vehicle-detail-value {
+        color: #666;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #ffffff, #f8fbff);
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border: none;
+        padding: 1.5rem;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    
+    .stats-card i {
+        font-size: 2.5rem;
+        color: #056a96;
+        margin-bottom: 1rem;
+    }
+    
+    .stats-card h3 {
+        color: #056a96;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stats-card p {
+        color: #666;
+        margin: 0;
+        font-weight: 500;
+    }
+    
+    .historial-table-enhanced {
+        background: linear-gradient(135deg, #ffffff, #f8fbff);
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border: none;
+        overflow: hidden;
+    }
+    
+    .content-header-enhanced {
+        background: linear-gradient(135deg, #056a96, #085173);
+        color: white;
+        padding: 1.5rem;
+        border: none;
+    }
+    
+    .content-header-enhanced h4 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 1.3rem;
+    }
+    
+    .historial-table-enhanced .table {
+        margin: 0;
+        border: none;
+    }
+    
+    .historial-table-enhanced .table thead th {
+        background: linear-gradient(135deg, #f0f8ff, #e6f3ff);
+        color: #056a96;
+        border: none;
+        font-weight: 600;
+        padding: 1rem;
+    }
+    
+    .historial-table-enhanced .table tbody tr {
+        transition: all 0.3s ease;
+    }
+    
+    .historial-table-enhanced .table tbody tr:hover {
+        background: linear-gradient(135deg, #f8fbff, #f0f8ff);
+        transform: translateY(-2px);
+        box-shadow: 0 2px 8px rgba(5, 106, 150, 0.1);
+    }
+    
+    .historial-table-enhanced .table tbody td {
+        padding: 1rem;
+        border-color: #e6f3ff;
+        vertical-align: middle;
+    }
+    
+    .btn-back {
+        background: linear-gradient(135deg, #6c757d, #5a6268);
+        border: none;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+    }
+    
+    .btn-back:hover {
+        background: linear-gradient(135deg, #5a6268, #495057);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+        color: white;
+        text-decoration: none;
+    }
+    
+    .empty-state-enhanced {
+        text-align: center;
+        padding: 3rem;
+        color: #666;
+    }
+    
+    .empty-state-enhanced i {
+        font-size: 4rem;
+        color: #06a7cf;
+        margin-bottom: 1rem;
+    }
+    
+    .empty-state-enhanced h5 {
+        color: #056a96;
+        margin-bottom: 1rem;
+    }
+    
+    .badge-enhanced {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 500;
+        font-size: 0.85rem;
+    }
+    
+    .badge-enhanced.bg-success {
+        background: linear-gradient(135deg, #28a745, #20c997) !important;
+    }
+    
+    .badge-enhanced.bg-info {
+        background: linear-gradient(135deg, #17a2b8, #138496) !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="dashboard-header text-center">
+        <h1 class="mb-2">
+            <i class="fas fa-history me-3"></i>
+            Historial del Vehículo
+        </h1>
+        <p class="mb-0 opacity-75">{{ vehiculo.marca }} {{ vehiculo.modelo }} - {{ vehiculo.placa }}</p>
+    </div>
+
+    <!-- Botón de regreso -->
+    <div class="mb-4">
+        <a href="{% url 'clientes:dashboard' %}" class="btn-back">
+            <i class="fas fa-arrow-left me-2"></i>
+            Volver al Dashboard
+        </a>
+    </div>
+
+    <!-- Información del vehículo -->
+    <div class="vehicle-info-card">
+        <div class="vehicle-info-header">
+            <h4 class="mb-0">
+                <i class="fas fa-car me-2"></i>
+                Información del Vehículo
+            </h4>
+        </div>
+        <div class="vehicle-info-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="vehicle-detail">
+                        <i class="fas fa-tag"></i>
+                        <span class="vehicle-detail-label">Marca:</span>
+                        <span class="vehicle-detail-value">{{ vehiculo.marca }}</span>
+                    </div>
+                    <div class="vehicle-detail">
+                        <i class="fas fa-car-side"></i>
+                        <span class="vehicle-detail-label">Modelo:</span>
+                        <span class="vehicle-detail-value">{{ vehiculo.modelo }}</span>
+                    </div>
+                    <div class="vehicle-detail">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span class="vehicle-detail-label">Año:</span>
+                        <span class="vehicle-detail-value">{{ vehiculo.anio }}</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="vehicle-detail">
+                        <i class="fas fa-id-card"></i>
+                        <span class="vehicle-detail-label">Placa:</span>
+                        <span class="vehicle-detail-value">{{ vehiculo.placa }}</span>
+                    </div>
+                    <div class="vehicle-detail">
+                        <i class="fas fa-palette"></i>
+                        <span class="vehicle-detail-label">Color:</span>
+                        <span class="vehicle-detail-value">{{ vehiculo.color }}</span>
+                    </div>
+                    <div class="vehicle-detail">
+                        <i class="fas fa-cogs"></i>
+                        <span class="vehicle-detail-label">Tipo:</span>
+                        <span class="vehicle-detail-value">{{ vehiculo.get_tipo_display }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas del vehículo -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card">
+                <i class="fas fa-clipboard-check"></i>
+                <h3>{{ total_servicios }}</h3>
+                <p>Servicios Realizados</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <i class="fas fa-dollar-sign"></i>
+                <h3>${{ total_gastado|floatformat:0 }}</h3>
+                <p>Total Gastado</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <i class="fas fa-star"></i>
+                <h3>{{ total_puntos }}</h3>
+                <p>Puntos Ganados</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <i class="fas fa-heart"></i>
+                <h3>{{ servicio_frecuente }}</h3>
+                <p>Servicio Favorito</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historial de servicios -->
+    <div class="historial-table-enhanced">
+        <div class="content-header-enhanced">
+            <h4>
+                <i class="fas fa-list me-2"></i>
+                Historial de Servicios
+            </h4>
+        </div>
+        
+        {% if historial %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Servicio</th>
+                            <th>Bahía</th>
+                            <th>Lavador</th>
+                            <th>Monto</th>
+                            <th>Puntos</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for servicio in historial %}
+                        <tr>
+                            <td>
+                                <i class="fas fa-calendar-alt text-primary me-2"></i>
+                                {{ servicio.fecha_servicio|date:"d/m/Y H:i" }}
+                            </td>
+                            <td>
+                                <i class="fas fa-car-wash text-info me-2"></i>
+                                {{ servicio.servicio }}
+                            </td>
+                            <td>
+                                {% if servicio.reserva.bahia %}
+                                    <i class="fas fa-map-marker-alt text-success me-2"></i>
+                                    {{ servicio.reserva.bahia.nombre }}
+                                {% else %}
+                                    <span class="text-muted">No asignada</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if servicio.reserva.lavador %}
+                                    <i class="fas fa-user text-warning me-2"></i>
+                                    {{ servicio.reserva.lavador.usuario.first_name }} {{ servicio.reserva.lavador.usuario.last_name }}
+                                {% else %}
+                                    <span class="text-muted">No asignado</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong class="text-success">${{ servicio.monto|floatformat:0 }}</strong>
+                            </td>
+                            <td>
+                                <span class="badge badge-enhanced bg-info">
+                                    <i class="fas fa-star me-1"></i>
+                                    {{ servicio.puntos_ganados }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge badge-enhanced bg-success">
+                                    <i class="fas fa-check me-1"></i>
+                                    Completado
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state-enhanced">
+                <i class="fas fa-history"></i>
+                <h5>Sin historial de servicios</h5>
+                <p>Este vehículo aún no tiene servicios registrados.</p>
+                <a href="{% url 'reservas:reservar_turno' %}" class="btn btn-primary mt-3">
+                    <i class="fas fa-calendar-plus me-2"></i>
+                    Reservar Primer Servicio
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

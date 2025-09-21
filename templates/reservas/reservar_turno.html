@@ -1,68 +1,99 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load reservas_filters %}
 
 {% block title %}Reservar Turno - Premium Car Detailing{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* Sidebar moderno */
+    /* Sidebar con el estilo correcto */
     .sidebar-enhanced {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #ffffff, #f8fbff);
         border-radius: 15px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         overflow: hidden;
-    }
-    
-    .sidebar-enhanced .card-header {
-        background: rgba(255,255,255,0.1);
         border: none;
-        backdrop-filter: blur(10px);
     }
     
-    .sidebar-enhanced .list-group-item {
-        background: transparent;
-        border: none;
-        color: rgba(255,255,255,0.8);
-        transition: all 0.3s ease;
-        padding: 15px 20px;
-    }
-    
-    .sidebar-enhanced .list-group-item:hover {
-        background: rgba(255,255,255,0.1);
+    .sidebar-header-enhanced {
+        background: linear-gradient(135deg, #056a96, #085173);
         color: white;
+        padding: 1.5rem;
+        border: none;
+    }
+    
+    .sidebar-header-enhanced h5 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+    
+    .sidebar-menu-enhanced {
+        padding: 0;
+    }
+    
+    .sidebar-item-enhanced {
+        border: none;
+        padding: 1rem 1.5rem;
+        transition: all 0.3s ease;
+        color: #333;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+    }
+    
+    .sidebar-item-enhanced:hover {
+        background: linear-gradient(135deg, #f0f8ff, #e6f3ff);
+        color: #056a96;
         transform: translateX(5px);
     }
     
-    .sidebar-enhanced .list-group-item.active {
-        background: rgba(255,255,255,0.2);
+    .sidebar-item-enhanced.active {
+        background: linear-gradient(135deg, #056a96, #085173);
         color: white;
-        border-left: 4px solid #fff;
+        border-left: 4px solid #06a7cf;
     }
     
-    .sidebar-enhanced .list-group-item.text-danger {
-        color: #ff6b6b !important;
+    .sidebar-item-enhanced i {
+        width: 20px;
+        margin-right: 12px;
+        font-size: 1rem;
     }
     
-    .sidebar-enhanced .list-group-item.text-danger:hover {
-        background: rgba(255,107,107,0.1);
-        color: #ff6b6b !important;
+    .sidebar-item-enhanced.text-danger {
+        color: #dc3545 !important;
+    }
+    
+    .sidebar-item-enhanced.text-danger:hover {
+        background: linear-gradient(135deg, #ffe6e6, #ffcccc);
+        color: #dc3545 !important;
     }
     
     /* Contenido principal moderno */
-    .main-card-enhanced {
+    .main-content-enhanced {
         border: none;
         border-radius: 20px;
         box-shadow: 0 15px 35px rgba(0,0,0,0.1);
         overflow: hidden;
+        background: white;
     }
     
-    .main-card-enhanced .card-header {
-        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    .content-header-enhanced {
+        background: linear-gradient(135deg, #056a96 0%, #085173 100%);
+        color: white;
         border: none;
         padding: 25px 30px;
+        border-radius: 20px 20px 0 0;
     }
     
-    .main-card-enhanced .card-body {
+    .content-header-enhanced h4 {
+        color: white;
+        margin: 0;
+        font-weight: 600;
+    }
+    
+    .main-content-enhanced .card-body {
         padding: 30px;
         background: #fafbfc;
     }
@@ -89,47 +120,160 @@
         border-bottom: 2px solid #e9ecef;
     }
     
-    /* Tarjetas de servicio mejoradas */
+    /* Tarjetas de servicio mejoradas con paleta específica */
     .service-card-enhanced {
-        border: none;
-        border-radius: 15px;
-        transition: all 0.3s ease;
+        border: 2px solid #cacaca;
+        border-radius: 20px;
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         cursor: pointer;
-        background: white;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        background: linear-gradient(145deg, #ffffff, #f8f9fa);
+        box-shadow: 0 8px 25px rgba(5, 106, 150, 0.1);
         overflow: hidden;
+        position: relative;
+    }
+    
+    .service-card-enhanced::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #06a7cf, #056a96, #085173);
+        opacity: 0;
+        transition: opacity 0.3s ease;
     }
     
     .service-card-enhanced:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        transform: translateY(-10px) scale(1.02);
+        box-shadow: 0 20px 40px rgba(5, 106, 150, 0.2);
+        border-color: #06a7cf;
+    }
+    
+    .service-card-enhanced:hover::before {
+        opacity: 1;
     }
     
     .service-card-enhanced.selected {
-        border: 2px solid #667eea;
-        background: linear-gradient(135deg, #f8f9ff 0%, #e8f0ff 100%);
-        transform: translateY(-5px);
+        border: 2px solid #06a7cf;
+        background: linear-gradient(145deg, #f0f8ff, #e6f3ff);
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 15px 35px rgba(6, 167, 207, 0.25);
+    }
+    
+    .service-card-enhanced.selected::before {
+        opacity: 1;
     }
     
     .service-card-enhanced .card-body {
         padding: 25px;
+        position: relative;
     }
     
     .service-card-enhanced .card-title {
-        color: #2c3e50;
-        font-weight: 600;
+        color: #056a96;
+        font-weight: 700;
         margin-bottom: 15px;
+        font-size: 1.3rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .service-card-enhanced .card-title i {
+        color: #06a7cf;
+        font-size: 1.5rem;
+        margin-right: 10px;
+        padding: 8px;
+        background: linear-gradient(135deg, rgba(6, 167, 207, 0.1), rgba(5, 106, 150, 0.1));
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
     
     .service-card-enhanced .card-text {
-        color: #6c757d;
+        color: #666666;
         line-height: 1.6;
+        margin-bottom: 12px;
+    }
+    
+    .service-card-enhanced .card-text:first-of-type {
+        color: #848484;
+        font-style: italic;
+        margin-bottom: 20px;
+        font-size: 0.95rem;
+    }
+    
+    .service-card-enhanced .card-text strong {
+        color: #303030;
+        font-weight: 600;
+    }
+    
+    .service-card-enhanced .card-text i {
+        color: #06a7cf;
+        width: 18px;
+        margin-right: 8px;
+    }
+    
+    .service-card-enhanced .price-highlight {
+        color: #056a96;
+        font-size: 1.4rem;
+        font-weight: 800;
+        text-shadow: 0 1px 2px rgba(5, 106, 150, 0.1);
     }
     
     .service-card-enhanced .card-footer {
-        background: #f8f9fa;
-        border-top: 1px solid #e9ecef;
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-top: 1px solid #cacaca;
         padding: 20px 25px;
+        border-radius: 0 0 20px 20px;
+    }
+    
+    .service-card-enhanced .form-check-enhanced {
+        margin: 0;
+    }
+    
+    .service-card-enhanced .form-check-enhanced .form-check-input {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #cacaca;
+        border-radius: 50%;
+        background: white;
+        transition: all 0.3s ease;
+    }
+    
+    .service-card-enhanced .form-check-enhanced .form-check-input:checked {
+        background: linear-gradient(135deg, #06a7cf, #056a96);
+        border-color: #06a7cf;
+        box-shadow: 0 0 0 3px rgba(6, 167, 207, 0.2);
+    }
+    
+    .service-card-enhanced .form-check-enhanced .form-check-label {
+        color: #303030;
+        font-weight: 600;
+        margin-left: 12px;
+        cursor: pointer;
+        transition: color 0.3s ease;
+        display: flex;
+        align-items: center;
+    }
+    
+    .service-card-enhanced .form-check-enhanced .form-check-label i {
+        color: #06a7cf;
+        margin-right: 6px;
+        font-size: 1.1rem;
+    }
+    
+    .service-card-enhanced:hover .form-check-enhanced .form-check-label {
+        color: #056a96;
+    }
+    
+    /* Animación para el icono de servicio */
+    .service-card-enhanced:hover .card-title i {
+        transform: rotate(10deg) scale(1.1);
+        background: linear-gradient(135deg, rgba(6, 167, 207, 0.2), rgba(5, 106, 150, 0.2));
     }
     
     /* Botones mejorados */
@@ -205,29 +349,285 @@
         box-shadow: 0 0 0 0.2rem rgba(102,126,234,0.25);
     }
     
-    /* Tarjetas de horario mejoradas */
-    .horario-card-enhanced, .bahia-card-enhanced, .lavador-card-enhanced {
-        border: 2px solid #e9ecef;
-        border-radius: 10px;
-        padding: 15px;
+    /* Tarjetas de Lavadores - Diseño Impactante y Futurista */
+    .lavador-card {
+        position: relative;
         cursor: pointer;
+        transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        border: 2px solid #e9ecef;
+        border-radius: 25px;
+        background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 50%, #ffffff 100%);
+        box-shadow: 
+            0 10px 30px rgba(0, 0, 0, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        overflow: hidden;
+        transform-style: preserve-3d;
+        perspective: 1000px;
+    }
+    
+    /* Efecto de brillo animado en el borde */
+    .lavador-card::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(45deg, 
+            #06a7cf, #056a96, #06a7cf, #056a96, 
+            #06a7cf, #056a96, #06a7cf);
+        background-size: 400% 400%;
+        border-radius: 27px;
+        z-index: -1;
+        animation: gradientShift 3s ease infinite;
+        opacity: 0;
+        transition: opacity 0.6s ease;
+    }
+    
+    @keyframes gradientShift {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+    }
+    
+    /* Efecto de partículas flotantes */
+    .lavador-card::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(circle at 20% 20%, rgba(6, 167, 207, 0.1) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 80%, rgba(5, 106, 150, 0.1) 0%, transparent 50%),
+                    radial-gradient(circle at 40% 60%, rgba(6, 167, 207, 0.05) 0%, transparent 50%);
+        opacity: 0;
+        transition: opacity 0.6s ease;
+        pointer-events: none;
+    }
+    
+    .lavador-card:hover::before {
+        opacity: 1;
+    }
+    
+    .lavador-card:hover::after {
+        opacity: 1;
+    }
+    
+    .lavador-card:hover {
+        transform: translateY(-15px) rotateX(5deg) rotateY(5deg) scale(1.05);
+        box-shadow: 
+            0 25px 50px rgba(6, 167, 207, 0.25),
+            0 15px 35px rgba(5, 106, 150, 0.15),
+            inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+    
+    /* Estado seleccionado con efecto holográfico */
+    .lavador-card.selected {
+        transform: translateY(-10px) scale(1.03);
+        background: linear-gradient(145deg, 
+            rgba(6, 167, 207, 0.1) 0%, 
+            rgba(255, 255, 255, 0.9) 30%, 
+            rgba(5, 106, 150, 0.1) 100%);
+        box-shadow: 
+            0 20px 40px rgba(6, 167, 207, 0.3),
+            0 10px 25px rgba(5, 106, 150, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 1),
+            inset 0 -1px 0 rgba(6, 167, 207, 0.2);
+    }
+    
+    .lavador-card.selected::before {
+        opacity: 1;
+        animation: gradientShift 1.5s ease infinite;
+    }
+    
+    .lavador-card.selected::after {
+        opacity: 1;
+        background: radial-gradient(circle at 50% 50%, rgba(6, 167, 207, 0.2) 0%, transparent 70%);
+    }
+    
+    /* Contenido de la tarjeta */
+    .lavador-card .card-body {
+        padding: 35px 25px 25px;
+        position: relative;
+        z-index: 2;
+    }
+    
+    /* Avatar con efecto de levitación */
+    .lavador-card .lavador-icon {
+        position: relative;
+        margin-bottom: 25px;
+        transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    
+    .lavador-card .lavador-icon img,
+    .lavador-card .lavador-icon i {
+        transition: all 0.6s ease;
+        filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.1));
+    }
+    
+    .lavador-card:hover .lavador-icon {
+        transform: translateY(-8px) scale(1.1);
+    }
+    
+    .lavador-card:hover .lavador-icon img,
+    .lavador-card:hover .lavador-icon i {
+        filter: drop-shadow(0 10px 25px rgba(6, 167, 207, 0.3));
+    }
+    
+    .lavador-card.selected .lavador-icon {
+        transform: translateY(-5px) scale(1.08);
+    }
+    
+    .lavador-card .lavador-icon i {
+        color: #06a7cf;
+        background: linear-gradient(135deg, #06a7cf, #056a96);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    /* Título con efecto de brillo */
+    .lavador-card .card-title {
+        color: #303030;
+        font-weight: 800;
+        font-size: 1.4rem;
+        margin-bottom: 10px;
+        transition: all 0.4s ease;
+        position: relative;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+    
+    .lavador-card:hover .card-title {
+        color: #056a96;
+        text-shadow: 0 2px 8px rgba(6, 167, 207, 0.3);
+        transform: translateY(-2px);
+    }
+    
+    .lavador-card.selected .card-title {
+        color: #056a96;
+        text-shadow: 0 2px 8px rgba(6, 167, 207, 0.4);
+    }
+    
+    /* Cargo con estilo futurista */
+    .lavador-card .card-text {
+        color: #848484;
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.4s ease;
+    }
+    
+    .lavador-card:hover .card-text {
+        color: #06a7cf;
+        transform: translateY(-1px);
+    }
+    
+    .lavador-card.selected .card-text {
+        color: #056a96;
+    }
+    
+    /* Estrellas con efecto de brillo */
+    .lavador-card .fa-star {
         transition: all 0.3s ease;
-        background: white;
-        text-align: center;
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
     }
     
-    .horario-card-enhanced:hover, .bahia-card-enhanced:hover, .lavador-card-enhanced:hover {
-        border-color: #667eea;
-        background: #f8f9ff;
-        transform: translateY(-3px);
-        box-shadow: 0 5px 15px rgba(102,126,234,0.2);
+    .lavador-card:hover .fa-star {
+        transform: scale(1.1);
+        filter: drop-shadow(0 2px 4px rgba(255, 193, 7, 0.4));
     }
     
-    .horario-card-enhanced.selected, .bahia-card-enhanced.selected, .lavador-card-enhanced.selected {
-        border-color: #667eea;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        transform: translateY(-3px);
+    .lavador-card.selected .fa-star {
+        transform: scale(1.05);
+        filter: drop-shadow(0 2px 6px rgba(255, 193, 7, 0.5));
+    }
+    
+    /* Footer con gradiente dinámico */
+    .lavador-card .card-footer {
+        background: linear-gradient(135deg, 
+            rgba(248, 249, 250, 0.8) 0%, 
+            rgba(233, 236, 239, 0.6) 100%);
+        border-top: 1px solid rgba(202, 202, 202, 0.3);
+        padding: 25px;
+        border-radius: 0 0 25px 25px;
+        backdrop-filter: blur(10px);
+        position: relative;
+        z-index: 2;
+    }
+    
+    .lavador-card:hover .card-footer {
+        background: linear-gradient(135deg, 
+            rgba(6, 167, 207, 0.1) 0%, 
+            rgba(248, 249, 250, 0.9) 50%,
+            rgba(5, 106, 150, 0.1) 100%);
+    }
+    
+    .lavador-card.selected .card-footer {
+        background: linear-gradient(135deg, 
+            rgba(6, 167, 207, 0.15) 0%, 
+            rgba(255, 255, 255, 0.9) 50%,
+            rgba(5, 106, 150, 0.15) 100%);
+        border-top: 1px solid rgba(6, 167, 207, 0.3);
+    }
+    
+    /* Checkbox futurista */
+    .lavador-card .form-check-input {
+        width: 24px;
+        height: 24px;
+        border: 3px solid #cacaca;
+        border-radius: 50%;
+        background: linear-gradient(145deg, #ffffff, #f8f9fa);
+        transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+        box-shadow: 
+            0 4px 8px rgba(0, 0, 0, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+    
+    .lavador-card .form-check-input:hover {
+        border-color: #06a7cf;
+        transform: scale(1.1);
+        box-shadow: 
+            0 6px 12px rgba(6, 167, 207, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 1);
+    }
+    
+    .lavador-card .form-check-input:checked {
+        background: linear-gradient(135deg, #06a7cf 0%, #056a96 100%);
+        border-color: #056a96;
+        transform: scale(1.05);
+        box-shadow: 
+            0 8px 16px rgba(5, 106, 150, 0.3),
+            0 0 0 4px rgba(6, 167, 207, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+    
+    /* Label con efecto de pulso */
+    .lavador-card .form-check-label {
+        color: #303030;
+        font-weight: 700;
+        margin-left: 15px;
+        cursor: pointer;
+        transition: all 0.4s ease;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.9rem;
+    }
+    
+    .lavador-card:hover .form-check-label {
+        color: #056a96;
+        transform: translateX(3px);
+    }
+    
+    .lavador-card.selected .form-check-label {
+        color: #056a96;
+        text-shadow: 0 1px 3px rgba(6, 167, 207, 0.3);
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
     }
     
     /* Resumen de reserva mejorado */
@@ -267,18 +667,392 @@
     .form-check-enhanced .form-check-input {
         width: 1.2em;
         height: 1.2em;
-        border: 2px solid #667eea;
-        border-radius: 4px;
+        border: 2px solid #cacaca;
+        border-radius: 6px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .form-check-enhanced .form-check-input:hover {
+        border-color: #06a7cf;
+        box-shadow: 0 4px 12px rgba(6, 167, 207, 0.2);
     }
     
     .form-check-enhanced .form-check-input:checked {
-        background-color: #667eea;
-        border-color: #667eea;
+        background-color: #056a96;
+        border-color: #056a96;
+        box-shadow: 0 4px 15px rgba(5, 106, 150, 0.3);
     }
     
     .form-check-enhanced .form-check-label {
         margin-left: 10px;
         color: #495057;
+    }
+    
+    /* Tarjetas de Medios de Pago - Diseño Cristal Holográfico Sorprendente */
+    .medio-pago-card {
+        position: relative;
+        cursor: pointer;
+        transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        border: 2px solid transparent;
+        border-radius: 30px;
+        background: linear-gradient(145deg, 
+            rgba(255, 255, 255, 0.95) 0%, 
+            rgba(248, 249, 250, 0.9) 30%,
+            rgba(233, 236, 239, 0.85) 70%,
+            rgba(255, 255, 255, 0.95) 100%);
+        backdrop-filter: blur(20px);
+        box-shadow: 
+            0 15px 35px rgba(0, 0, 0, 0.08),
+            0 5px 15px rgba(0, 0, 0, 0.04),
+            inset 0 1px 0 rgba(255, 255, 255, 0.8),
+            inset 0 -1px 0 rgba(0, 0, 0, 0.02);
+        overflow: hidden;
+        transform-style: preserve-3d;
+        perspective: 1200px;
+    }
+    
+    /* Efecto de cristal holográfico con ondas de color */
+    .medio-pago-card::before {
+        content: '';
+        position: absolute;
+        top: -3px;
+        left: -3px;
+        right: -3px;
+        bottom: -3px;
+        background: linear-gradient(45deg, 
+            #06a7cf 0%, #056a96 25%, #cacaca 50%, 
+            #848484 75%, #06a7cf 100%);
+        background-size: 300% 300%;
+        border-radius: 33px;
+        z-index: -1;
+        animation: holographicWave 4s ease-in-out infinite;
+        opacity: 0;
+        transition: opacity 0.8s ease;
+        filter: blur(1px);
+    }
+    
+    @keyframes holographicWave {
+        0%, 100% { 
+            background-position: 0% 50%;
+            transform: rotate(0deg) scale(1);
+        }
+        25% { 
+            background-position: 100% 0%;
+            transform: rotate(1deg) scale(1.02);
+        }
+        50% { 
+            background-position: 100% 100%;
+            transform: rotate(0deg) scale(1.01);
+        }
+        75% { 
+            background-position: 0% 100%;
+            transform: rotate(-1deg) scale(1.02);
+        }
+    }
+    
+    /* Efecto de partículas de cristal flotantes */
+    .medio-pago-card::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+            radial-gradient(circle at 15% 25%, rgba(6, 167, 207, 0.15) 0%, transparent 40%),
+            radial-gradient(circle at 85% 75%, rgba(5, 106, 150, 0.12) 0%, transparent 35%),
+            radial-gradient(circle at 50% 10%, rgba(202, 202, 202, 0.08) 0%, transparent 30%),
+            radial-gradient(circle at 25% 90%, rgba(132, 132, 132, 0.1) 0%, transparent 25%);
+        border-radius: 30px;
+        opacity: 0;
+        transition: opacity 0.8s ease;
+        animation: crystalFloat 6s ease-in-out infinite;
+    }
+    
+    @keyframes crystalFloat {
+        0%, 100% { 
+            transform: translateY(0px) rotate(0deg);
+            opacity: 0.3;
+        }
+        33% { 
+            transform: translateY(-3px) rotate(1deg);
+            opacity: 0.6;
+        }
+        66% { 
+            transform: translateY(2px) rotate(-0.5deg);
+            opacity: 0.4;
+        }
+    }
+    
+    /* Estados de hover con efectos cristalinos */
+    .medio-pago-card:hover {
+        transform: translateY(-8px) rotateX(5deg) rotateY(2deg) scale(1.03);
+        box-shadow: 
+            0 25px 50px rgba(6, 167, 207, 0.15),
+            0 15px 30px rgba(0, 0, 0, 0.1),
+            0 5px 15px rgba(5, 106, 150, 0.2),
+            inset 0 2px 0 rgba(255, 255, 255, 0.9),
+            inset 0 -2px 0 rgba(6, 167, 207, 0.1);
+        background: linear-gradient(145deg, 
+            rgba(255, 255, 255, 0.98) 0%, 
+            rgba(248, 249, 250, 0.95) 30%,
+            rgba(6, 167, 207, 0.05) 50%,
+            rgba(233, 236, 239, 0.9) 70%,
+            rgba(255, 255, 255, 0.98) 100%);
+    }
+    
+    .medio-pago-card:hover::before {
+        opacity: 0.8;
+        animation-duration: 2s;
+    }
+    
+    .medio-pago-card:hover::after {
+        opacity: 0.7;
+        animation-duration: 3s;
+    }
+    
+    /* Estado seleccionado con brillo holográfico */
+    .medio-pago-card.selected {
+        transform: translateY(-5px) scale(1.02);
+        border: 2px solid #06a7cf;
+        background: linear-gradient(145deg, 
+            rgba(255, 255, 255, 1) 0%, 
+            rgba(6, 167, 207, 0.08) 30%,
+            rgba(5, 106, 150, 0.06) 50%,
+            rgba(6, 167, 207, 0.08) 70%,
+            rgba(255, 255, 255, 1) 100%);
+        box-shadow: 
+            0 20px 40px rgba(6, 167, 207, 0.2),
+            0 10px 25px rgba(5, 106, 150, 0.15),
+            0 0 0 4px rgba(6, 167, 207, 0.1),
+            inset 0 2px 0 rgba(255, 255, 255, 1),
+            inset 0 -1px 0 rgba(6, 167, 207, 0.2);
+    }
+    
+    .medio-pago-card.selected::before {
+        opacity: 1;
+        animation-duration: 1.5s;
+        filter: blur(0px);
+    }
+    
+    .medio-pago-card.selected::after {
+        opacity: 0.9;
+        animation-duration: 2s;
+    }
+    
+    /* Icono con efectos cristalinos */
+    .medio-pago-card .medio-pago-icon {
+        position: relative;
+        z-index: 3;
+        transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    
+    .medio-pago-card .medio-pago-icon i {
+        background: linear-gradient(135deg, #06a7cf 0%, #056a96 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        filter: drop-shadow(0 2px 4px rgba(6, 167, 207, 0.3));
+        transition: all 0.5s ease;
+    }
+    
+    .medio-pago-card:hover .medio-pago-icon {
+        transform: translateY(-5px) scale(1.1) rotateY(10deg);
+    }
+    
+    .medio-pago-card:hover .medio-pago-icon i {
+        filter: drop-shadow(0 4px 8px rgba(6, 167, 207, 0.4));
+        animation: iconPulse 2s ease-in-out infinite;
+    }
+    
+    .medio-pago-card.selected .medio-pago-icon {
+        transform: translateY(-3px) scale(1.05);
+    }
+    
+    .medio-pago-card.selected .medio-pago-icon i {
+        filter: drop-shadow(0 3px 6px rgba(5, 106, 150, 0.5));
+        animation: iconGlow 3s ease-in-out infinite;
+    }
+    
+    @keyframes iconPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+    
+    @keyframes iconGlow {
+        0%, 100% { 
+            filter: drop-shadow(0 3px 6px rgba(5, 106, 150, 0.5));
+        }
+        50% { 
+            filter: drop-shadow(0 5px 10px rgba(6, 167, 207, 0.7));
+        }
+    }
+    
+    /* Título con efecto holográfico */
+    .medio-pago-card .card-title {
+        color: #303030;
+        font-weight: 800;
+        font-size: 1.3rem;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 0;
+        transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        position: relative;
+        z-index: 3;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+    
+    .medio-pago-card:hover .card-title {
+        color: #056a96;
+        text-shadow: 
+            0 2px 8px rgba(6, 167, 207, 0.4),
+            0 0 20px rgba(6, 167, 207, 0.2);
+        transform: translateY(-2px);
+    }
+    
+    .medio-pago-card.selected .card-title {
+        color: #056a96;
+        text-shadow: 
+            0 2px 10px rgba(5, 106, 150, 0.5),
+            0 0 25px rgba(6, 167, 207, 0.3);
+        animation: titleShimmer 4s ease-in-out infinite;
+    }
+    
+    @keyframes titleShimmer {
+        0%, 100% { 
+            text-shadow: 
+                0 2px 10px rgba(5, 106, 150, 0.5),
+                0 0 25px rgba(6, 167, 207, 0.3);
+        }
+        50% { 
+            text-shadow: 
+                0 3px 15px rgba(6, 167, 207, 0.7),
+                0 0 35px rgba(5, 106, 150, 0.4);
+        }
+    }
+    
+    /* Footer con cristal esmerilado */
+    .medio-pago-card .card-footer {
+        background: linear-gradient(135deg, 
+            rgba(255, 255, 255, 0.9) 0%, 
+            rgba(248, 249, 250, 0.8) 50%,
+            rgba(233, 236, 239, 0.7) 100%);
+        border-top: 1px solid rgba(6, 167, 207, 0.1);
+        padding: 25px;
+        border-radius: 0 0 30px 30px;
+        backdrop-filter: blur(15px);
+        position: relative;
+        z-index: 2;
+        transition: all 0.6s ease;
+    }
+    
+    .medio-pago-card:hover .card-footer {
+        background: linear-gradient(135deg, 
+            rgba(6, 167, 207, 0.08) 0%, 
+            rgba(255, 255, 255, 0.95) 30%,
+            rgba(248, 249, 250, 0.9) 70%,
+            rgba(5, 106, 150, 0.06) 100%);
+        border-top: 1px solid rgba(6, 167, 207, 0.2);
+    }
+    
+    .medio-pago-card.selected .card-footer {
+        background: linear-gradient(135deg, 
+            rgba(6, 167, 207, 0.12) 0%, 
+            rgba(255, 255, 255, 0.98) 30%,
+            rgba(248, 249, 250, 0.95) 70%,
+            rgba(5, 106, 150, 0.1) 100%);
+        border-top: 1px solid rgba(6, 167, 207, 0.3);
+    }
+    
+    /* Radio button cristalino */
+    .medio-pago-card .form-check-input {
+        width: 26px;
+        height: 26px;
+        border: 3px solid #cacaca;
+        border-radius: 50%;
+        background: linear-gradient(145deg, 
+            rgba(255, 255, 255, 0.9), 
+            rgba(248, 249, 250, 0.8));
+        transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        box-shadow: 
+            0 6px 12px rgba(0, 0, 0, 0.08),
+            inset 0 2px 0 rgba(255, 255, 255, 0.9),
+            inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+        backdrop-filter: blur(10px);
+    }
+    
+    .medio-pago-card .form-check-input:hover {
+        border-color: #06a7cf;
+        transform: scale(1.15) rotateZ(5deg);
+        box-shadow: 
+            0 8px 16px rgba(6, 167, 207, 0.2),
+            0 0 0 4px rgba(6, 167, 207, 0.1),
+            inset 0 2px 0 rgba(255, 255, 255, 1);
+    }
+    
+    .medio-pago-card .form-check-input:checked {
+        background: linear-gradient(135deg, #06a7cf 0%, #056a96 100%);
+        border-color: #056a96;
+        transform: scale(1.1);
+        box-shadow: 
+            0 10px 20px rgba(5, 106, 150, 0.3),
+            0 0 0 5px rgba(6, 167, 207, 0.15),
+            0 0 20px rgba(6, 167, 207, 0.2),
+            inset 0 2px 0 rgba(255, 255, 255, 0.4);
+        animation: radioGlow 2s ease-in-out infinite;
+    }
+    
+    @keyframes radioGlow {
+        0%, 100% { 
+            box-shadow: 
+                0 10px 20px rgba(5, 106, 150, 0.3),
+                0 0 0 5px rgba(6, 167, 207, 0.15),
+                0 0 20px rgba(6, 167, 207, 0.2),
+                inset 0 2px 0 rgba(255, 255, 255, 0.4);
+        }
+        50% { 
+            box-shadow: 
+                0 12px 25px rgba(5, 106, 150, 0.4),
+                0 0 0 6px rgba(6, 167, 207, 0.2),
+                0 0 30px rgba(6, 167, 207, 0.3),
+                inset 0 2px 0 rgba(255, 255, 255, 0.5);
+        }
+    }
+    
+    /* Label con efecto cristalino */
+    .medio-pago-card .form-check-label {
+        color: #303030;
+        font-weight: 700;
+        margin-left: 15px;
+        cursor: pointer;
+        transition: all 0.5s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.95rem;
+        position: relative;
+        z-index: 3;
+    }
+    
+    .medio-pago-card:hover .form-check-label {
+        color: #056a96;
+        transform: translateX(5px);
+        text-shadow: 0 1px 3px rgba(6, 167, 207, 0.3);
+    }
+    
+    .medio-pago-card.selected .form-check-label {
+        color: #056a96;
+        text-shadow: 0 2px 5px rgba(5, 106, 150, 0.4);
+        animation: labelShine 3s ease-in-out infinite;
+    }
+    
+    @keyframes labelShine {
+        0%, 100% { 
+            text-shadow: 0 2px 5px rgba(5, 106, 150, 0.4);
+        }
+        50% { 
+            text-shadow: 0 3px 8px rgba(6, 167, 207, 0.6);
+        }
     }
 </style>
 {% endblock %}
@@ -289,29 +1063,29 @@
         <!-- Menú lateral -->
         <div class="col-md-3 mb-4">
             <div class="card sidebar-enhanced">
-                <div class="card-header">
+                <div class="sidebar-header-enhanced">
                     <h5 class="mb-0">
                         <i class="fas fa-user-circle me-2"></i>
                         Mi Cuenta
                     </h5>
                 </div>
-                <div class="list-group list-group-flush">
-                    <a href="{% url 'autenticacion:perfil' %}" class="list-group-item list-group-item-action">
-                        <i class="fas fa-user-circle me-2"></i> Mi Perfil
+                <div class="sidebar-menu-enhanced">
+                    <a href="{% url 'autenticacion:perfil' %}" class="sidebar-item-enhanced">
+                        <i class="fas fa-user-circle"></i> Mi Perfil
                     </a>
                     {% if not user.is_staff %}
-                    <a href="{% url 'reservas:mis_turnos' %}" class="list-group-item list-group-item-action">
-                        <i class="fas fa-calendar-alt me-2"></i> Mis Turnos
+                    <a href="{% url 'reservas:mis_turnos' %}" class="sidebar-item-enhanced">
+                        <i class="fas fa-calendar-alt"></i> Mis Turnos
                     </a>
-                    <a href="{% url 'clientes:historial_servicios' %}" class="list-group-item list-group-item-action">
-                        <i class="fas fa-history me-2"></i> Historial de Servicios
+                    <a href="{% url 'clientes:historial_servicios' %}" class="sidebar-item-enhanced">
+                        <i class="fas fa-history"></i> Historial de Servicios
                     </a>
-                    <a href="{% url 'clientes:puntos_recompensas' %}" class="list-group-item list-group-item-action">
-                        <i class="fas fa-star me-2"></i> Puntos y Recompensas
+                    <a href="{% url 'clientes:puntos_recompensas' %}" class="sidebar-item-enhanced">
+                        <i class="fas fa-star"></i> Puntos y Recompensas
                     </a>
                     {% endif %}
-                    <a href="{% url 'autenticacion:logout' %}" class="list-group-item list-group-item-action text-danger">
-                        <i class="fas fa-sign-out-alt me-2"></i> Cerrar Sesión
+                    <a href="{% url 'autenticacion:logout' %}" class="sidebar-item-enhanced text-danger">
+                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
                     </a>
                 </div>
             </div>
@@ -319,8 +1093,8 @@
         
         <!-- Contenido principal -->
         <div class="col-md-9">
-            <div class="card main-card-enhanced">
-                <div class="card-header d-flex justify-content-between align-items-center">
+            <div class="card main-content-enhanced">
+                <div class="content-header-enhanced d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">
                         <i class="fas fa-calendar-plus me-2"></i>
                         Reservar Turno
@@ -355,24 +1129,23 @@
                                     <div class="card h-100 service-card-enhanced" data-service-id="{{ servicio.id }}">
                                         <div class="card-body">
                                             <h5 class="card-title">
-                                                <i class="fas fa-car-wash me-2"></i>
+                                                <i class="fas fa-spray-can"></i>
                                                 {{ servicio.nombre }}
                                             </h5>
                                             <p class="card-text">{{ servicio.descripcion }}</p>
                                             <p class="card-text">
-                                                <i class="fas fa-clock me-1"></i>
+                                                <i class="fas fa-clock"></i>
                                                 <strong>Duración:</strong> {{ servicio.duracion_minutos }} minutos
                                             </p>
                                             <p class="card-text">
-                                                <i class="fas fa-dollar-sign me-1"></i>
-                                                <strong>Precio:</strong> ${{ servicio.precio }}
+                                                <i class="fas fa-money-bill-wave"></i>
+                                                <strong>Precio:</strong> <span class="price-highlight">${{ servicio.precio|format_price }}</span>
                                             </p>
                                         </div>
                                         <div class="card-footer">
                                             <div class="form-check form-check-enhanced">
                                                 <input class="form-check-input service-radio" type="radio" name="servicio" id="servicio{{ servicio.id }}" value="{{ servicio.id }}">
                                                 <label class="form-check-label" for="servicio{{ servicio.id }}">
-                                                    <i class="fas fa-check-circle me-1"></i>
                                                     Seleccionar
                                                 </label>
                                             </div>
@@ -614,7 +1387,6 @@
                                                     <div class="form-check form-check-enhanced">
                                                         <input class="form-check-input lavador-radio" type="radio" name="lavador" id="lavador{{ lavador.id }}" value="{{ lavador.id }}">
                                                         <label class="form-check-label" for="lavador{{ lavador.id }}">
-                                                            <i class="fas fa-check-circle me-1"></i>
                                                             Seleccionar
                                                         </label>
                                                     </div>
@@ -698,7 +1470,6 @@
                                                     <div class="form-check form-check-enhanced">
                                                         <input class="form-check-input medio-pago-radio" type="radio" name="medio_pago" id="medio{{ medio.id }}" value="{{ medio.id }}">
                                                         <label class="form-check-label" for="medio{{ medio.id }}">
-                                                            <i class="fas fa-check-circle me-1"></i>
                                                             Seleccionar
                                                         </label>
                                                     </div>
@@ -1012,21 +1783,139 @@
 {% block extra_js %}
 <!-- Versión: 1.1 - Corrección de navegación entre pasos -->
 <style>
+    /* Tarjetas de Bahías Mejoradas */
     .bahia-card {
         cursor: pointer;
-        transition: all 0.3s ease;
-        border: 2px solid transparent;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 2px solid #cacaca;
+        border-radius: 20px;
+        background: linear-gradient(145deg, #ffffff, #f8f9fa);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        position: relative;
     }
+    
+    .bahia-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #06a7cf, #056a96);
+        transform: scaleX(0);
+        transition: transform 0.4s ease;
+    }
+    
     .bahia-card:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 20px 40px rgba(6, 167, 207, 0.15);
+        border-color: #06a7cf;
+    }
+    
+    .bahia-card:hover::before {
+        transform: scaleX(1);
+    }
+    
+    .bahia-card.selected {
+        border-color: #056a96;
+        background: linear-gradient(145deg, #ffffff, rgba(6, 167, 207, 0.05));
         transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        box-shadow: 0 15px 35px rgba(5, 106, 150, 0.2);
     }
-    .bahia-card.border-primary {
-        border-color: #0d6efd;
-        background-color: rgba(13, 110, 253, 0.05);
+    
+    .bahia-card.selected::before {
+        transform: scaleX(1);
+        background: linear-gradient(90deg, #056a96, #06a7cf);
     }
+    
+    .bahia-card .card-body {
+        padding: 30px 25px;
+        position: relative;
+    }
+    
     .bahia-icon {
-        color: #0d6efd;
+        color: #06a7cf;
+        transition: all 0.4s ease;
+        margin-bottom: 20px;
+        position: relative;
+    }
+    
+    .bahia-card:hover .bahia-icon {
+        color: #056a96;
+        transform: scale(1.1) rotate(5deg);
+    }
+    
+    .bahia-card .card-title {
+        color: #303030;
+        font-weight: 700;
+        font-size: 1.3rem;
+        margin-bottom: 15px;
+        transition: color 0.3s ease;
+    }
+    
+    .bahia-card:hover .card-title {
+        color: #056a96;
+    }
+    
+    .bahia-card .card-text {
+        color: #848484;
+        font-size: 0.95rem;
+        margin-bottom: 20px;
+        line-height: 1.5;
+    }
+    
+    .bahia-card .badge {
+        border-radius: 20px;
+        padding: 8px 16px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+    }
+    
+    .bahia-card .badge.bg-info {
+        background: linear-gradient(135deg, #06a7cf, #056a96) !important;
+        color: white;
+        box-shadow: 0 2px 8px rgba(6, 167, 207, 0.3);
+    }
+    
+    .bahia-card .badge.bg-secondary {
+        background: linear-gradient(135deg, #848484, #cacaca) !important;
+        color: white;
+    }
+    
+    .bahia-card .card-footer {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border-top: 1px solid #cacaca;
+        padding: 20px 25px;
+        border-radius: 0;
+    }
+    
+    .bahia-card .form-check-input {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #cacaca;
+        border-radius: 50%;
+        background: white;
+        transition: all 0.3s ease;
+    }
+    
+    .bahia-card .form-check-input:checked {
+        background: linear-gradient(135deg, #06a7cf, #056a96);
+        border-color: #06a7cf;
+        box-shadow: 0 0 0 3px rgba(6, 167, 207, 0.2);
+    }
+    
+    .bahia-card .form-check-label {
+        color: #303030;
+        font-weight: 600;
+        margin-left: 12px;
+        cursor: pointer;
+        transition: color 0.3s ease;
+    }
+    
+    .bahia-card:hover .form-check-label {
+        color: #056a96;
     }
 </style>
 <script>
@@ -1273,9 +2162,9 @@
                                 const radio = document.querySelector('#lavador' + lavadorId);
                                 radio.checked = true;
                                 
-                                // Actualizar estilos
-                                lavadorCards.forEach(c => c.classList.remove('border-primary'));
-                                this.classList.add('border-primary');
+                                // Actualizar estilos con la nueva clase 'selected'
+                                lavadorCards.forEach(c => c.classList.remove('selected'));
+                                this.classList.add('selected');
                                 
                                 // Guardar selección
                                 selectedLavador = lavadorId;
@@ -1288,9 +2177,9 @@
                                 if (this.checked) {
                                     const lavadorId = this.value;
                                     
-                                    // Actualizar estilos
-                                    lavadorCards.forEach(c => c.classList.remove('border-primary'));
-                                    document.querySelector('.lavador-card[data-lavador-id="' + lavadorId + '"]').classList.add('border-primary');
+                                    // Actualizar estilos con la nueva clase 'selected'
+                                    lavadorCards.forEach(c => c.classList.remove('selected'));
+                                    document.querySelector('.lavador-card[data-lavador-id="' + lavadorId + '"]').classList.add('selected');
                                     
                                     // Guardar selección
                                     selectedLavador = lavadorId;
@@ -1839,9 +2728,9 @@
                                 const radio = document.querySelector('#bahia' + bahiaId);
                                 radio.checked = true;
                                 
-                                // Actualizar estilos
-                                bahiaCards.forEach(c => c.classList.remove('border-primary'));
-                                this.classList.add('border-primary');
+                                // Actualizar estilos con la nueva clase 'selected'
+                                bahiaCards.forEach(c => c.classList.remove('selected'));
+                                this.classList.add('selected');
                                 
                                 // Guardar selección
                                 selectedBahia = bahiaId;
@@ -1858,11 +2747,11 @@
                                     selectedBahia = parseInt(this.value);
                                     document.querySelector('#bahiaInput').value = this.value;
                                     
-                                    // Actualizar estilos visuales
-                                    bahiaCards.forEach(c => c.classList.remove('border-primary'));
+                                    // Actualizar estilos visuales con la nueva clase 'selected'
+                                    bahiaCards.forEach(c => c.classList.remove('selected'));
                                     const selectedCard = document.querySelector(`[data-bahia-id="${this.value}"]`);
                                     if (selectedCard) {
-                                        selectedCard.classList.add('border-primary');
+                                        selectedCard.classList.add('selected');
                                     }
                                 }
                             });
