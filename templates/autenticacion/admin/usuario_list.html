@@ -1,0 +1,462 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestión de Usuarios - Premium Car Detailing{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+    }
+    
+    .filters-card {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .table-container {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    
+    .table th {
+        background: #343a40;
+        color: white;
+        border: none;
+        font-weight: 600;
+    }
+    
+    .badge-rol {
+        font-size: 0.75rem;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .btn-action {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        margin: 0 0.125rem;
+    }
+    
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .status-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
+    
+    .status-active { background-color: #28a745; }
+    .status-inactive { background-color: #dc3545; }
+    .status-verified { background-color: #17a2b8; }
+    .status-unverified { background-color: #ffc107; }
+    
+    .search-box {
+        border-radius: 25px;
+        border: 2px solid #e9ecef;
+        padding: 0.75rem 1.25rem;
+        transition: all 0.3s ease;
+    }
+    
+    .search-box:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .filter-select {
+        border-radius: 8px;
+        border: 2px solid #e9ecef;
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .pagination .page-link {
+        border-radius: 8px;
+        margin: 0 2px;
+        border: none;
+        color: #667eea;
+    }
+    
+    .pagination .page-item.active .page-link {
+        background-color: #667eea;
+        border-color: #667eea;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Token CSRF para AJAX -->
+{% csrf_token %}
+
+<header class="admin-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1><i class="fas fa-users me-3"></i>Gestión de Usuarios</h1>
+                <p class="lead mb-0">Administra todos los usuarios del sistema</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{% url 'autenticacion:admin_usuario_create' %}" class="btn btn-light btn-lg">
+                    <i class="fas fa-plus me-2"></i>Nuevo Usuario
+                </a>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="container">
+    <!-- Filtros de búsqueda -->
+    <div class="filters-card">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label for="search" class="form-label"><i class="fas fa-search me-2"></i>Buscar</label>
+                <input type="text" class="form-control search-box" id="search" name="search" 
+                       value="{{ search }}" placeholder="Email, nombre o apellido...">
+            </div>
+            <div class="col-md-2">
+                <label for="rol" class="form-label"><i class="fas fa-user-tag me-2"></i>Rol</label>
+                <select class="form-select filter-select" id="rol" name="rol">
+                    <option value="">Todos los roles</option>
+                    {% for value, label in roles %}
+                        <option value="{{ value }}" {% if value == rol_selected %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="activo" class="form-label"><i class="fas fa-toggle-on me-2"></i>Estado</label>
+                <select class="form-select filter-select" id="activo" name="activo">
+                    <option value="">Todos</option>
+                    <option value="true" {% if activo_selected == 'true' %}selected{% endif %}>Activos</option>
+                    <option value="false" {% if activo_selected == 'false' %}selected{% endif %}>Inactivos</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="verificado" class="form-label"><i class="fas fa-check-circle me-2"></i>Verificación</label>
+                <select class="form-select filter-select" id="verificado" name="verificado">
+                    <option value="">Todos</option>
+                    <option value="true" {% if verificado_selected == 'true' %}selected{% endif %}>Verificados</option>
+                    <option value="false" {% if verificado_selected == 'false' %}selected{% endif %}>No verificados</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-filter me-1"></i>Filtrar
+                </button>
+                <a href="{% url 'autenticacion:admin_usuario_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tabla de usuarios -->
+    <div class="table-container">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Nombre Completo</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Verificación</th>
+                        <th>Fecha de Registro</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for usuario in usuarios %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if usuario.foto_perfil %}
+                                    <img src="{{ usuario.foto_perfil.url }}" alt="Foto" 
+                                         class="rounded-circle me-2" width="40" height="40">
+                                {% else %}
+                                    <div class="bg-secondary rounded-circle me-2 d-flex align-items-center justify-content-center" 
+                                         style="width: 40px; height: 40px;">
+                                        <i class="fas fa-user text-white"></i>
+                                    </div>
+                                {% endif %}
+                                <div>
+                                    <strong>{{ usuario.email }}</strong>
+                                    {% if usuario.is_superuser %}
+                                        <span class="badge bg-danger ms-1">SUPER</span>
+                                    {% endif %}
+                                    {% if usuario.is_staff %}
+                                        <span class="badge bg-warning ms-1">STAFF</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {{ usuario.get_full_name|default:"Sin nombre" }}
+                        </td>
+                        <td>
+                            <span class="badge badge-rol 
+                                {% if usuario.rol == 'admin_sistema' %}bg-danger
+                                {% elif usuario.rol == 'admin_autolavado' %}bg-warning
+                                {% elif usuario.rol == 'gerente' %}bg-info
+                                {% elif usuario.rol == 'lavador' %}bg-success
+                                {% else %}bg-secondary{% endif %}">
+                                {{ usuario.get_rol_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="status-badge">
+                                <span class="status-indicator {% if usuario.is_active %}status-active{% else %}status-inactive{% endif %}"></span>
+                                {% if usuario.is_active %}Activo{% else %}Inactivo{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="status-badge">
+                                <span class="status-indicator {% if usuario.is_verified %}status-verified{% else %}status-unverified{% endif %}"></span>
+                                {% if usuario.is_verified %}Verificado{% else %}Pendiente{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            {{ usuario.date_joined|date:"d/m/Y H:i" }}
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'autenticacion:admin_usuario_detail' usuario.pk %}" 
+                                   class="btn btn-outline-info btn-action" title="Ver detalles">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'autenticacion:admin_usuario_update' usuario.pk %}" 
+                                   class="btn btn-outline-primary btn-action" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% if usuario != request.user %}
+                                    <button type="button" class="btn btn-outline-warning btn-action toggle-active" 
+                                            data-user-id="{{ usuario.pk }}" 
+                                            title="{% if usuario.is_active %}Desactivar{% else %}Activar{% endif %}">
+                                        <i class="fas {% if usuario.is_active %}fa-toggle-on{% else %}fa-toggle-off{% endif %}"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-info btn-action toggle-verified" 
+                                            data-user-id="{{ usuario.pk }}" 
+                                            title="{% if usuario.is_verified %}Desverificar{% else %}Verificar{% endif %}">
+                                        <i class="fas {% if usuario.is_verified %}fa-check-circle{% else %}fa-question-circle{% endif %}"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-action reset-password" 
+                                            data-user-id="{{ usuario.pk }}" title="Resetear contraseña">
+                                        <i class="fas fa-key"></i>
+                                    </button>
+                                    <a href="{% url 'autenticacion:admin_usuario_delete' usuario.pk %}" 
+                                       class="btn btn-outline-danger btn-action" title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No se encontraron usuarios con los filtros aplicados.</p>
+                            <a href="{% url 'autenticacion:admin_usuario_create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Crear primer usuario
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Paginación -->
+    {% if is_paginated %}
+    <nav aria-label="Paginación de usuarios" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.rol %}&rol={{ request.GET.rol }}{% endif %}{% if request.GET.activo %}&activo={{ request.GET.activo }}{% endif %}{% if request.GET.verificado %}&verificado={{ request.GET.verificado }}{% endif %}">
+                        <i class="fas fa-angle-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.rol %}&rol={{ request.GET.rol }}{% endif %}{% if request.GET.activo %}&activo={{ request.GET.activo }}{% endif %}{% if request.GET.verificado %}&verificado={{ request.GET.verificado }}{% endif %}">
+                        <i class="fas fa-angle-left"></i>
+                    </a>
+                </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.rol %}&rol={{ request.GET.rol }}{% endif %}{% if request.GET.activo %}&activo={{ request.GET.activo }}{% endif %}{% if request.GET.verificado %}&verificado={{ request.GET.verificado }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.rol %}&rol={{ request.GET.rol }}{% endif %}{% if request.GET.activo %}&activo={{ request.GET.activo }}{% endif %}{% if request.GET.verificado %}&verificado={{ request.GET.verificado }}{% endif %}">
+                        <i class="fas fa-angle-right"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.rol %}&rol={{ request.GET.rol }}{% endif %}{% if request.GET.activo %}&activo={{ request.GET.activo }}{% endif %}{% if request.GET.verificado %}&verificado={{ request.GET.verificado }}{% endif %}">
+                        <i class="fas fa-angle-double-right"></i>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<!-- Modal para mostrar nueva contraseña -->
+<div class="modal fade" id="passwordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nueva Contraseña Generada</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>La nueva contraseña temporal es:</p>
+                <div class="alert alert-info">
+                    <strong id="nueva-password"></strong>
+                </div>
+                <p class="text-muted">Por favor, comparte esta contraseña con el usuario de forma segura.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Obtener token CSRF
+    function getCsrfToken() {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+        return csrfToken ? csrfToken.value : '';
+    }
+
+    // Toggle active status
+    document.querySelectorAll('.toggle-active').forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.dataset.userId;
+            const csrfToken = getCsrfToken();
+            
+            if (!csrfToken) {
+                alert('Error: Token CSRF no encontrado');
+                return;
+            }
+            
+            fetch(`/autenticacion/admin/usuario/${userId}/toggle-active/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message || 'Error al cambiar el estado del usuario');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al cambiar el estado del usuario');
+            });
+        });
+    });
+
+    // Toggle verified status
+    document.querySelectorAll('.toggle-verified').forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.dataset.userId;
+            const csrfToken = getCsrfToken();
+            
+            if (!csrfToken) {
+                alert('Error: Token CSRF no encontrado');
+                return;
+            }
+            
+            fetch(`/autenticacion/admin/usuario/${userId}/toggle-verified/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.message || 'Error al cambiar el estado de verificación');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al cambiar el estado de verificación');
+            });
+        });
+    });
+
+    // Reset password
+    document.querySelectorAll('.reset-password').forEach(button => {
+        button.addEventListener('click', function() {
+            if (confirm('¿Estás seguro de que quieres resetear la contraseña de este usuario?')) {
+                const userId = this.dataset.userId;
+                const csrfToken = getCsrfToken();
+                
+                if (!csrfToken) {
+                    alert('Error: Token CSRF no encontrado');
+                    return;
+                }
+                
+                fetch(`/autenticacion/admin/usuario/${userId}/reset-password/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('nueva-password').textContent = data.nueva_password;
+                        const modal = new bootstrap.Modal(document.getElementById('passwordModal'));
+                        modal.show();
+                    } else {
+                        alert(data.message || 'Error al resetear la contraseña');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al resetear la contraseña');
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

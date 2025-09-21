@@ -79,10 +79,28 @@ class EmpleadoCreateView(LoginRequiredMixin, RolRequiredMixin, CreateView):
         return super().form_valid(form)
     
     def form_invalid(self, form):
-        messages.error(
-            self.request,
-            'Error al crear el empleado. Por favor, revisa los datos ingresados.'
-        )
+        # Recopilar todos los errores del formulario
+        errores = []
+        
+        # Errores de campos específicos
+        for field, errors in form.errors.items():
+            if field == '__all__':
+                errores.extend(errors)
+            else:
+                field_label = form.fields[field].label or field
+                for error in errors:
+                    errores.append(f"{field_label}: {error}")
+        
+        # Mostrar errores específicos
+        if errores:
+            for error in errores:
+                messages.error(self.request, error)
+        else:
+            messages.error(
+                self.request,
+                'Error al crear el empleado. Por favor, revisa los datos ingresados.'
+            )
+        
         return super().form_invalid(form)
 
 
@@ -146,7 +164,7 @@ def registrar_tiempo_view(request, empleado_id):
     # Verificar que el usuario sea el empleado o tenga permisos
     if request.user.rol not in [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO, Usuario.ROL_GERENTE] and request.user != empleado.usuario:
         messages.error(request, 'No tienes permisos para registrar tiempo para este empleado')
-        return redirect('empleados:dashboard_empleado')
+        return redirect('empleados_dashboard:dashboard')
     
     if request.method == 'POST':
         servicio_id = request.POST.get('servicio_id')
@@ -176,7 +194,7 @@ def registrar_tiempo_view(request, empleado_id):
                 messages.error(request, 'No se encontró un registro de tiempo abierto para este servicio')
     
     # Redirigir a la página de servicios activos o dashboard
-    return redirect('empleados:dashboard_empleado')
+    return redirect('empleados_dashboard:dashboard')
 
 
 @login_required
@@ -186,7 +204,7 @@ def registro_tiempo_empleado_view(request):
         empleado = request.user.empleado
     except Empleado.DoesNotExist:
         messages.error(request, 'No tienes un perfil de empleado asociado.')
-        return redirect('empleados:dashboard_empleado')
+        return redirect('empleados_dashboard:dashboard')
     
     # Obtener servicios activos del empleado
     servicios_activos = Reserva.objects.filter(
@@ -244,15 +262,15 @@ def dashboard_empleado_view(request):
     # Verificar que el usuario sea un empleado
     if request.user.rol not in [Usuario.ROL_LAVADOR, Usuario.ROL_GERENTE] and not hasattr(request.user, 'empleado'):
         messages.error(request, 'Esta página es solo para empleados')
-        return redirect('autenticacion:login_success')
+        return redirect('home')
     
     try:
         empleado = request.user.empleado
         # Lógica del dashboard
-        return render(request, 'empleados/dashboard.html', {'empleado': empleado})
+        return render(request, 'empleados/dashboard/dashboard.html', {'empleado': empleado})
     except Empleado.DoesNotExist:
         messages.error(request, 'No se encontró un perfil de empleado asociado a tu usuario')
-        return redirect('autenticacion:login_success')
+        return redirect('home')
 
 
 # Vistas para CRUD de Cargos
@@ -400,7 +418,7 @@ def cambiar_password(request):
         empleado = request.user.empleado
     except Empleado.DoesNotExist:
         messages.error(request, 'No tienes un perfil de empleado asociado.')
-        return redirect('dashboard:dashboard')
+        return redirect('empleados_dashboard:dashboard')
     
     if request.method == 'POST':
         form = CambiarPasswordForm(request.user, request.POST)
@@ -427,7 +445,7 @@ def perfil_empleado(request):
         empleado = request.user.empleado
     except Empleado.DoesNotExist:
         messages.error(request, 'No tienes un perfil de empleado asociado.')
-        return redirect('dashboard:dashboard')
+        return redirect('empleados_dashboard:dashboard')
     
     if request.method == 'POST':
         form = EmpleadoPerfilForm(request.POST, request.FILES, instance=empleado)

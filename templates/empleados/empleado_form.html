@@ -587,6 +587,21 @@
                     </div>
                     
                     <div class="col-md-4 mb-3">
+                        <label for="{{ form.email_personal.id_for_label }}" class="form-label fw-bold">
+                            <i class="fas fa-envelope me-2 text-primary"></i>Correo Electrónico
+                        </label>
+                        {{ form.email_personal }}
+                        {% if form.email_personal.errors %}
+                            <div class="invalid-feedback d-block">
+                                <i class="fas fa-exclamation-circle me-1"></i>
+                                {% for error in form.email_personal.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
                         <label for="{{ form.fecha_nacimiento.id_for_label }}" class="form-label fw-bold">
                             <i class="fas fa-birthday-cake me-2 text-primary"></i>Fecha de Nacimiento
                         </label>
@@ -690,6 +705,26 @@
                         {% endif %}
                     </div>
                     
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.disponible.id_for_label }}" class="form-label fw-bold">
+                            <i class="fas fa-check-circle me-2 text-primary"></i>Disponible para Trabajar
+                        </label>
+                        <div class="form-check">
+                            {{ form.disponible }}
+                            <label class="form-check-label" for="{{ form.disponible.id_for_label }}">
+                                Marcar si está disponible para recibir asignaciones
+                            </label>
+                        </div>
+                        {% if form.disponible.errors %}
+                            <div class="invalid-feedback d-block">
+                                <i class="fas fa-exclamation-circle me-1"></i>
+                                {% for error in form.disponible.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
                     {% if form.instance.pk %}
                         <div class="col-md-4 mb-3">
                             <label for="{{ form.activo.id_for_label }}" class="form-label fw-bold">
@@ -738,6 +773,83 @@
                         </div>
                     {% endif %}
                 </div>
+
+                <!-- Configuración de Contraseña (solo para nuevos empleados) -->
+                {% if not form.instance.pk %}
+                <div class="row">
+                    <div class="col-12">
+                        <div class="section-header">
+                            <h4><i class="fas fa-key me-2"></i>Configuración de Contraseña</h4>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 mb-3">
+                        <div class="form-check">
+                            {{ form.generar_password_automatico }}
+                            <label class="form-check-label fw-bold" for="{{ form.generar_password_automatico.id_for_label }}">
+                                <i class="fas fa-magic me-2 text-primary"></i>{{ form.generar_password_automatico.label }}
+                            </label>
+                            {% if form.generar_password_automatico.help_text %}
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>{{ form.generar_password_automatico.help_text }}
+                                </div>
+                            {% endif %}
+                            {% if form.generar_password_automatico.errors %}
+                                <div class="invalid-feedback d-block">
+                                    <i class="fas fa-exclamation-circle me-1"></i>
+                                    {% for error in form.generar_password_automatico.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div id="password-fields" class="col-12" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.password1.id_for_label }}" class="form-label fw-bold">
+                                    <i class="fas fa-lock me-2 text-primary"></i>{{ form.password1.label }}
+                                </label>
+                                {{ form.password1 }}
+                                {% if form.password1.help_text %}
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>{{ form.password1.help_text }}
+                                    </div>
+                                {% endif %}
+                                {% if form.password1.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        <i class="fas fa-exclamation-circle me-1"></i>
+                                        {% for error in form.password1.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.password2.id_for_label }}" class="form-label fw-bold">
+                                    <i class="fas fa-lock me-2 text-primary"></i>{{ form.password2.label }}
+                                </label>
+                                {{ form.password2 }}
+                                {% if form.password2.help_text %}
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>{{ form.password2.help_text }}
+                                    </div>
+                                {% endif %}
+                                {% if form.password2.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        <i class="fas fa-exclamation-circle me-1"></i>
+                                        {% for error in form.password2.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
                 
                 <div class="mt-4 text-end">
                     <button type="submit" class="btn btn-primary">
@@ -772,26 +884,35 @@
             });
 
             // Funcionalidad para mostrar/ocultar campos de contraseña
-            const checkboxAutomatico = document.getElementById('generar_password_automatico');
+            const checkboxAutomatico = document.getElementById('id_generar_password_automatico');
             const passwordFields = document.getElementById('password-fields');
             const password1 = document.getElementById('id_password1');
             const password2 = document.getElementById('id_password2');
 
             function togglePasswordFields() {
-                if (checkboxAutomatico.checked) {
-                    passwordFields.style.display = 'none';
-                    if (password1) password1.required = false;
-                    if (password2) password2.required = false;
-                } else {
-                    passwordFields.style.display = 'block';
-                    if (password1) password1.required = true;
-                    if (password2) password2.required = true;
+                console.log('Toggle ejecutado. Checkbox checked:', checkboxAutomatico.checked);
+                if (checkboxAutomatico && passwordFields) {
+                    if (checkboxAutomatico.checked) {
+                        passwordFields.style.display = 'none';
+                        if (password1) password1.required = false;
+                        if (password2) password2.required = false;
+                        console.log('Campos de contraseña ocultos');
+                    } else {
+                        passwordFields.style.display = 'block';
+                        if (password1) password1.required = true;
+                        if (password2) password2.required = true;
+                        console.log('Campos de contraseña mostrados');
+                    }
                 }
             }
 
             if (checkboxAutomatico) {
+                console.log('Checkbox encontrado, agregando event listener');
                 checkboxAutomatico.addEventListener('change', togglePasswordFields);
-                togglePasswordFields(); // Ejecutar al cargar la página
+                // Ejecutar al cargar la página con un pequeño delay para asegurar que el DOM esté listo
+                setTimeout(togglePasswordFields, 100);
+            } else {
+                console.log('Checkbox no encontrado');
             }
 
             // Animaciones suaves para las secciones del formulario

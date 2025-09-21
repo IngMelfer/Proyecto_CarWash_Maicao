@@ -1,0 +1,590 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if form.instance.pk %}Editar Usuario{% else %}Nuevo Usuario{% endif %} - Premium Car Detailing
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+    }
+    
+    .form-container {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 0 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    
+    .form-header {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .form-body {
+        padding: 2rem;
+    }
+    
+    .form-section {
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        background: #fafafa;
+    }
+    
+    .form-section h5 {
+        color: #495057;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #667eea;
+    }
+    
+    .form-control, .form-select {
+        border-radius: 8px;
+        border: 2px solid #e9ecef;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 25px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-secondary {
+        border-radius: 25px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+    }
+    
+    .alert {
+        border-radius: 10px;
+        border: none;
+    }
+    
+    .form-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+    
+    .password-strength {
+        margin-top: 0.5rem;
+    }
+    
+    .strength-bar {
+        height: 4px;
+        border-radius: 2px;
+        background: #e9ecef;
+        overflow: hidden;
+    }
+    
+    .strength-fill {
+        height: 100%;
+        transition: all 0.3s ease;
+        width: 0%;
+    }
+    
+    .strength-weak { background: #dc3545; }
+    .strength-medium { background: #ffc107; }
+    .strength-strong { background: #28a745; }
+    
+    .checkbox-container {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .checkbox-container:hover {
+        border-color: #667eea;
+        background: #f8f9ff;
+    }
+    
+    .checkbox-container input[type="checkbox"] {
+        transform: scale(1.2);
+    }
+    
+    .photo-preview {
+        max-width: 150px;
+        max-height: 150px;
+        border-radius: 10px;
+        border: 3px solid #e9ecef;
+        object-fit: cover;
+    }
+    
+    .file-input-container {
+        position: relative;
+        display: inline-block;
+        cursor: pointer;
+        border: 2px dashed #667eea;
+        border-radius: 10px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        background: #f8f9ff;
+    }
+    
+    .file-input-container:hover {
+        border-color: #5a67d8;
+        background: #f0f4ff;
+    }
+    
+    .file-input-container input[type="file"] {
+        position: absolute;
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<header class="admin-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1>
+                    <i class="fas {% if form.instance.pk %}fa-user-edit{% else %}fa-user-plus{% endif %} me-3"></i>
+                    {% if form.instance.pk %}Editar Usuario{% else %}Nuevo Usuario{% endif %}
+                </h1>
+                <p class="lead mb-0">
+                    {% if form.instance.pk %}
+                        Modifica la información del usuario {{ form.instance.email }}
+                    {% else %}
+                        Crea un nuevo usuario en el sistema
+                    {% endif %}
+                </p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{% url 'autenticacion:admin_usuario_list' %}" class="btn btn-light btn-lg">
+                    <i class="fas fa-arrow-left me-2"></i>Volver a la lista
+                </a>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="form-container">
+                <div class="form-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Información del Usuario
+                    </h4>
+                </div>
+                
+                <div class="form-body">
+                    {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <h6><i class="fas fa-exclamation-triangle me-2"></i>Por favor corrige los siguientes errores:</h6>
+                            <ul class="mb-0">
+                                {% for field, errors in form.errors.items %}
+                                    {% for error in errors %}
+                                        <li>{{ field|capfirst }}: {{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Información básica -->
+                        <div class="form-section">
+                            <h5><i class="fas fa-user me-2"></i>Información Básica</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ form.email.id_for_label }}" class="form-label required-field">
+                                            <i class="fas fa-envelope me-2"></i>Email
+                                        </label>
+                                        {{ form.email }}
+                                        {% if form.email.help_text %}
+                                            <div class="form-text">{{ form.email.help_text }}</div>
+                                        {% endif %}
+                                        {% if form.email.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.email.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ form.rol.id_for_label }}" class="form-label required-field">
+                                            <i class="fas fa-user-tag me-2"></i>Rol
+                                        </label>
+                                        {{ form.rol }}
+                                        {% if form.rol.help_text %}
+                                            <div class="form-text">{{ form.rol.help_text }}</div>
+                                        {% endif %}
+                                        {% if form.rol.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.rol.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                                            <i class="fas fa-user me-2"></i>Nombre
+                                        </label>
+                                        {{ form.first_name }}
+                                        {% if form.first_name.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.first_name.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                                            <i class="fas fa-user me-2"></i>Apellido
+                                        </label>
+                                        {{ form.last_name }}
+                                        {% if form.last_name.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.last_name.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contraseña (solo para nuevos usuarios) -->
+                        {% if not form.instance.pk %}
+                        <div class="form-section">
+                            <h5><i class="fas fa-lock me-2"></i>Contraseña</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ form.password1.id_for_label }}" class="form-label required-field">
+                                            <i class="fas fa-key me-2"></i>Contraseña
+                                        </label>
+                                        {{ form.password1 }}
+                                        <div class="password-strength">
+                                            <div class="strength-bar">
+                                                <div class="strength-fill" id="strength-fill"></div>
+                                            </div>
+                                            <small class="form-text" id="strength-text">Ingresa una contraseña</small>
+                                        </div>
+                                        {% if form.password1.help_text %}
+                                            <div class="form-text">{{ form.password1.help_text }}</div>
+                                        {% endif %}
+                                        {% if form.password1.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.password1.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ form.password2.id_for_label }}" class="form-label required-field">
+                                            <i class="fas fa-key me-2"></i>Confirmar Contraseña
+                                        </label>
+                                        {{ form.password2 }}
+                                        {% if form.password2.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.password2.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Información adicional -->
+                        <div class="form-section">
+                            <h5><i class="fas fa-info me-2"></i>Información Adicional</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ form.telefono.id_for_label }}" class="form-label">
+                                            <i class="fas fa-phone me-2"></i>Teléfono
+                                        </label>
+                                        {{ form.telefono }}
+                                        {% if form.telefono.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.telefono.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ form.direccion.id_for_label }}" class="form-label">
+                                            <i class="fas fa-map-marker-alt me-2"></i>Dirección
+                                        </label>
+                                        {{ form.direccion }}
+                                        {% if form.direccion.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.direccion.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="mb-3">
+                                        <label class="form-label">
+                                            <i class="fas fa-camera me-2"></i>Foto de Perfil
+                                        </label>
+                                        {% if form.instance.foto_perfil %}
+                                            <div class="mb-2">
+                                                <img src="{{ form.instance.foto_perfil.url }}" alt="Foto actual" class="photo-preview">
+                                                <p class="form-text">Foto actual</p>
+                                            </div>
+                                        {% endif %}
+                                        <div class="file-input-container">
+                                            {{ form.foto_perfil }}
+                                            <div>
+                                                <i class="fas fa-cloud-upload-alt fa-2x text-primary mb-2"></i>
+                                                <p class="mb-0">Haz clic para seleccionar una imagen</p>
+                                                <small class="text-muted">JPG, PNG o GIF (máx. 5MB)</small>
+                                            </div>
+                                        </div>
+                                        {% if form.foto_perfil.errors %}
+                                            <div class="text-danger">
+                                                {% for error in form.foto_perfil.errors %}
+                                                    <small>{{ error }}</small>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Permisos y estado -->
+                        <div class="form-section">
+                            <h5><i class="fas fa-cogs me-2"></i>Permisos y Estado</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="checkbox-container mb-3">
+                                        {{ form.is_active }}
+                                        <label for="{{ form.is_active.id_for_label }}" class="form-label mb-0">
+                                            <i class="fas fa-toggle-on me-2"></i>Usuario Activo
+                                        </label>
+                                    </div>
+                                    {% if form.is_active.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.is_active.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="checkbox-container mb-3">
+                                        {{ form.is_verified }}
+                                        <label for="{{ form.is_verified.id_for_label }}" class="form-label mb-0">
+                                            <i class="fas fa-check-circle me-2"></i>Usuario Verificado
+                                        </label>
+                                    </div>
+                                    {% if form.is_verified.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.is_verified.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="checkbox-container mb-3">
+                                        {{ form.is_staff }}
+                                        <label for="{{ form.is_staff.id_for_label }}" class="form-label mb-0">
+                                            <i class="fas fa-user-tie me-2"></i>Es Staff
+                                        </label>
+                                    </div>
+                                    <small class="form-text">Permite acceso al panel de administración</small>
+                                    {% if form.is_staff.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.is_staff.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="checkbox-container mb-3">
+                                        {{ form.is_superuser }}
+                                        <label for="{{ form.is_superuser.id_for_label }}" class="form-label mb-0">
+                                            <i class="fas fa-crown me-2"></i>Es Superusuario
+                                        </label>
+                                    </div>
+                                    <small class="form-text">Acceso completo a todas las funciones</small>
+                                    {% if form.is_superuser.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.is_superuser.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de acción -->
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary btn-lg me-3">
+                                <i class="fas fa-save me-2"></i>
+                                {% if form.instance.pk %}Actualizar Usuario{% else %}Crear Usuario{% endif %}
+                            </button>
+                            <a href="{% url 'autenticacion:admin_usuario_list' %}" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Password strength checker
+    const passwordInput = document.getElementById('{{ form.password1.id_for_label }}');
+    if (passwordInput) {
+        const strengthFill = document.getElementById('strength-fill');
+        const strengthText = document.getElementById('strength-text');
+        
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
+            let strength = 0;
+            let text = '';
+            let className = '';
+            
+            if (password.length >= 8) strength++;
+            if (/[a-z]/.test(password)) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+            
+            switch (strength) {
+                case 0:
+                case 1:
+                    text = 'Muy débil';
+                    className = 'strength-weak';
+                    strengthFill.style.width = '20%';
+                    break;
+                case 2:
+                    text = 'Débil';
+                    className = 'strength-weak';
+                    strengthFill.style.width = '40%';
+                    break;
+                case 3:
+                    text = 'Regular';
+                    className = 'strength-medium';
+                    strengthFill.style.width = '60%';
+                    break;
+                case 4:
+                    text = 'Fuerte';
+                    className = 'strength-strong';
+                    strengthFill.style.width = '80%';
+                    break;
+                case 5:
+                    text = 'Muy fuerte';
+                    className = 'strength-strong';
+                    strengthFill.style.width = '100%';
+                    break;
+            }
+            
+            strengthFill.className = 'strength-fill ' + className;
+            strengthText.textContent = text;
+        });
+    }
+    
+    // File input preview
+    const fileInput = document.getElementById('{{ form.foto_perfil.id_for_label }}');
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Create or update preview image
+                    let preview = document.querySelector('.photo-preview');
+                    if (!preview) {
+                        preview = document.createElement('img');
+                        preview.className = 'photo-preview mt-2';
+                        fileInput.parentNode.appendChild(preview);
+                    }
+                    preview.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

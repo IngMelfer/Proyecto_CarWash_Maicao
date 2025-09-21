@@ -46,8 +46,8 @@ class EmpleadoRegistroForm(forms.ModelForm):
         model = Empleado
         fields = [
             'nombre', 'apellido', 'tipo_documento', 'numero_documento',
-            'fecha_nacimiento', 'telefono', 'direccion', 'ciudad',
-            'cargo', 'rol', 'fecha_contratacion', 'fotografia'
+            'email_personal', 'fecha_nacimiento', 'telefono', 'direccion', 'ciudad',
+            'cargo', 'rol', 'disponible', 'fecha_contratacion', 'fotografia'
         ]
         widgets = {
             'nombre': forms.TextInput(attrs={
@@ -64,6 +64,10 @@ class EmpleadoRegistroForm(forms.ModelForm):
             'numero_documento': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Número de documento'
+            }),
+            'email_personal': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'correo@ejemplo.com'
             }),
             'fecha_nacimiento': forms.DateInput(attrs={
                 'class': 'form-control',
@@ -87,6 +91,9 @@ class EmpleadoRegistroForm(forms.ModelForm):
             'rol': forms.Select(attrs={
                 'class': 'form-select'
             }),
+            'disponible': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
             'fecha_contratacion': forms.DateInput(attrs={
                 'class': 'form-control',
                 'type': 'date'
@@ -101,19 +108,23 @@ class EmpleadoRegistroForm(forms.ModelForm):
             'apellido': _('Apellido'),
             'tipo_documento': _('Tipo de Documento'),
             'numero_documento': _('Número de Documento'),
+            'email_personal': _('Correo Electrónico'),
             'fecha_nacimiento': _('Fecha de Nacimiento'),
             'telefono': _('Teléfono'),
             'direccion': _('Dirección'),
             'ciudad': _('Ciudad'),
             'cargo': _('Cargo'),
             'rol': _('Rol'),
+            'disponible': _('Disponible para Trabajar'),
             'fecha_contratacion': _('Fecha de Contratación'),
             'fotografia': _('Fotografía')
         }
         help_texts = {
             'numero_documento': _('Ingresa el número de documento sin puntos ni espacios.'),
+            'email_personal': _('Correo electrónico que se usará para crear la cuenta de usuario.'),
             'telefono': _('Formato: +57 300 123 4567'),
             'fecha_nacimiento': _('Selecciona la fecha de nacimiento del empleado.'),
+            'disponible': _('Marca si el empleado está disponible para recibir asignaciones de trabajo.'),
             'fecha_contratacion': _('Fecha en que el empleado inicia labores.'),
             'fotografia': _('Sube una fotografía del empleado (opcional).')
         }
@@ -132,6 +143,18 @@ class EmpleadoRegistroForm(forms.ModelForm):
         self.fields['direccion'].required = False
         self.fields['ciudad'].required = False
         self.fields['fotografia'].required = False
+        
+        # El campo email_personal es requerido para crear la cuenta de usuario
+        self.fields['email_personal'].required = True
+        
+        # Los campos de contraseña no son requeridos por defecto
+        # La validación se hace en el método clean()
+        self.fields['password1'].required = False
+        self.fields['password2'].required = False
+        
+        # Establecer disponible=True por defecto para nuevos empleados
+        if not self.instance.pk:  # Solo para nuevos empleados
+            self.fields['disponible'].initial = True
 
     def clean_numero_documento(self):
         numero_documento = self.cleaned_data['numero_documento']
@@ -165,12 +188,12 @@ class EmpleadoRegistroForm(forms.ModelForm):
         empleado = super().save(commit=False)
         
         if commit:
-            # Crear el usuario asociado
-            email = f"{empleado.numero_documento}@autolavado.com"
+            # Crear el usuario asociado usando el email_personal del empleado
+            email = empleado.email_personal
             
             # Verificar que no exista un usuario con este email
             if Usuario.objects.filter(email=email).exists():
-                # Si existe, usar un email alternativo
+                # Si existe, usar un email alternativo basado en el documento
                 email = f"empleado_{empleado.numero_documento}@autolavado.com"
             
             # Determinar el rol del usuario basado en el rol del empleado

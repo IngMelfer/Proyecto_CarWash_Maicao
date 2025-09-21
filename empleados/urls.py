@@ -11,8 +11,7 @@ urlpatterns = [
     path('<int:pk>/editar/', views.EmpleadoUpdateView.as_view(), name='empleado_update'),
     path('<int:pk>/eliminar/', views.EmpleadoDeleteView.as_view(), name='empleado_delete'),
     
-    # Vistas para empleados
-    path('dashboard/', views.dashboard_empleado_view, name='dashboard_empleado'),
+    # Vistas para empleados - usando el dashboard específico
     path('<int:empleado_id>/registrar-tiempo/', views.registrar_tiempo_view, name='registrar_tiempo'),
     path('registro-tiempo/', views.registro_tiempo_empleado_view, name='registro_tiempo'),
     path('perfil/', views.perfil_empleado, name='perfil'),
@@ -31,6 +30,7 @@ urlpatterns = [
     path('cargos/<int:pk>/editar/', views.CargoUpdateView.as_view(), name='cargo_update'),
     path('cargos/<int:pk>/eliminar/', views.CargoDeleteView.as_view(), name='cargo_delete'),
     
-    # Dashboard de empleados
+    # Dashboard de empleados - ruta directa y sistema específico
+    path('dashboard-empleado/', views.dashboard_empleado_view, name='dashboard'),
     path('dashboard/', include('empleados.urls_dashboard')),
 ]

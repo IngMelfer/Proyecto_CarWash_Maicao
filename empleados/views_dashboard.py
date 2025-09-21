@@ -6,10 +6,11 @@ from django.db.models import Count, Avg, Q, Sum
 from django.utils import timezone
 from django.core.paginator import Paginator
 from datetime import datetime, timedelta
+from decimal import Decimal
+import json
 from .models import Empleado, Calificacion, Incentivo
 from .forms import EmpleadoPerfilForm
 from reservas.models import Reserva
-from .forms import EmpleadoPerfilForm
 
 
 @login_required
@@ -18,21 +19,52 @@ def dashboard_lavador(request):
     Vista principal del dashboard para empleados lavadores.
     Muestra estadísticas, resumen de actividad y accesos rápidos.
     """
+    # Verificar que el usuario tenga rol de Lavador
+    if request.user.rol != request.user.ROL_LAVADOR:
+        messages.error(request, 'No tienes permisos para acceder a esta sección. Solo usuarios con rol de Lavador pueden acceder.')
+        return redirect('home')
+    
+    # Intentar obtener el empleado, pero no es obligatorio
+    empleado = None
     try:
         empleado = request.user.empleado
-        if not empleado.es_lavador():
-            messages.error(request, 'No tienes permisos para acceder a esta sección.')
-            return redirect('home')
     except Empleado.DoesNotExist:
-        messages.error(request, 'No se encontró información de empleado para tu usuario.')
-        return redirect('home')
+        # Si no tiene registro de empleado, crear contexto básico
+        pass
     
     # Fechas para filtros
     hoy = timezone.now().date()
     inicio_semana = hoy - timedelta(days=hoy.weekday())
     inicio_mes = hoy.replace(day=1)
     
-    # Estadísticas generales
+    # Si no hay empleado asociado, mostrar dashboard básico
+    if not empleado:
+        context = {
+            'empleado': None,
+            'usuario': request.user,
+            'reservas_hoy': 0,
+            'reservas_semana': 0,
+            'reservas_mes': 0,
+            'promedio_calificacion': 0,
+            'total_calificaciones': 0,
+            'proximas_reservas': [],
+            'incentivos_recientes': [],
+            'total_incentivos_mes': Decimal('0'),
+            'estados_data': json.dumps({'labels': [], 'data': []}),
+            'rendimiento_semanal': json.dumps([]),
+            'grafico_labels': json.dumps([]),
+            'grafico_data': json.dumps([]),
+            'estadisticas': {
+                'servicios_pendientes': 0,
+                'servicios_completados': 0,
+                'calificacion_promedio': 0,
+                'bonificaciones_mes': 0,
+            },
+            'mensaje_info': 'Bienvenido al dashboard. Para acceder a todas las funcionalidades, contacta al administrador para completar tu perfil de empleado.'
+        }
+        return render(request, 'empleados/dashboard/dashboard.html', context)
+    
+    # Estadísticas generales (solo si hay empleado)
     reservas_hoy = empleado.reservas_asignadas.filter(
         fecha_hora__date=hoy,
         estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA, Reserva.EN_PROCESO]
@@ -75,7 +107,7 @@ def dashboard_lavador(request):
     
     # Preparar datos para gráficos
     estados_data = {
-        'labels': [dict(Reserva.ESTADO_CHOICES).get(item['estado'], item['estado']) for item in estados_reservas],
+        'labels': [str(dict(Reserva.ESTADO_CHOICES).get(item['estado'], item['estado'])) for item in estados_reservas],
         'data': [item['count'] for item in estados_reservas]
     }
     
@@ -94,6 +126,18 @@ def dashboard_lavador(request):
             'servicios': servicios_semana
         })
     
+    # Datos para el gráfico de servicios de los últimos 7 días
+    grafico_labels = []
+    grafico_data = []
+    for i in range(7):
+        fecha = hoy - timedelta(days=6-i)
+        servicios_dia = empleado.reservas_asignadas.filter(
+            fecha_hora__date=fecha,
+            estado=Reserva.COMPLETADA
+        ).count()
+        grafico_labels.append(fecha.strftime('%d/%m'))
+        grafico_data.append(servicios_dia)
+    
     context = {
         'empleado': empleado,
         'reservas_hoy': reservas_hoy,
@@ -106,9 +150,17 @@ def dashboard_lavador(request):
         'total_incentivos_mes': total_incentivos_mes,
         'estados_data': json.dumps(estados_data),
         'rendimiento_semanal': json.dumps(rendimiento_semanal),
+        'grafico_labels': json.dumps(grafico_labels),
+        'grafico_data': json.dumps(grafico_data),
+        'estadisticas': {
+            'servicios_pendientes': empleado.reservas_asignadas.filter(estado=Reserva.PENDIENTE).count(),
+            'servicios_completados': empleado.reservas_asignadas.filter(estado=Reserva.COMPLETADA).count(),
+            'calificacion_promedio': promedio_calificacion,
+            'bonificaciones_mes': total_incentivos_mes,
+        }
     }
     
-    return render(request, 'empleados/dashboard_lavador.html', context)
+    return render(request, 'empleados/dashboard/dashboard.html', context)
 
 
 @login_required
@@ -616,18 +668,73 @@ def bonificaciones_empleado(request):
 
 @login_required
 def actualizar_disponibilidad(request):
-    """API para actualizar la disponibilidad del empleado"""
+    """
+    API para actualizar la disponibilidad del empleado
+    """
     if request.method == 'POST':
-        empleado = get_object_or_404(Empleado, usuario=request.user)
-        disponible = request.POST.get('disponible') == 'true'
+        try:
+            empleado = request.user.empleado
+            disponible = request.POST.get('disponible') == 'true'
+            empleado.disponible = disponible
+            empleado.save()
+            
+            return JsonResponse({
+                'success': True,
+                'disponible': empleado.disponible,
+                'mensaje': f'Estado actualizado: {"Disponible" if disponible else "No disponible"}'
+            })
+        except Empleado.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Empleado no encontrado'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Método no permitido'})
+
+
+@login_required
+def api_estadisticas(request):
+    """
+    API para obtener estadísticas del empleado en formato JSON
+    """
+    try:
+        empleado = request.user.empleado
+        hoy = timezone.now().date()
+        inicio_semana = hoy - timedelta(days=hoy.weekday())
+        inicio_mes = hoy.replace(day=1)
         
-        empleado.disponible = disponible
-        empleado.save()
+        # Estadísticas básicas
+        reservas_hoy = empleado.reservas_asignadas.filter(
+            fecha_hora__date=hoy,
+            estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA, Reserva.EN_PROCESO]
+        ).count()
+        
+        reservas_semana = empleado.reservas_asignadas.filter(
+            fecha_hora__date__gte=inicio_semana,
+            estado=Reserva.COMPLETADA
+        ).count()
+        
+        reservas_mes = empleado.reservas_asignadas.filter(
+            fecha_hora__date__gte=inicio_mes,
+            estado=Reserva.COMPLETADA
+        ).count()
+        
+        # Calificación promedio
+        calificacion_promedio = empleado.calificaciones.aggregate(
+            promedio=Avg('puntuacion')
+        )['promedio'] or 0
         
         return JsonResponse({
             'success': True,
-            'disponible': empleado.disponible,
-            'mensaje': f'Disponibilidad actualizada: {"Disponible" if disponible else "No disponible"}'
+            'estadisticas': {
+                'reservas_hoy': reservas_hoy,
+                'reservas_semana': reservas_semana,
+                'reservas_mes': reservas_mes,
+                'calificacion_promedio': round(calificacion_promedio, 1),
+                'disponible': empleado.disponible
+            }
         })
-    
-    return JsonResponse({'success': False, 'error': 'Método no permitido'})
+        
+    except Empleado.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Empleado no encontrado'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})

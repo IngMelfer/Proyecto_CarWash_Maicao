@@ -1,0 +1,315 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar Usuario - {{ usuario.get_full_name|default:usuario.email }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-header {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+    }
+    
+    .delete-container {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 0 30px rgba(0,0,0,0.1);
+        overflow: hidden;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .delete-header {
+        background: #f8d7da;
+        padding: 2rem;
+        text-align: center;
+        border-bottom: 1px solid #f5c6cb;
+    }
+    
+    .delete-icon {
+        width: 80px;
+        height: 80px;
+        background: #dc3545;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+    }
+    
+    .delete-body {
+        padding: 2rem;
+    }
+    
+    .user-info {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+        border-left: 4px solid #dc3545;
+    }
+    
+    .user-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #dc3545;
+    }
+    
+    .user-avatar-placeholder {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 3px solid #dc3545;
+    }
+    
+    .warning-list {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+    
+    .warning-list h6 {
+        color: #856404;
+        margin-bottom: 0.5rem;
+    }
+    
+    .warning-list ul {
+        color: #856404;
+        margin-bottom: 0;
+        padding-left: 1.5rem;
+    }
+    
+    .btn-danger {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        border: none;
+        border-radius: 25px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-danger:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(220, 53, 69, 0.4);
+    }
+    
+    .btn-secondary {
+        border-radius: 25px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+    }
+    
+    .related-objects {
+        background: #e7f3ff;
+        border: 1px solid #b3d9ff;
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+    
+    .related-objects h6 {
+        color: #0056b3;
+        margin-bottom: 0.5rem;
+    }
+    
+    .related-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #cce7ff;
+    }
+    
+    .related-item:last-child {
+        border-bottom: none;
+    }
+    
+    .related-item i {
+        color: #0056b3;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<header class="admin-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1>
+                    <i class="fas fa-exclamation-triangle me-3"></i>
+                    Eliminar Usuario
+                </h1>
+                <p class="lead mb-0">Esta acción no se puede deshacer</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{% url 'autenticacion:admin_usuario_detail' usuario.pk %}" class="btn btn-light btn-lg">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </a>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="container">
+    <div class="delete-container">
+        <div class="delete-header">
+            <div class="delete-icon">
+                <i class="fas fa-trash fa-2x text-white"></i>
+            </div>
+            <h3 class="text-danger mb-2">¿Eliminar Usuario?</h3>
+            <p class="text-muted mb-0">Esta acción eliminará permanentemente el usuario del sistema</p>
+        </div>
+        
+        <div class="delete-body">
+            <!-- Información del usuario a eliminar -->
+            <div class="user-info">
+                <div class="d-flex align-items-center">
+                    {% if usuario.foto_perfil %}
+                        <img src="{{ usuario.foto_perfil.url }}" alt="Foto de {{ usuario.get_full_name }}" class="user-avatar me-3">
+                    {% else %}
+                        <div class="user-avatar-placeholder me-3">
+                            <i class="fas fa-user text-muted"></i>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="flex-grow-1">
+                        <h5 class="mb-1">{{ usuario.get_full_name|default:"Sin nombre" }}</h5>
+                        <p class="text-muted mb-1">{{ usuario.email }}</p>
+                        <div class="d-flex gap-2">
+                            <span class="badge 
+                                {% if usuario.rol == 'admin_sistema' %}bg-danger
+                                {% elif usuario.rol == 'admin_autolavado' %}bg-warning
+                                {% elif usuario.rol == 'gerente' %}bg-info
+                                {% elif usuario.rol == 'lavador' %}bg-success
+                                {% else %}bg-secondary{% endif %}">
+                                {{ usuario.get_rol_display }}
+                            </span>
+                            
+                            {% if usuario.is_superuser %}
+                                <span class="badge bg-danger">SUPERUSUARIO</span>
+                            {% endif %}
+                            
+                            {% if usuario.is_staff %}
+                                <span class="badge bg-warning">STAFF</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Advertencias -->
+            <div class="warning-list">
+                <h6><i class="fas fa-exclamation-triangle me-2"></i>Advertencias importantes:</h6>
+                <ul>
+                    <li>Esta acción <strong>no se puede deshacer</strong></li>
+                    <li>Se eliminará toda la información personal del usuario</li>
+                    <li>Se perderá el historial de actividades del usuario</li>
+                    {% if usuario.is_superuser %}
+                        <li class="text-danger"><strong>¡CUIDADO!</strong> Este es un superusuario con acceso completo al sistema</li>
+                    {% endif %}
+                    {% if usuario.is_staff %}
+                        <li class="text-warning">Este usuario tiene permisos de staff</li>
+                    {% endif %}
+                </ul>
+            </div>
+            
+            <!-- Objetos relacionados que se eliminarán -->
+            {% if related_objects %}
+            <div class="related-objects">
+                <h6><i class="fas fa-link me-2"></i>También se eliminarán los siguientes elementos relacionados:</h6>
+                {% for obj in related_objects %}
+                <div class="related-item">
+                    <i class="fas fa-{{ obj.icon }}"></i>
+                    <span>{{ obj.name }} ({{ obj.count }} elemento{{ obj.count|pluralize }})</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            <!-- Información adicional si es empleado -->
+            {% if usuario.empleado %}
+            <div class="related-objects">
+                <h6><i class="fas fa-briefcase me-2"></i>Información de empleado:</h6>
+                <div class="related-item">
+                    <i class="fas fa-id-card"></i>
+                    <span>Cédula: {{ usuario.empleado.cedula }}</span>
+                </div>
+                <div class="related-item">
+                    <i class="fas fa-calendar"></i>
+                    <span>Fecha de contratación: {{ usuario.empleado.fecha_contratacion|date:"d/m/Y" }}</span>
+                </div>
+                <div class="related-item">
+                    <i class="fas fa-user-tag"></i>
+                    <span>Rol de empleado: {{ usuario.empleado.get_rol_display }}</span>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Formulario de confirmación -->
+            <form method="post" class="mt-4">
+                {% csrf_token %}
+                
+                <div class="alert alert-danger">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="confirm-delete" required>
+                        <label class="form-check-label" for="confirm-delete">
+                            <strong>Confirmo que entiendo las consecuencias y quiero eliminar este usuario permanentemente</strong>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <button type="submit" class="btn btn-danger btn-lg me-3" id="delete-btn" disabled>
+                        <i class="fas fa-trash me-2"></i>
+                        Sí, Eliminar Usuario
+                    </button>
+                    <a href="{% url 'autenticacion:admin_usuario_detail' usuario.pk %}" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-times me-2"></i>
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmCheckbox = document.getElementById('confirm-delete');
+    const deleteBtn = document.getElementById('delete-btn');
+    
+    confirmCheckbox.addEventListener('change', function() {
+        deleteBtn.disabled = !this.checked;
+        
+        if (this.checked) {
+            deleteBtn.classList.remove('btn-secondary');
+            deleteBtn.classList.add('btn-danger');
+        } else {
+            deleteBtn.classList.remove('btn-danger');
+            deleteBtn.classList.add('btn-secondary');
+        }
+    });
+    
+    // Confirmación adicional al enviar el formulario
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const userName = '{{ usuario.get_full_name|default:usuario.email }}';
+        const confirmMessage = `¿Estás absolutamente seguro de que quieres eliminar al usuario "${userName}"?\n\nEsta acción NO se puede deshacer.`;
+        
+        if (!confirm(confirmMessage)) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}
