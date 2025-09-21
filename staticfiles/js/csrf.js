@@ -19,15 +19,33 @@ function getCookie(name) {
 const csrftoken = getCookie('csrftoken');
 
 // Configurar jQuery AJAX (si jQuery está presente)
-if (typeof $ !== 'undefined') {
-    $.ajaxSetup({
-        beforeSend: function(xhr, settings) {
-            if (!(/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) && !this.crossDomain) {
-                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+// Usar una función que se ejecute cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof $ !== 'undefined' && typeof $.ajaxSetup === 'function') {
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!(/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) && !this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                }
             }
-        }
-    });
-}
+        });
+        console.log('jQuery AJAX configurado con token CSRF');
+    } else {
+        // Si jQuery no está disponible aún, intentar de nuevo después de un breve retraso
+        setTimeout(function() {
+            if (typeof $ !== 'undefined' && typeof $.ajaxSetup === 'function') {
+                $.ajaxSetup({
+                    beforeSend: function(xhr, settings) {
+                        if (!(/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) && !this.crossDomain) {
+                            xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+                        }
+                    }
+                });
+                console.log('jQuery AJAX configurado con token CSRF (con retraso)');
+            }
+        }, 100);
+    }
+});
 
 // Configurar Fetch API para incluir el token CSRF
 const originalFetch = window.fetch;

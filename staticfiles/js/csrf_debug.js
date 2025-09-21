@@ -124,7 +124,7 @@ function actualizarFormulariosCSRF() {
 // Función para configurar AJAX con el token CSRF
 function configurarAJAXConCSRF() {
     // Para jQuery (si está disponible)
-    if (typeof $ !== 'undefined') {
+    if (typeof $ !== 'undefined' && typeof $.ajaxSetup === 'function') {
         $.ajaxSetup({
             beforeSend: function(xhr, settings) {
                 if (!(/^(GET|HEAD|OPTIONS|TRACE)$/.test(settings.type)) && !this.crossDomain) {
@@ -134,6 +134,8 @@ function configurarAJAXConCSRF() {
             }
         });
         console.log('jQuery AJAX configurado con token CSRF');
+    } else {
+        console.log('jQuery no está disponible o no tiene ajaxSetup');
     }
     
     // Para Fetch API (interceptar solicitudes)

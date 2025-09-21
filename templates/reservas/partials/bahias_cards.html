@@ -10,11 +10,11 @@
                 <p><strong>Servicio:</strong> {{ info.servicio.nombre }}</p>
                 <p><strong>Estado:</strong> {{ info.reserva.get_estado_display }}</p>
                 
-                {% if info.estado == 'en_proceso' %}
-                    <div class="cronometro" id="cronometro-{{ info.reserva.id }}" 
-                         data-inicio="{{ info.reserva.fecha_inicio_servicio|date:'Y-m-d H:i:s' }}" 
+                {% if info.estado == 'en_proceso' and info.reserva.fecha_inicio_servicio %}
+                    <div class="cronometro" 
+                         data-fecha-inicio="{{ info.reserva.fecha_inicio_servicio|date:'c' }}" 
                          data-duracion="{{ info.servicio.duracion_minutos }}">
-                        <i class="fas fa-clock"></i> <span class="tiempo-restante">Calculando...</span>
+                        <span class="tiempo-display">Calculando...</span>
                     </div>
                 {% endif %}
                 

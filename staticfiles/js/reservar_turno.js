@@ -1,35 +1,39 @@
-$(document).ready(function() {
-    // Variables globales para almacenar la información de la reserva
-    let reservaData = {
-        servicio_id: null,
-        servicio_nombre: '',
-        fecha: '',
-        hora_id: '',
-        bahia_id: null,
-        bahia_nombre: '',
-        lavador_id: null,
-        lavador_nombre: '',
-        vehiculo_id: null,
-        vehiculo_placa: '',
-        medio_pago_id: null,
-        medio_pago_nombre: '',
-        precio: 0
-    };
-    
-    // Hacer reservaData accesible globalmente para sincronización
-    window.reservaData = reservaData;
+// Verificar que jQuery esté disponible antes de ejecutar el código
+if (typeof $ !== 'undefined' && typeof $.fn !== 'undefined') {
+    $(document).ready(function() {
+        // Variables globales para almacenar la información de la reserva
+        let reservaData = {
+            servicio_id: null,
+            servicio_nombre: '',
+            fecha: '',
+            hora_id: '',
+            bahia_id: null,
+            bahia_nombre: '',
+            lavador_id: null,
+            lavador_nombre: '',
+            vehiculo_id: null,
+            vehiculo_placa: '',
+            medio_pago_id: null,
+            medio_pago_nombre: '',
+            precio: 0
+        };
+        
+        // Hacer reservaData accesible globalmente para sincronización
+        window.reservaData = reservaData;
 
-    // Token CSRF para peticiones AJAX
-    const csrftoken = $('input[name="csrfmiddlewaretoken"]').val();
+        // Token CSRF para peticiones AJAX
+        const csrftoken = $('input[name="csrfmiddlewaretoken"]').val();
 
-    // Configuración para incluir el token CSRF en todas las peticiones AJAX
-    $.ajaxSetup({
-        beforeSend: function(xhr, settings) {
-            if (!this.crossDomain) {
-                xhr.setRequestHeader("X-CSRFToken", csrftoken);
-            }
+        // Configuración para incluir el token CSRF en todas las peticiones AJAX
+        if (typeof $.ajaxSetup === 'function') {
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", csrftoken);
+                    }
+                }
+            });
         }
-    });
     
     // Inicializar el botón nextToStep2 para que funcione con la selección de servicio
     $('#nextToStep2').click(function() {
@@ -492,4 +496,7 @@ $(document).ready(function() {
             }
         });
     });
-});
+    }); // Cierre de $(document).ready
+} else {
+    console.error('jQuery no está disponible. El formulario de reserva no funcionará correctamente.');
+}

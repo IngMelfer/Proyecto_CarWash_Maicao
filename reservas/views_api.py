@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django.views import View
 from django.utils import timezone
 from django.db.models import Q, Avg
+from django.db import IntegrityError
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 from .models import Servicio, Bahia, Vehiculo, MedioPago, Reserva
@@ -419,20 +420,23 @@ class CrearReservaView(LoginRequiredMixin, View):
                 return JsonResponse({'success': False, 'error': 'El lavador ya no está disponible'}, status=400)
             
             # Crear la reserva
-            reserva = Reserva.objects.create(
-                cliente=request.user,
-                servicio=servicio,
-                bahia=bahia,
-                lavador=lavador,
-                vehiculo=vehiculo,
-                fecha=fecha,
-                hora_inicio=hora_inicio,
-                hora_fin=hora_fin,
-                precio=servicio.precio,
-                medio_pago=medio_pago,
-                estado='pendiente',
-                codigo_acceso=str(uuid.uuid4())[:8]
-            )
+            try:
+                reserva = Reserva.objects.create(
+                    cliente=request.user,
+                    servicio=servicio,
+                    bahia=bahia,
+                    lavador=lavador,
+                    vehiculo=vehiculo,
+                    fecha=fecha,
+                    hora_inicio=hora_inicio,
+                    hora_fin=hora_fin,
+                    precio=servicio.precio,
+                    medio_pago=medio_pago,
+                    estado='pendiente',
+                    codigo_acceso=str(uuid.uuid4())[:8]
+                )
+            except IntegrityError:
+                return JsonResponse({'success': False, 'error': 'Esta bahía ya está reservada para la fecha y hora seleccionada. Por favor, selecciona otra bahía u horario.'}, status=400)
             
             return JsonResponse({
                 'success': True, 

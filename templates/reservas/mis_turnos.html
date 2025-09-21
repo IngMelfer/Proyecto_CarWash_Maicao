@@ -350,96 +350,37 @@
         box-shadow: 0 2px 10px rgba(255, 107, 53, 0.2);
     }
 
-    .cronometro-dashboard {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: 2px solid rgba(255, 255, 255, 0.2);
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        transition: all 0.3s ease;
+    /* Prevenir duplicación de contenido */
+    .turno-info-item * {
+        position: relative !important;
+        z-index: 1 !important;
+    }
+    
+    .turno-info-item::before,
+    .turno-info-item::after {
+        display: none !important;
+        content: none !important;
+    }
+    
+    .card-body *::before,
+    .card-body *::after {
+        display: none !important;
+        content: none !important;
+    }
+    
+    /* Forzar renderizado limpio */
+    .turno-card-enhanced {
+        transform: translateZ(0) !important;
+        backface-visibility: hidden !important;
+        -webkit-font-smoothing: antialiased !important;
+    }
+    
+    .turno-info-item {
+        overflow: hidden !important;
+        text-overflow: clip !important;
     }
 
-    .cronometro-dashboard:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-    }
 
-    .cronometro-dashboard .tiempo-restante {
-        font-size: 1.1rem;
-        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-    }
-
-    .cronometro-dashboard.tiempo-agotado {
-        background: linear-gradient(135deg, #ff416c, #ff4b2b);
-        animation: pulse 2s infinite;
-    }
-
-    /* Estilos específicos para el cronómetro en el encabezado */
-    .cronometro-dashboard-header {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        color: white;
-        padding: 8px 12px;
-        border-radius: 20px;
-        border: 2px solid rgba(255, 255, 255, 0.2);
-        box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
-        transition: all 0.3s ease;
-        font-size: 0.85rem;
-    }
-
-    .cronometro-dashboard-header:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
-    }
-
-    .cronometro-dashboard-header .tiempo-restante {
-        font-size: 0.85rem;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-        font-weight: 600;
-    }
-
-    .cronometro-dashboard-header.tiempo-agotado {
-        background: linear-gradient(135deg, #dc3545, #c82333);
-        animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.05); }
-        100% { transform: scale(1); }
-    }
-
-    /* Estilos para el cronómetro en el cuerpo de la tarjeta */
-    .cronometro-tiempo-restante {
-        border-left: 3px solid #007bff !important;
-        background-color: rgba(0, 123, 255, 0.05) !important;
-        padding: 12px 16px !important;
-        border-radius: 8px !important;
-        margin-top: 8px !important;
-    }
-
-    .cronometro-tiempo-restante i {
-        color: #007bff !important;
-        font-size: 1.1rem;
-    }
-
-    .cronometro-tiempo-restante .tiempo-display {
-        color: #007bff !important;
-        font-size: 1rem;
-        font-weight: 600 !important;
-    }
-
-    .cronometro-tiempo-restante.tiempo-agotado {
-        border-left-color: #dc3545 !important;
-        background-color: rgba(220, 53, 69, 0.05) !important;
-    }
-
-    .cronometro-tiempo-restante.tiempo-agotado i,
-    .cronometro-tiempo-restante.tiempo-agotado .tiempo-display {
-        color: #dc3545 !important;
-    }
-
-    .cronometro-tiempo-restante.tiempo-agotado {
-        animation: pulse 2s infinite;
-    }
 </style>
 {% endblock %}
 
@@ -571,28 +512,11 @@
                                                             <span class="text-muted fw-bold">${{ cita.servicio.precio }}</span>
                                                         </div>
                                                     </div>
-                                                    
-                                                    <!-- Cronómetro para En Proceso -->
-                                                    <div class="turno-info-item cronometro-tiempo-restante" 
-                                                         id="cronometro-proceso-{{ cita.id }}" 
-                                                         data-inicio="{{ cita.fecha_inicio_servicio|date:'Y-m-d H:i:s' }}" 
-                                                         data-duracion="{{ cita.servicio.duracion_minutos }}">
-                                                        <i class="fas fa-clock text-primary"></i>
+                                                    <div class="turno-info-item">
+                                                        <i class="fas fa-user"></i>
                                                         <div>
-                                                            <strong>Tiempo restante:</strong><br>
-                                                            <span class="text-primary fw-bold tiempo-display">Calculando...</span>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <!-- Cronómetro con formato de la imagen -->
-                                                    <div class="turno-info-item cronometro-tiempo-restante" 
-                                                         id="cronometro-tiempo-{{ cita.id }}" 
-                                                         data-inicio="{{ cita.fecha_inicio_servicio|date:'Y-m-d H:i:s' }}" 
-                                                         data-duracion="{{ cita.servicio.duracion_minutos }}">
-                                                        <i class="fas fa-clock text-primary"></i>
-                                                        <div>
-                                                            <strong>Tiempo restante:</strong><br>
-                                                            <span class="text-primary fw-bold tiempo-display">Calculando...</span>
+                                                            <strong>Lavador:</strong><br>
+                                                            <span class="text-muted">{% if cita.lavador %}{{ cita.lavador.nombre }} {{ cita.lavador.apellido }}{% else %}No asignado{% endif %}</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -951,6 +875,75 @@
     </div>
 {% endfor %}
 
+<!-- Modales independientes para Ver Detalles de Turnos En Proceso -->
+{% for cita in en_proceso %}
+    <!-- Modal Detalles Cita En Proceso -->
+    <div class="modal fade" id="detalleModalProceso{{ cita.id }}" tabindex="-1" aria-labelledby="detalleModalProcesoLabel{{ cita.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="detalleModalProcesoLabel{{ cita.id }}">Detalles del Servicio en Proceso</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <h6>Servicio</h6>
+                        <p>{{ cita.servicio.nombre }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Descripción</h6>
+                        <p>{{ cita.servicio.descripcion }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Fecha y Hora</h6>
+                        <p>{{ cita.fecha_hora|date:"l, j \d\e F \d\e Y" }} a las {{ cita.fecha_hora|time:"h:i A" }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Duración</h6>
+                        <p>{{ cita.servicio.duracion_minutos }} minutos</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Bahía</h6>
+                        <p>{% if cita.bahia %}{{ cita.bahia.nombre }}{% else %}No asignada{% endif %}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Cámara</h6>
+                        <p>{% if cita.bahia and cita.bahia.tiene_camara %}
+                            <span class="badge bg-success"><i class="fas fa-video me-1"></i> Disponible</span>
+                        {% else %}
+                            <span class="badge bg-secondary"><i class="fas fa-video-slash me-1"></i> No disponible</span>
+                        {% endif %}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Vehículo</h6>
+                        <p>{% if cita.vehiculo %}{{ cita.vehiculo.marca }} {{ cita.vehiculo.modelo }} ({{ cita.vehiculo.placa }}){% else %}No especificado{% endif %}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Precio</h6>
+                        <p>${{ cita.servicio.precio }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Lavador</h6>
+                        <p>{% if cita.lavador %}{{ cita.lavador.nombre }} {{ cita.lavador.apellido }}{% else %}No asignado{% endif %}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Observaciones</h6>
+                        <p>{{ cita.observaciones|default:"Sin observaciones" }}</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    {% if cita.bahia and cita.bahia.tiene_camara %}
+                        <a href="{% url 'reservas:ver_camara' token=cita.stream_token %}" class="btn btn-info">
+                            <i class="fas fa-video me-1"></i> Ver Cámara
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endfor %}
+
 <!-- Modales independientes para Ver Detalles de Turnos Pasados -->
 {% for cita in pasadas %}
     <!-- Modal Detalles Cita Pasada -->
@@ -1139,183 +1132,6 @@
             
             card.addEventListener('mouseleave', function(e) {
                 e.stopPropagation();
-            });
-        });
-        
-        // Cronómetro para turnos en proceso
-        function inicializarCronometros() {
-            const cronometros = document.querySelectorAll('.cronometro-container');
-            
-            cronometros.forEach(cronometro => {
-                const duracionMinutos = parseInt(cronometro.dataset.duracion);
-                const fechaInicio = cronometro.dataset.inicio;
-                
-                console.log(`Cronómetro ${index} - Duración:`, duracionMinutos, 'Fecha inicio:', fechaInicio);
-                
-                if (!fechaInicio || fechaInicio === 'None') {
-                    cronometro.querySelector('.cronometro-tiempo').innerHTML = '<i class="fas fa-clock me-1"></i>No iniciado';
-                    return;
-                }
-                
-                const inicioServicio = new Date(fechaInicio);
-                const duracionMs = duracionMinutos * 60 * 1000;
-                
-                function actualizarCronometro() {
-                    const ahora = new Date();
-                    const tiempoTranscurrido = ahora - inicioServicio;
-                    const tiempoRestante = duracionMs - tiempoTranscurrido;
-                    
-                    if (tiempoRestante <= 0) {
-                        cronometro.querySelector('.cronometro-tiempo').innerHTML = '<i class="fas fa-check me-1 text-success"></i>Completado';
-                        cronometro.querySelector('.cronometro-tiempo').classList.remove('text-warning');
-                        cronometro.querySelector('.cronometro-tiempo').classList.add('text-success');
-                        return;
-                    }
-                    
-                    const minutosRestantes = Math.floor(tiempoRestante / (1000 * 60));
-                    const segundosRestantes = Math.floor((tiempoRestante % (1000 * 60)) / 1000);
-                    
-                    const minutosStr = minutosRestantes.toString().padStart(2, '0');
-                    const segundosStr = segundosRestantes.toString().padStart(2, '0');
-                    
-                    cronometro.querySelector('.minutos').textContent = minutosStr;
-                    cronometro.querySelector('.segundos').textContent = segundosStr;
-                    
-                    // Cambiar color cuando queden menos de 5 minutos
-                    if (minutosRestantes < 5) {
-                        cronometro.querySelector('.cronometro-tiempo').classList.remove('text-warning');
-                        cronometro.querySelector('.cronometro-tiempo').classList.add('text-danger');
-                    }
-                }
-                
-                // Actualizar inmediatamente
-                actualizarCronometro();
-                
-                // Actualizar cada segundo
-                setInterval(actualizarCronometro, 1000);
-            });
-        }
-        
-        // Inicializar cronómetros cuando se carga la página
-        inicializarCronometros();
-        
-        // Cronómetro del Dashboard del Administrador para Servicios en Proceso
-        function inicializarCronometrosDashboard() {
-            const cronometrosDashboard = document.querySelectorAll('.cronometro-dashboard, .cronometro-dashboard-header, .cronometro-tiempo-restante');
-            console.log('Cronómetros encontrados:', cronometrosDashboard.length);
-            
-            cronometrosDashboard.forEach((cronometro, index) => {
-                console.log(`Inicializando cronómetro ${index}:`, cronometro);
-                const duracionMinutos = parseInt(cronometro.dataset.duracion);
-                const fechaInicio = cronometro.dataset.inicio;
-                
-                console.log(`Cronómetro ${index} - Duración:`, duracionMinutos, 'Fecha inicio:', fechaInicio);
-                
-                // Validar que tenemos datos válidos
-                if (!fechaInicio || fechaInicio === 'None' || fechaInicio === 'null' || !fechaInicio.trim()) {
-                    console.log(`Cronómetro ${index} - Fecha inválida:`, fechaInicio);
-                    const tiempoElement = cronometro.querySelector('.tiempo-restante') || cronometro.querySelector('.tiempo-display');
-                    if (tiempoElement) {
-                        tiempoElement.innerHTML = 'No iniciado';
-                    }
-                    return;
-                }
-                
-                if (!duracionMinutos || isNaN(duracionMinutos) || duracionMinutos <= 0) {
-                    console.log(`Cronómetro ${index} - Duración inválida:`, duracionMinutos);
-                    const tiempoElement = cronometro.querySelector('.tiempo-restante') || cronometro.querySelector('.tiempo-display');
-                    if (tiempoElement) {
-                        tiempoElement.innerHTML = 'Duración no válida';
-                    }
-                    return;
-                }
-                
-                // Intentar crear la fecha de inicio
-                let inicioServicio;
-                try {
-                    // Crear la fecha asumiendo que está en la zona horaria local
-                    inicioServicio = new Date(fechaInicio);
-                    
-                    // Si la fecha no es válida, intentar con formato ISO
-                    if (isNaN(inicioServicio.getTime())) {
-                        // Intentar agregar 'T' para formato ISO si no está presente
-                        const fechaISO = fechaInicio.includes('T') ? fechaInicio : fechaInicio.replace(' ', 'T');
-                        inicioServicio = new Date(fechaISO);
-                    }
-                    
-                    // Verificar que la fecha es válida
-                    if (isNaN(inicioServicio.getTime())) {
-                        throw new Error('Fecha inválida');
-                    }
-                } catch (error) {
-                    console.error('Error al parsear fecha:', fechaInicio, error);
-                    const tiempoElement = cronometro.querySelector('.tiempo-restante') || cronometro.querySelector('.tiempo-display');
-                    if (tiempoElement) {
-                        tiempoElement.innerHTML = 'Fecha inválida';
-                    }
-                    return;
-                }
-                
-                const duracionMs = duracionMinutos * 60 * 1000;
-                
-                function actualizarCronometroDashboard() {
-                    const ahora = new Date();
-                    const tiempoTranscurrido = ahora - inicioServicio;
-                    const tiempoRestante = duracionMs - tiempoTranscurrido;
-                    
-                    const tiempoElement = cronometro.querySelector('.tiempo-display') || cronometro.querySelector('.tiempo-restante');
-                    console.log(`Cronómetro ${index} - Elemento tiempo encontrado:`, tiempoElement);
-                    
-                    if (tiempoRestante <= 0) {
-                        cronometro.classList.add('tiempo-agotado');
-                        if (tiempoElement) {
-                            tiempoElement.innerHTML = '¡Tiempo agotado!';
-                        }
-                        return;
-                    }
-                    
-                    const minutosRestantes = Math.floor(tiempoRestante / (1000 * 60));
-                    const segundosRestantes = Math.floor((tiempoRestante % (1000 * 60)) / 1000);
-                    
-                    // Validar que los valores calculados son números válidos
-                    if (isNaN(minutosRestantes) || isNaN(segundosRestantes)) {
-                        if (tiempoElement) {
-                            tiempoElement.innerHTML = 'Error de cálculo';
-                        }
-                        return;
-                    }
-                    
-                    const minutosStr = minutosRestantes.toString().padStart(2, '0');
-                    const segundosStr = segundosRestantes.toString().padStart(2, '0');
-                    
-                    if (tiempoElement) {
-                        tiempoElement.innerHTML = `${minutosStr}:${segundosStr}`;
-                        console.log(`Cronómetro ${index} - Tiempo actualizado:`, `${minutosStr}:${segundosStr}`);
-                    }
-                    
-                    // Cambiar a rojo cuando queden menos de 5 minutos
-                    if (minutosRestantes < 5) {
-                        cronometro.classList.add('tiempo-agotado');
-                    }
-                }
-                
-                // Actualizar inmediatamente
-                actualizarCronometroDashboard();
-                
-                // Actualizar cada segundo
-                setInterval(actualizarCronometroDashboard, 1000);
-            });
-        }
-        
-        // Inicializar cronómetros del dashboard
-        console.log('Iniciando inicializarCronometrosDashboard...');
-        inicializarCronometrosDashboard();
-        
-        // Reinicializar cronómetros cuando se cambia de pestaña
-        document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
-            tab.addEventListener('shown.bs.tab', function() {
-                setTimeout(inicializarCronometros, 100);
-                setTimeout(inicializarCronometrosDashboard, 100);
             });
         });
         

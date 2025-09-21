@@ -290,30 +290,7 @@ class Reserva(models.Model):
             return True
         return False
     
-    def get_tiempo_restante(self):
-        """
-        Calcula el tiempo restante del servicio en proceso.
-        Retorna un diccionario con minutos y segundos restantes.
-        """
-        if self.estado != self.EN_PROCESO or not self.fecha_inicio_servicio:
-            return None
-            
-        tiempo_transcurrido = timezone.now() - self.fecha_inicio_servicio
-        duracion_total = timedelta(minutes=self.servicio.duracion_minutos)
-        tiempo_restante = duracion_total - tiempo_transcurrido
-        
-        if tiempo_restante.total_seconds() <= 0:
-            return {'minutos': 0, 'segundos': 0, 'terminado': True}
-        
-        minutos_restantes = int(tiempo_restante.total_seconds() // 60)
-        segundos_restantes = int(tiempo_restante.total_seconds() % 60)
-        
-        return {
-            'minutos': minutos_restantes,
-            'segundos': segundos_restantes,
-            'terminado': False,
-            'total_segundos': int(tiempo_restante.total_seconds())
-        }
+
     
     def completar_servicio(self):
         """

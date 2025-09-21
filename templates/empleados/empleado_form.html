@@ -92,6 +92,68 @@
         letter-spacing: 1px;
     }
 
+    #volverListaBtn {
+        background-color: #6c757d !important;
+        border-color: #6c757d !important;
+        color: white !important;
+        transition: all 0.3s ease !important;
+        cursor: pointer !important;
+        text-decoration: none !important;
+        display: inline-block !important;
+        pointer-events: auto !important;
+        z-index: 9999 !important;
+        position: relative !important;
+    }
+
+    #volverListaBtn:hover {
+        background-color: #5a6268 !important;
+        border-color: #545b62 !important;
+        color: white !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    #volverListaBtn:active {
+        transform: translateY(0) !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    #volverListaBtn:focus {
+        outline: 2px solid #007bff !important;
+        outline-offset: 2px !important;
+    }
+
+    .back-button {
+        transition: all 0.3s ease !important;
+        background-color: #6c757d !important;
+        border-color: #6c757d !important;
+        color: white !important;
+        text-decoration: none !important;
+        display: inline-block !important;
+        pointer-events: auto !important;
+        z-index: 9999 !important;
+        position: relative !important;
+        cursor: pointer !important;
+    }
+
+    .back-button:hover {
+        background-color: #5a6268 !important;
+        border-color: #545b62 !important;
+        color: white !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    .back-button:active {
+        transform: translateY(0) !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    .back-button:focus {
+        outline: 2px solid #007bff !important;
+        outline-offset: 2px !important;
+    }
+
     .profile-photo-container {
         background: linear-gradient(135deg, rgba(84, 160, 255, 0.1) 0%, rgba(84, 160, 255, 0.05) 100%);
         border-radius: 20px;
@@ -402,9 +464,9 @@
                 </h1>
             </div>
             <div class="col-md-4 text-end">
-                <a href="{% url 'empleados:empleado_list' %}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left me-2"></i> Volver a la lista
-                </a>
+                <button type="button" class="btn btn-secondary btn-lg" id="volverListaBtn" style="background-color: #6c757d; border-color: #6c757d; color: white; transition: all 0.3s ease; cursor: pointer;">
+                    <i class="fas fa-arrow-left me-2"></i> Volver a la Lista
+                </button>
             </div>
         </div>
     </div>
@@ -427,8 +489,8 @@
                 
                 <!-- Fotografía del empleado -->
                 <div class="profile-photo-container">
-                    <label for="{{ form.fotografia.id_for_label }}" class="form-label d-block">
-                        <i class="fas fa-camera me-2"></i>{{ form.fotografia.label }}
+                    <label for="{{ form.fotografia.id_for_label }}" class="form-label d-block fw-bold">
+                        <i class="fas fa-camera me-2 text-primary"></i>Fotografía
                     </label>
                     {% if form.instance.fotografia %}
                         <div class="mb-3">
@@ -465,8 +527,8 @@
                     </div>
                     
                     <div class="col-md-6 mb-3">
-                        <label for="{{ form.nombre.id_for_label }}" class="form-label">
-                            <i class="fas fa-user me-1"></i>{{ form.nombre.label }}
+                        <label for="{{ form.nombre.id_for_label }}" class="form-label fw-bold">
+                            <i class="fas fa-user me-2 text-primary"></i>Nombre
                         </label>
                         {{ form.nombre }}
                         {% if form.nombre.errors %}
@@ -480,8 +542,8 @@
                     </div>
                     
                     <div class="col-md-6 mb-3">
-                        <label for="{{ form.apellido.id_for_label }}" class="form-label">
-                            <i class="fas fa-user me-1"></i>{{ form.apellido.label }}
+                        <label for="{{ form.apellido.id_for_label }}" class="form-label fw-bold">
+                            <i class="fas fa-user me-2 text-primary"></i>Apellido
                         </label>
                         {{ form.apellido }}
                         {% if form.apellido.errors %}
@@ -495,8 +557,8 @@
                     </div>
                     
                     <div class="col-md-4 mb-3">
-                        <label for="{{ form.tipo_documento.id_for_label }}" class="form-label">
-                            <i class="fas fa-id-card me-1"></i>{{ form.tipo_documento.label }}
+                        <label for="{{ form.tipo_documento.id_for_label }}" class="form-label fw-bold">
+                            <i class="fas fa-id-card me-2 text-primary"></i>Tipo de Documento
                         </label>
                         {{ form.tipo_documento }}
                         {% if form.tipo_documento.errors %}
@@ -510,8 +572,8 @@
                     </div>
                     
                     <div class="col-md-4 mb-3">
-                        <label for="{{ form.numero_documento.id_for_label }}" class="form-label">
-                            <i class="fas fa-hashtag me-1"></i>{{ form.numero_documento.label }}
+                        <label for="{{ form.numero_documento.id_for_label }}" class="form-label fw-bold">
+                            <i class="fas fa-hashtag me-2 text-primary"></i>Número de Documento
                         </label>
                         {{ form.numero_documento }}
                         {% if form.numero_documento.errors %}
@@ -525,8 +587,8 @@
                     </div>
                     
                     <div class="col-md-4 mb-3">
-                        <label for="{{ form.fecha_nacimiento.id_for_label }}" class="form-label">
-                            <i class="fas fa-birthday-cake me-1"></i>{{ form.fecha_nacimiento.label }}
+                        <label for="{{ form.fecha_nacimiento.id_for_label }}" class="form-label fw-bold">
+                            <i class="fas fa-birthday-cake me-2 text-primary"></i>Fecha de Nacimiento
                         </label>
                         <input type="date" name="fecha_nacimiento" id="{{ form.fecha_nacimiento.id_for_label }}" class="form-control" value="{{ form.fecha_nacimiento.value|date:'Y-m-d' }}">
                         {% if form.fecha_nacimiento.errors %}
@@ -547,8 +609,8 @@
                     </div>
                     
                     <div class="col-md-4 mb-3">
-                        <label for="{{ form.telefono.id_for_label }}" class="form-label">
-                            <i class="fas fa-phone me-1"></i>{{ form.telefono.label }}
+                        <label for="{{ form.telefono.id_for_label }}" class="form-label fw-bold">
+                            <i class="fas fa-phone me-2 text-primary"></i>Teléfono
                         </label>
                         {{ form.telefono }}
                         {% if form.telefono.errors %}
@@ -562,8 +624,8 @@
                     </div>
                     
                     <div class="col-md-4 mb-3">
-                        <label for="{{ form.direccion.id_for_label }}" class="form-label">
-                            <i class="fas fa-map-marker-alt me-1"></i>{{ form.direccion.label }}
+                        <label for="{{ form.direccion.id_for_label }}" class="form-label fw-bold">
+                            <i class="fas fa-map-marker-alt me-2 text-primary"></i>Dirección
                         </label>
                         {{ form.direccion }}
                         {% if form.direccion.errors %}
@@ -577,8 +639,8 @@
                     </div>
                     
                     <div class="col-md-4 mb-3">
-                        <label for="{{ form.ciudad.id_for_label }}" class="form-label">
-                            <i class="fas fa-city me-1"></i>{{ form.ciudad.label }}
+                        <label for="{{ form.ciudad.id_for_label }}" class="form-label fw-bold">
+                            <i class="fas fa-city me-2 text-primary"></i>Ciudad
                         </label>
                         {{ form.ciudad }}
                         {% if form.ciudad.errors %}
@@ -599,8 +661,8 @@
                     </div>
                     
                     <div class="col-md-4 mb-3">
-                        <label for="{{ form.cargo.id_for_label }}" class="form-label">
-                            <i class="fas fa-user-tie me-1"></i>{{ form.cargo.label }}
+                        <label for="{{ form.cargo.id_for_label }}" class="form-label fw-bold">
+                            <i class="fas fa-user-tie me-2 text-primary"></i>Cargo
                         </label>
                         {{ form.cargo }}
                         {% if form.cargo.errors %}
@@ -614,8 +676,8 @@
                     </div>
 
                     <div class="col-md-4 mb-3">
-                        <label for="{{ form.rol.id_for_label }}" class="form-label">
-                            <i class="fas fa-shield-alt me-1"></i>{{ form.rol.label }}
+                        <label for="{{ form.rol.id_for_label }}" class="form-label fw-bold">
+                            <i class="fas fa-shield-alt me-2 text-primary"></i>Rol
                         </label>
                         {{ form.rol }}
                         {% if form.rol.errors %}
@@ -630,8 +692,8 @@
                     
                     {% if form.instance.pk %}
                         <div class="col-md-4 mb-3">
-                            <label for="{{ form.activo.id_for_label }}" class="form-label">
-                                <i class="fas fa-toggle-on me-1"></i>{{ form.activo.label }}
+                            <label for="{{ form.activo.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-toggle-on me-2 text-primary"></i>Activo
                             </label>
                             <div>
                                 {{ form.activo }}
@@ -646,8 +708,8 @@
                             {% endif %}
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label for="{{ form.fecha_contratacion.id_for_label }}" class="form-label">
-                                <i class="fas fa-calendar-plus me-1"></i>{{ form.fecha_contratacion.label }}
+                            <label for="{{ form.fecha_contratacion.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-calendar-plus me-2 text-primary"></i>Fecha de Contratación
                             </label>
                             <input type="date" name="fecha_contratacion" id="{{ form.fecha_contratacion.id_for_label }}" class="form-control" value="{{ form.fecha_contratacion.value|date:'Y-m-d' }}">
                             {% if form.fecha_contratacion.errors %}
@@ -661,8 +723,8 @@
                         </div>
                     {% else %}
                         <div class="col-md-4 mb-3">
-                            <label for="{{ form.fecha_contratacion.id_for_label }}" class="form-label">
-                                <i class="fas fa-calendar-plus me-1"></i>{{ form.fecha_contratacion.label }}
+                            <label for="{{ form.fecha_contratacion.id_for_label }}" class="form-label fw-bold">
+                                <i class="fas fa-calendar-plus me-2 text-primary"></i>Fecha de Contratación
                             </label>
                             <input type="date" name="fecha_contratacion" id="{{ form.fecha_contratacion.id_for_label }}" class="form-control" value="{{ form.fecha_contratacion.value|date:'Y-m-d' }}">
                             {% if form.fecha_contratacion.errors %}
@@ -773,6 +835,68 @@
                         password2.dispatchEvent(new Event('input'));
                     }
                 });
+            }
+
+            // Asegurar funcionalidad del botón "Volver a la Lista"
+            const volverBtn = document.getElementById('volverListaBtn');
+            if (volverBtn) {
+                console.log('Botón encontrado:', volverBtn);
+                
+                // Función para navegar
+                function navegarALista() {
+                    console.log('Navegando a la lista de empleados...');
+                    const url = "{% url 'empleados:empleado_list' %}";
+                    window.location.href = url;
+                }
+                
+                // Agregar event listener
+                volverBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    navegarALista();
+                });
+                
+                // Asegurar estilos
+                volverBtn.style.cursor = 'pointer';
+                volverBtn.style.pointerEvents = 'auto';
+                
+                console.log('Event listener agregado al botón');
+            } else {
+                console.error('No se encontró el botón volverListaBtn');
+            }
+
+            // Código anterior del botón (mantener como respaldo)
+            const backButton = document.querySelector('.back-button');
+            if (backButton) {
+                // Remover cualquier event listener previo
+                backButton.removeEventListener('click', handleBackButtonClick);
+                
+                // Agregar nuevo event listener
+                backButton.addEventListener('click', handleBackButtonClick);
+                
+                // Función para manejar el click del botón
+                function handleBackButtonClick(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Múltiples métodos para asegurar la navegación
+                    const url = backButton.getAttribute('href');
+                    
+                    try {
+                        window.location.href = url;
+                    } catch (error) {
+                        // Método alternativo
+                        window.location.assign(url);
+                    }
+                    
+                    return false;
+                }
+                
+                // Asegurar que el botón sea visible y clickeable
+                backButton.style.pointerEvents = 'auto';
+                backButton.style.cursor = 'pointer';
+                backButton.style.zIndex = '9999';
+                backButton.style.position = 'relative';
             }
         });
     });

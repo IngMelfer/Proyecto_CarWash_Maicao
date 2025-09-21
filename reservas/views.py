@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.conf import settings
+from django.db import IntegrityError
 from rest_framework import status, viewsets, filters, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -957,20 +958,29 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
                     return redirect('reservas:reservar_turno')
             
             # Crear la reserva con el precio final
-            reserva = Reserva.objects.create(
-                cliente=request.user.cliente,
-                servicio=servicio,
-                fecha_hora=fecha_hora,
-                bahia=bahia,
-                vehiculo=vehiculo,  # Asociar el vehículo a la reserva
-                notas=notas,
-                estado=Reserva.PENDIENTE,
-                medio_pago=medio_pago,
-                precio_final=precio_final,  # Guardar el precio con descuento
-                descuento_aplicado=descuento_aplicado if usar_puntos else 0,
-                puntos_redimidos=puntos_a_redimir if usar_puntos else 0,
-                recompensa_aplicada=recompensa_seleccionada if usar_puntos else ''
-            )
+            try:
+                reserva = Reserva.objects.create(
+                    cliente=request.user.cliente,
+                    servicio=servicio,
+                    fecha_hora=fecha_hora,
+                    bahia=bahia,
+                    vehiculo=vehiculo,  # Asociar el vehículo a la reserva
+                    notas=notas,
+                    estado=Reserva.PENDIENTE,
+                    medio_pago=medio_pago,
+                    precio_final=precio_final,  # Guardar el precio con descuento
+                    descuento_aplicado=descuento_aplicado if usar_puntos else 0,
+                    puntos_redimidos=puntos_a_redimir if usar_puntos else 0,
+                    recompensa_aplicada=recompensa_seleccionada if usar_puntos else ''
+                )
+            except IntegrityError:
+                # La bahía ya está reservada para esa fecha y hora
+                if is_ajax:
+                    response = JsonResponse({'success': False, 'error': 'Esta bahía ya está reservada para la fecha y hora seleccionada. Por favor, selecciona otra bahía u horario.'}, status=400)
+                    response['Content-Type'] = 'application/json'
+                    return response
+                messages.error(request, 'Esta bahía ya está reservada para la fecha y hora seleccionada. Por favor, selecciona otra bahía u horario.')
+                return redirect('reservas:reservar_turno')
             
             # Verificar si se seleccionó un lavador específico
             lavador_id = request.POST.get('lavador_id')
@@ -1166,7 +1176,7 @@ class MisTurnosView(LoginRequiredMixin, TemplateView):
         proximas = Reserva.objects.filter(
             cliente=cliente,
             fecha_hora__gte=timezone.now(),
-            estado=Reserva.PENDIENTE
+            estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA]
         ).order_by('fecha_hora')
         
         pasadas = Reserva.objects.filter(

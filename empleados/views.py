@@ -13,7 +13,7 @@ from autenticacion.mixins import RolRequiredMixin
 from autenticacion.models import Usuario
 from reservas.models import Reserva
 from .models import Empleado, RegistroTiempo, Calificacion, Incentivo, Cargo
-from .forms import EmpleadoPerfilForm, RegistroTiempoForm, EmpleadoRegistroForm, CambiarPasswordForm
+from .forms import EmpleadoPerfilForm, RegistroTiempoForm, EmpleadoRegistroForm, CambiarPasswordForm, EmpleadoEditForm
 
 # Create your views here.
 
@@ -89,7 +89,7 @@ class EmpleadoCreateView(LoginRequiredMixin, RolRequiredMixin, CreateView):
 class EmpleadoUpdateView(LoginRequiredMixin, RolRequiredMixin, UpdateView):
     """Vista para actualizar un empleado existente"""
     model = Empleado
-    form_class = EmpleadoPerfilForm
+    form_class = EmpleadoEditForm
     template_name = 'empleados/empleado_form.html'
     success_url = reverse_lazy('empleados:empleado_list')
     roles_permitidos = [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO, Usuario.ROL_GERENTE]

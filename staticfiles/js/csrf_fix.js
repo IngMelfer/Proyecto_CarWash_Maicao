@@ -117,7 +117,7 @@ function fetchCSRFToken() {
 // Configurar el token CSRF para todas las solicitudes AJAX
 function setupAjaxCSRF(token) {
     // Para jQuery (si está disponible)
-    if (typeof $ !== 'undefined') {
+    if (typeof $ !== 'undefined' && typeof $.ajaxSetup === 'function') {
         $.ajaxSetup({
             beforeSend: function(xhr, settings) {
                 if (!(/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) && !this.crossDomain) {
@@ -126,6 +126,8 @@ function setupAjaxCSRF(token) {
             }
         });
         console.log('Token CSRF configurado para jQuery AJAX');
+    } else {
+        console.log('jQuery no está disponible o no tiene ajaxSetup');
     }
     
     // Para Fetch API

@@ -3,7 +3,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 from .models import Empleado, TipoDocumento, Cargo
-from usuarios.models import Usuario
+from autenticacion.models import Usuario
 
 
 class EmpleadoRegistroForm(forms.ModelForm):
@@ -202,3 +202,233 @@ class EmpleadoRegistroForm(forms.ModelForm):
             empleado.save()
         
         return empleado
+
+
+class EmpleadoEditForm(forms.ModelForm):
+    """
+    Formulario para que los administradores editen empleados existentes.
+    No incluye campos de contraseña.
+    """
+    
+    class Meta:
+        model = Empleado
+        fields = [
+            'nombre', 'apellido', 'tipo_documento', 'numero_documento',
+            'fecha_nacimiento', 'telefono', 'direccion', 'ciudad',
+            'cargo', 'rol', 'fecha_contratacion', 'activo', 'fotografia'
+        ]
+        widgets = {
+            'nombre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre del empleado'
+            }),
+            'apellido': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Apellido del empleado'
+            }),
+            'tipo_documento': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'numero_documento': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Número de documento'
+            }),
+            'fecha_nacimiento': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'telefono': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '+57 300 123 4567'
+            }),
+            'direccion': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Dirección completa'
+            }),
+            'ciudad': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ciudad de residencia'
+            }),
+            'cargo': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'rol': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'fecha_contratacion': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'activo': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'fotografia': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*'
+            })
+        }
+        labels = {
+            'nombre': _('Nombre'),
+            'apellido': _('Apellido'),
+            'tipo_documento': _('Tipo de Documento'),
+            'numero_documento': _('Número de Documento'),
+            'fecha_nacimiento': _('Fecha de Nacimiento'),
+            'telefono': _('Teléfono'),
+            'direccion': _('Dirección'),
+            'ciudad': _('Ciudad'),
+            'cargo': _('Cargo'),
+            'rol': _('Rol'),
+            'fecha_contratacion': _('Fecha de Contratación'),
+            'activo': _('Activo'),
+            'fotografia': _('Fotografía')
+        }
+        help_texts = {
+            'numero_documento': _('Número de documento sin puntos ni espacios.'),
+            'telefono': _('Formato: +57 300 123 4567'),
+            'fecha_nacimiento': _('Fecha de nacimiento del empleado.'),
+            'fecha_contratacion': _('Fecha en que el empleado inicia labores.'),
+            'fotografia': _('Fotografía del empleado (opcional).'),
+            'activo': _('Marcar si el empleado está activo en el sistema.')
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Filtrar solo tipos de documento activos
+        self.fields['tipo_documento'].queryset = TipoDocumento.objects.filter(activo=True)
+        
+        # Filtrar solo cargos activos
+        self.fields['cargo'].queryset = Cargo.objects.filter(activo=True)
+        
+        # Hacer algunos campos opcionales
+        self.fields['telefono'].required = False
+        self.fields['direccion'].required = False
+        self.fields['ciudad'].required = False
+        self.fields['fotografia'].required = False
+
+    def clean_numero_documento(self):
+        numero_documento = self.cleaned_data['numero_documento']
+        
+        # Verificar que no exista otro empleado con el mismo documento (excepto el actual)
+        if self.instance.pk:
+            if Empleado.objects.filter(numero_documento=numero_documento).exclude(pk=self.instance.pk).exists():
+                raise forms.ValidationError(_('Ya existe un empleado con este número de documento.'))
+        else:
+            if Empleado.objects.filter(numero_documento=numero_documento).exists():
+                raise forms.ValidationError(_('Ya existe un empleado con este número de documento.'))
+        
+        return numero_documento
+
+
+class EmpleadoPerfilForm(forms.ModelForm):
+    """
+    Formulario para que los empleados editen su perfil personal.
+    """
+    
+    class Meta:
+        model = Empleado
+        fields = [
+            'nombre', 'apellido', 'telefono', 'direccion', 'ciudad', 'fotografia'
+        ]
+        widgets = {
+            'nombre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre'
+            }),
+            'apellido': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Apellido'
+            }),
+            'telefono': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '+57 300 123 4567'
+            }),
+            'direccion': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Dirección completa'
+            }),
+            'ciudad': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ciudad de residencia'
+            }),
+            'fotografia': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*'
+            }),
+        }
+        labels = {
+            'nombre': _('Nombre'),
+            'apellido': _('Apellido'),
+            'telefono': _('Teléfono'),
+            'direccion': _('Dirección'),
+            'ciudad': _('Ciudad'),
+            'fotografia': _('Fotografía'),
+        }
+
+
+class RegistroTiempoForm(forms.ModelForm):
+    """
+    Formulario para registrar tiempo de trabajo de empleados.
+    """
+    
+    TIPO_REGISTRO_CHOICES = [
+        ('inicio_servicio', 'Inicio de Servicio'),
+        ('fin_servicio', 'Fin de Servicio'),
+        ('inicio_descanso', 'Inicio de Descanso'),
+        ('fin_descanso', 'Fin de Descanso'),
+    ]
+    
+    tipo_registro = forms.ChoiceField(
+        choices=TIPO_REGISTRO_CHOICES,
+        label="Tipo de Registro",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    class Meta:
+        model = Empleado  # Cambiar por el modelo correcto cuando esté disponible
+        fields = ['tipo_registro']
+        widgets = {
+            'notas': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+
+class CambiarPasswordForm(forms.Form):
+    """
+    Formulario para cambiar contraseña de empleados.
+    """
+    
+    password_actual = forms.CharField(
+        label=_('Contraseña Actual'),
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Contraseña actual'
+        })
+    )
+    
+    password_nueva = forms.CharField(
+        label=_('Nueva Contraseña'),
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Nueva contraseña'
+        }),
+        help_text=_('La contraseña debe tener al menos 8 caracteres.')
+    )
+    
+    password_confirmacion = forms.CharField(
+        label=_('Confirmar Nueva Contraseña'),
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Confirmar nueva contraseña'
+        })
+    )
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        password_nueva = cleaned_data.get('password_nueva')
+        password_confirmacion = cleaned_data.get('password_confirmacion')
+        
+        if password_nueva and password_confirmacion:
+            if password_nueva != password_confirmacion:
+                raise ValidationError(_('Las contraseñas no coinciden.'))
+        
+        return cleaned_data
