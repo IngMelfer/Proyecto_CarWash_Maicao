@@ -1149,13 +1149,24 @@ class MisTurnosView(LoginRequiredMixin, TemplateView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        cliente = self.request.user.cliente
+        
+        # Verificar si el usuario tiene un cliente asociado
+        try:
+            cliente = self.request.user.cliente
+        except Cliente.DoesNotExist:
+            # Si el usuario no tiene cliente, mostrar listas vacías
+            context['proximas'] = []
+            context['en_proceso'] = []
+            context['pasadas'] = []
+            context['canceladas'] = []
+            context['sin_cliente'] = True
+            return context
         
         # Obtener reservas del cliente
         proximas = Reserva.objects.filter(
             cliente=cliente,
             fecha_hora__gte=timezone.now(),
-            estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA]
+            estado=Reserva.PENDIENTE
         ).order_by('fecha_hora')
         
         pasadas = Reserva.objects.filter(
@@ -1179,6 +1190,7 @@ class MisTurnosView(LoginRequiredMixin, TemplateView):
         context['en_proceso'] = en_proceso
         context['pasadas'] = pasadas
         context['canceladas'] = canceladas
+        context['sin_cliente'] = False
         
         # Verificar si hay un turno_id en la URL para abrir el modal automáticamente
         turno_id = self.request.GET.get('turno_id')

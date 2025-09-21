@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, views_admin
+from . import views, views_admin, views_csrf
 
 urlpatterns = [
     # Rutas para vistas basadas en plantillas
@@ -88,5 +88,7 @@ urlpatterns = [
       
       # Las rutas de bahías ya están definidas arriba
       
-      # Las rutas de diagnóstico CSRF han sido eliminadas
+      # Rutas para diagnóstico CSRF
+      path('csrf-diagnostico/', views_csrf.csrf_diagnostico_view, name='csrf_diagnostico'),
+      path('csrf-test/', views_csrf.csrf_test_view, name='csrf_test'),
 ]

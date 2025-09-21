@@ -3,14 +3,367 @@
 {% block title %}Registro - Premium Car Detailing{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card shadow">
-                <div class="card-header bg-dark text-white text-center">
-                    <h3 class="mb-0">Crear una cuenta</h3>
-                </div>
-                <div class="card-body p-4">
+<style>
+    :root {
+        --primary-color: #06a7cf;
+        --secondary-color: #848484;
+        --success-color: #056a96;
+        --danger-color: #085173;
+        --warning-color: #889084;
+        --info-color: #06a7cf;
+        --light-color: #cacaca;
+        --dark-color: #040404;
+        --gradient-primary: linear-gradient(135deg, #06a7cf 0%, #056a96 100%);
+        --gradient-secondary: linear-gradient(135deg, #085173 0%, #05334c 100%);
+        --shadow-light: 0 2px 10px rgba(4,4,4,0.1);
+        --shadow-medium: 0 4px 20px rgba(4,4,4,0.15);
+        --shadow-heavy: 0 8px 30px rgba(4,4,4,0.2);
+    }
+
+    .register-container {
+        min-height: 100vh;
+        background: var(--gradient-primary);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        padding: 2rem 0;
+    }
+
+    .animated-background {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        z-index: 1;
+    }
+
+    .bubble {
+        position: absolute;
+        background: rgba(6, 167, 207, 0.1);
+        border-radius: 50%;
+        animation: float 6s ease-in-out infinite;
+    }
+
+    .bubble:nth-child(1) { width: 80px; height: 80px; left: 10%; animation-delay: 0s; }
+    .bubble:nth-child(2) { width: 60px; height: 60px; left: 20%; animation-delay: 2s; }
+    .bubble:nth-child(3) { width: 100px; height: 100px; left: 35%; animation-delay: 4s; }
+    .bubble:nth-child(4) { width: 120px; height: 120px; left: 50%; animation-delay: 0s; }
+    .bubble:nth-child(5) { width: 90px; height: 90px; left: 70%; animation-delay: 3s; }
+    .bubble:nth-child(6) { width: 110px; height: 110px; left: 85%; animation-delay: 5s; }
+
+    @keyframes float {
+        0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.7; }
+        50% { transform: translateY(-20px) rotate(180deg); opacity: 1; }
+    }
+
+    .register-card {
+        background: rgba(202, 202, 202, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(132, 132, 132, 0.2);
+        border-radius: 20px;
+        padding: 1.8rem;
+        box-shadow: var(--shadow-heavy);
+        position: relative;
+        z-index: 2;
+        animation: slideUp 0.8s ease-out;
+        max-width: 100%;
+    }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .register-header {
+        text-align: center;
+        margin-bottom: 1.2rem;
+        animation: slideDown 0.8s ease-out 0.2s both;
+    }
+
+    .logo-container {
+        margin-bottom: 0.8rem;
+    }
+
+    .logo-icon {
+        font-size: 2.5rem;
+        color: var(--primary-color);
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+
+    .register-title {
+        color: var(--dark-color);
+        font-weight: 700;
+        font-size: 1.8rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .register-subtitle {
+        color: var(--secondary-color);
+        font-size: 0.95rem;
+        margin-bottom: 0;
+    }
+
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .register-form {
+        margin-bottom: 1rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.2rem;
+    }
+
+    .input-container {
+        position: relative;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border: 2px solid #666666;
+        border-radius: 10px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background: rgba(202, 202, 202, 0.9);
+        color: var(--dark-color);
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(6, 167, 207, 0.25);
+        background: rgba(202, 202, 202, 1);
+    }
+
+    .input-group-text {
+        background: rgba(202, 202, 202, 0.9);
+        border: 2px solid #666666;
+        border-right: none;
+        border-radius: 10px 0 0 10px;
+        color: var(--dark-color);
+    }
+
+    .input-group .form-control {
+        border-left: none;
+        border-radius: 0 10px 10px 0;
+    }
+
+    .input-group:focus-within .input-group-text {
+        border-color: var(--primary-color);
+        background: rgba(202, 202, 202, 1);
+    }
+
+    .btn-primary {
+        background: var(--gradient-primary);
+        border: none;
+        border-radius: 10px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: var(--shadow-light);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-medium);
+        background: var(--gradient-secondary);
+    }
+
+    .section-title {
+        color: var(--dark-color);
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #666666;
+        position: relative;
+    }
+
+    .section-title::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 50px;
+        height: 2px;
+        background: var(--primary-color);
+    }
+
+    .form-check-input:checked {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .form-check-input:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(6, 167, 207, 0.25);
+    }
+
+    .alert {
+        border-radius: 10px;
+        border: none;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        animation: slideDown 0.5s ease-out;
+    }
+
+    .alert-danger {
+        background: rgba(4, 4, 4, 0.9);
+        color: #cacaca;
+        border-left: 4px solid #056a96;
+    }
+
+    .alert-success {
+        background: rgba(6, 167, 207, 0.9);
+        color: #040404;
+        border-left: 4px solid #085173;
+    }
+
+    /* Avatar container para registro */
+    .avatar-container-register {
+        position: relative;
+        display: inline-block;
+        width: 120px;
+        height: 120px;
+        margin: 0 auto;
+        border-radius: 50%;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(6, 167, 207, 0.3);
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .avatar-container-register:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(6, 167, 207, 0.4);
+    }
+
+    .profile-photo-register {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+    }
+
+    .profile-photo-placeholder-register {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        transition: all 0.3s ease;
+    }
+
+    .avatar-overlay-register {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(4, 4, 4, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        color: white;
+    }
+
+    .avatar-container-register:hover .avatar-overlay-register {
+        opacity: 1;
+    }
+
+    .btn-change-photo-register {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+        color: #040404;
+        border: none;
+        padding: 0.5rem 1.5rem;
+        border-radius: 25px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(6, 167, 207, 0.3);
+    }
+
+    .btn-change-photo-register:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(6, 167, 207, 0.4);
+        color: #040404;
+    }
+
+    .card-footer {
+        background: rgba(132, 132, 132, 0.8);
+        border-top: 1px solid #666666;
+        border-radius: 0 0 20px 20px;
+        padding: 1rem;
+        text-align: center;
+    }
+
+    .card-footer a {
+        color: var(--primary-color);
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.3s ease;
+    }
+
+    .card-footer a:hover {
+        color: var(--accent-color);
+        text-decoration: underline;
+    }
+
+    .error-message {
+        color: var(--danger-color);
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+        display: none;
+    }
+
+    .form-control.is-invalid {
+        border-color: var(--danger-color);
+    }
+
+    .form-control.is-valid {
+        border-color: var(--success-color);
+    }
+</style>
+
+<div class="register-container">
+    <div class="animated-background">
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+        <div class="bubble"></div>
+    </div>
+    
+    <div class="container py-3">
+        <div class="row justify-content-center" style="min-height: 100vh;">
+            <div class="col-md-10 col-lg-8 col-xl-6">
+                <div class="register-card">
+                    <div class="register-header">
+                        <div class="logo-container">
+                            <i class="fas fa-user-plus logo-icon"></i>
+                        </div>
+                        <h2 class="register-title">Crear tu cuenta</h2>
+                        <p class="register-subtitle">Únete a Premium Car Detailing</p>
+                    </div>
+                    
+                    <div class="register-body">
                     {% if messages %}
                         {% for message in messages %}
                             <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
@@ -20,30 +373,57 @@
                         {% endfor %}
                     {% endif %}
                     
-                    <form method="post" id="registroForm">
+                    <form method="post" id="registroForm" class="register-form" enctype="multipart/form-data">
                         {% csrf_token %}
                         
-                        <h5 class="mb-3 border-bottom pb-2">Información de la cuenta</h5>
+                        <h5 class="section-title">Foto de perfil</h5>
                         
-                        <div class="row mb-3">
-                            <div class="col-md-6">
+                        <div class="row form-group">
+                            <div class="col-md-12 mb-3">
+                                <div class="text-center">
+                                    <div class="avatar-container-register mb-3">
+                                        <div class="profile-photo-placeholder-register">
+                                            <i class="fas fa-user fa-3x"></i>
+                                        </div>
+                                        <div class="avatar-overlay-register">
+                                            <i class="fas fa-camera fa-2x"></i>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <button type="button" class="btn btn-change-photo-register" onclick="document.getElementById('foto_perfil').click()">
+                                            <i class="fas fa-camera me-2"></i>
+                                            <span>Seleccionar Foto</span>
+                                        </button>
+                                        <input type="file" class="form-control d-none" id="foto_perfil" name="foto_perfil" accept="image/*">
+                                    </div>
+                                    <small class="text-muted">Opcional - Formatos: JPG, PNG, GIF (máx. 5MB)</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h5 class="section-title">Información de la cuenta</h5>
+                        
+                        <div class="row form-group">
+                            <div class="col-md-6 mb-3">
                                 <label for="email" class="form-label">Correo Electrónico *</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fas fa-envelope"></i></span>
                                     <input type="email" class="form-control" id="email" name="email" required>
                                 </div>
+                                <div class="error-message" id="email-error">Por favor ingresa un correo electrónico válido</div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-3">
                                 <label for="telefono" class="form-label">Teléfono *</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fas fa-phone"></i></span>
-                                    <input type="tel" class="form-control" id="telefono" name="telefono" required>
+                                    <input type="tel" class="form-control" id="telefono" name="telefono" required pattern="[0-9]+" maxlength="10">
                                 </div>
+                                <div class="error-message" id="telefono-error">El teléfono solo debe contener números</div>
                             </div>
                         </div>
                         
-                        <div class="row mb-3">
-                            <div class="col-md-6">
+                        <div class="row form-group">
+                            <div class="col-md-6 mb-3">
                                 <label for="password" class="form-label">Contraseña *</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fas fa-lock"></i></span>
@@ -54,7 +434,7 @@
                                 </div>
                                 <div class="form-text">La contraseña debe tener al menos 8 caracteres, incluir letras y números.</div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-3">
                                 <label for="password_confirm" class="form-label">Confirmar Contraseña *</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fas fa-lock"></i></span>
@@ -63,23 +443,23 @@
                             </div>
                         </div>
                         
-                        <h5 class="mb-3 mt-4 border-bottom pb-2">Información personal</h5>
+                        <h5 class="section-title">Información personal</h5>
                         
-                        <div class="row mb-3">
-                            <div class="col-md-6">
+                        <div class="row form-group">
+                            <div class="col-md-6 mb-3">
                                 <label for="nombre" class="form-label">Nombre *</label>
                                 <input type="text" class="form-control" id="nombre" name="nombre" required>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-3">
                                 <label for="apellido" class="form-label">Apellido *</label>
                                 <input type="text" class="form-control" id="apellido" name="apellido" required>
                             </div>
                         </div>
                         
-                        <div class="row mb-3">
-                            <div class="col-md-6">
+                        <div class="row form-group">
+                            <div class="col-md-6 mb-3">
                                 <label for="tipo_documento" class="form-label">Tipo de Documento *</label>
-                                <select class="form-select" id="tipo_documento" name="tipo_documento" required>
+                                <select class="form-select form-control" id="tipo_documento" name="tipo_documento" required>
                                     <option value="" selected disabled>Seleccione...</option>
                                     <option value="CC">Cédula de Ciudadanía</option>
                                     <option value="CE">Cédula de Extranjería</option>
@@ -87,38 +467,43 @@
                                     <option value="PP">Pasaporte</option>
                                 </select>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-3">
                                 <label for="numero_documento" class="form-label">Número de Documento *</label>
-                                <input type="text" class="form-control" id="numero_documento" name="numero_documento" required>
+                                <input type="text" class="form-control" id="numero_documento" name="numero_documento" required pattern="[0-9]+" maxlength="15">
+                                <div class="error-message" id="documento-error">El número de documento solo debe contener números</div>
                             </div>
                         </div>
                         
-                        <div class="row mb-3">
-                            <div class="col-md-6">
+                        <div class="row form-group">
+                            <div class="col-md-6 mb-3">
                                 <label for="direccion" class="form-label">Dirección *</label>
                                 <input type="text" class="form-control" id="direccion" name="direccion" required>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-3">
                                 <label for="ciudad" class="form-label">Ciudad *</label>
                                 <input type="text" class="form-control" id="ciudad" name="ciudad" required>
                             </div>
                         </div>
                         
-                        <div class="row mb-3">
-                            <div class="col-md-6">
+                        <div class="row form-group">
+                            <div class="col-md-6 mb-3">
                                 <label for="fecha_nacimiento" class="form-label">Fecha de Nacimiento</label>
                                 <input type="date" class="form-control" id="fecha_nacimiento" name="fecha_nacimiento">
                             </div>
                         </div>
                         
-                        <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="recibir_notificaciones" name="recibir_notificaciones" checked>
-                            <label class="form-check-label" for="recibir_notificaciones">Deseo recibir notificaciones sobre promociones y novedades</label>
+                        <div class="form-group">
+                            <div class="form-check mb-3">
+                                <input type="checkbox" class="form-check-input" id="recibir_notificaciones" name="recibir_notificaciones" checked>
+                                <label class="form-check-label" for="recibir_notificaciones">Deseo recibir notificaciones sobre promociones y novedades</label>
+                            </div>
                         </div>
                         
-                        <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="terminos" name="terminos" required>
-                            <label class="form-check-label" for="terminos">Acepto los <a href="#" data-bs-toggle="modal" data-bs-target="#terminosModal">términos y condiciones</a> *</label>
+                        <div class="form-group">
+                            <div class="form-check mb-3">
+                                <input type="checkbox" class="form-check-input" id="terminos" name="terminos" required>
+                                <label class="form-check-label" for="terminos">Acepto los <a href="#" data-bs-toggle="modal" data-bs-target="#terminosModal">términos y condiciones</a> *</label>
+                            </div>
                         </div>
                         
                         <div class="d-grid gap-2">
@@ -177,10 +562,139 @@
             this.querySelector('i').classList.toggle('fa-eye-slash');
         });
         
+        // Validación de foto de perfil
+        const fotoInput = document.getElementById('foto_perfil');
+        if (fotoInput) {
+            fotoInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    // Validar tamaño (máximo 5MB)
+                    if (file.size > 5 * 1024 * 1024) {
+                        showAlert('La imagen es demasiado grande. El tamaño máximo es 5MB.', 'danger');
+                        e.target.value = '';
+                        return;
+                    }
+                    
+                    // Validar tipo de archivo
+                    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+                    if (!allowedTypes.includes(file.type)) {
+                        showAlert('Formato de imagen no válido. Solo se permiten JPG, PNG y GIF.', 'danger');
+                        e.target.value = '';
+                        return;
+                    }
+                    
+                    // Mostrar preview de la imagen
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const placeholder = document.querySelector('.profile-photo-placeholder-register');
+                        const existingImg = document.querySelector('.profile-photo-register');
+                        
+                        if (existingImg) {
+                            existingImg.src = e.target.result;
+                        } else if (placeholder) {
+                            // Crear nueva imagen
+                            const newImg = document.createElement('img');
+                            newImg.src = e.target.result;
+                            newImg.alt = 'Foto de perfil';
+                            newImg.className = 'profile-photo-register';
+                            placeholder.parentNode.replaceChild(newImg, placeholder);
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        // Email validation
+        const emailInput = document.querySelector('#email');
+        const emailError = document.querySelector('#email-error');
+        
+        emailInput.addEventListener('blur', function() {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(this.value) && this.value !== '') {
+                this.classList.add('is-invalid');
+                this.classList.remove('is-valid');
+                emailError.style.display = 'block';
+            } else if (this.value !== '') {
+                this.classList.add('is-valid');
+                this.classList.remove('is-invalid');
+                emailError.style.display = 'none';
+            }
+        });
+        
+        // Phone number validation (only numbers)
+        const telefonoInput = document.querySelector('#telefono');
+        const telefonoError = document.querySelector('#telefono-error');
+        
+        telefonoInput.addEventListener('input', function() {
+            // Remove any non-numeric characters
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+        
+        telefonoInput.addEventListener('blur', function() {
+            if (!/^[0-9]+$/.test(this.value) && this.value !== '') {
+                this.classList.add('is-invalid');
+                this.classList.remove('is-valid');
+                telefonoError.style.display = 'block';
+            } else if (this.value !== '') {
+                this.classList.add('is-valid');
+                this.classList.remove('is-invalid');
+                telefonoError.style.display = 'none';
+            }
+        });
+        
+        // Document number validation (only numbers)
+        const documentoInput = document.querySelector('#numero_documento');
+        const documentoError = document.querySelector('#documento-error');
+        
+        documentoInput.addEventListener('input', function() {
+            // Remove any non-numeric characters
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+        
+        documentoInput.addEventListener('blur', function() {
+            if (!/^[0-9]+$/.test(this.value) && this.value !== '') {
+                this.classList.add('is-invalid');
+                this.classList.remove('is-valid');
+                documentoError.style.display = 'block';
+            } else if (this.value !== '') {
+                this.classList.add('is-valid');
+                this.classList.remove('is-invalid');
+                documentoError.style.display = 'none';
+            }
+        });
+        
         // Form validation
         const registroForm = document.querySelector('#registroForm');
         registroForm.addEventListener('submit', function(e) {
             e.preventDefault();
+            
+            let isValid = true;
+            
+            // Validar email
+            const email = emailInput.value;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                emailInput.classList.add('is-invalid');
+                emailError.style.display = 'block';
+                isValid = false;
+            }
+            
+            // Validar teléfono
+            const telefono = telefonoInput.value;
+            if (!/^[0-9]+$/.test(telefono)) {
+                telefonoInput.classList.add('is-invalid');
+                telefonoError.style.display = 'block';
+                isValid = false;
+            }
+            
+            // Validar número de documento
+            const documento = documentoInput.value;
+            if (!/^[0-9]+$/.test(documento)) {
+                documentoInput.classList.add('is-invalid');
+                documentoError.style.display = 'block';
+                isValid = false;
+            }
             
             // Validar contraseñas
             const password = document.querySelector('#password').value;
@@ -188,23 +702,28 @@
             
             if (password !== passwordConfirm) {
                 showAlert('Las contraseñas no coinciden', 'danger');
-                return;
+                isValid = false;
             }
             
             if (password.length < 8) {
                 showAlert('La contraseña debe tener al menos 8 caracteres', 'danger');
-                return;
+                isValid = false;
             }
             
             // Validar términos y condiciones
             const terminos = document.querySelector('#terminos').checked;
             if (!terminos) {
                 showAlert('Debes aceptar los términos y condiciones', 'danger');
-                return;
+                isValid = false;
             }
             
             // Submit the form if validation passes
-            this.submit();
+            if (isValid) {
+                showAlert('Validación exitosa. Procesando registro...', 'success');
+                setTimeout(() => {
+                    this.submit();
+                }, 1000);
+            }
         });
     });
     
@@ -217,8 +736,8 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         `;
         
-        const cardBody = document.querySelector('.card-body');
-        cardBody.insertBefore(alertDiv, cardBody.firstChild);
+        const registerBody = document.querySelector('.register-body');
+        registerBody.insertBefore(alertDiv, registerBody.firstChild);
         
         // Auto dismiss after 5 seconds
         setTimeout(() => {

@@ -160,9 +160,30 @@ class RegistroUsuarioView(View):
             'notificaciones_whatsapp': request.POST.get('notificaciones_whatsapp') == 'on',
         }
         
+        # Manejar la foto de perfil si se proporciona
+        foto_archivo = None
+        if 'foto_perfil' in request.FILES and request.FILES['foto_perfil']:
+            foto_archivo = request.FILES['foto_perfil']
+            
+            # Validar tamaño del archivo (máximo 5MB)
+            if foto_archivo.size > 5 * 1024 * 1024:
+                messages.error(request, 'La imagen es demasiado grande. El tamaño máximo es 5MB.')
+                return render(request, 'autenticacion/registro.html', {'form_data': data})
+            
+            # Validar tipo de archivo
+            allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif']
+            if foto_archivo.content_type not in allowed_types:
+                messages.error(request, 'Formato de imagen no válido. Solo se permiten JPG, PNG y GIF.')
+                return render(request, 'autenticacion/registro.html', {'form_data': data})
+        
         serializer = RegistroUsuarioSerializer(data=data)
         if serializer.is_valid():
             usuario = serializer.save()
+            
+            # Asignar la foto de perfil si se proporcionó
+            if foto_archivo:
+                usuario.foto_perfil = foto_archivo
+                usuario.save()
             
             # Generar token de verificación
             token = usuario.generate_verification_token()
