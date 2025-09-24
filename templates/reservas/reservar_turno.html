@@ -457,10 +457,23 @@
         position: relative;
         margin-bottom: 25px;
         transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
     
-    .lavador-card .lavador-icon img,
+    .lavador-card .lavador-icon img {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #e9ecef;
+        transition: all 0.6s ease;
+        filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.1));
+    }
+    
     .lavador-card .lavador-icon i {
+        font-size: 120px;
         transition: all 0.6s ease;
         filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.1));
     }
@@ -469,13 +482,23 @@
         transform: translateY(-8px) scale(1.1);
     }
     
-    .lavador-card:hover .lavador-icon img,
+    .lavador-card:hover .lavador-icon img {
+        border-color: #06a7cf;
+        filter: drop-shadow(0 10px 25px rgba(6, 167, 207, 0.3));
+        transform: scale(1.05);
+    }
+    
     .lavador-card:hover .lavador-icon i {
         filter: drop-shadow(0 10px 25px rgba(6, 167, 207, 0.3));
     }
     
     .lavador-card.selected .lavador-icon {
         transform: translateY(-5px) scale(1.08);
+    }
+    
+    .lavador-card.selected .lavador-icon img {
+        border-color: #056a96;
+        filter: drop-shadow(0 8px 20px rgba(5, 106, 150, 0.4));
     }
     
     .lavador-card .lavador-icon i {
@@ -2308,19 +2331,80 @@
                     return response.json();
                 })
                 .then(data => {
-                    // Verificar si hay un error en la respuesta
-                    if (data.error) {
+                    // Verificar si hay un error específico de no lavadores disponibles
+                    if (data.error === 'no_lavadores_disponibles') {
+                        // Obtener el contenedor de lavadores
+                        const lavadoresContainer = document.querySelector('#lavadoresContainer');
+                        
+                        // Limpiar el contenedor
+                        lavadoresContainer.innerHTML = '';
+                        
+                        // Mostrar mensaje específico de indisponibilidad de personal
+                        lavadoresContainer.innerHTML = `
+                            <div class="col-12">
+                                <div class="alert alert-warning text-center">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <h5 class="mt-2">Indisponibilidad de Personal</h5>
+                                    <p class="mb-0">${data.message}</p>
+                                </div>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    // Verificar si hay otros errores en la respuesta
+                    if (data.error && data.error !== 'no_lavadores_disponibles') {
                         console.error('Error del servidor:', data.error);
                         showAlert('Error al cargar los lavadores disponibles', 'danger');
                         return;
                     }
                     
+                    // Obtener el contenedor de lavadores
+                    const lavadoresContainer = document.querySelector('#lavadoresContainer');
+                    
+                    // Limpiar el contenedor
+                    lavadoresContainer.innerHTML = '';
+                    
                     // Verificar si hay lavadores disponibles
                     if (data.lavadores && data.lavadores.length > 0) {
-                        // Si ya hay lavadores en el contexto, no necesitamos hacer nada
-                        // El template ya los muestra con el bucle for
+                        // Generar dinámicamente las tarjetas de lavadores
+                        data.lavadores.forEach(lavador => {
+                            const cardHtml = `
+                                <div class="col-md-4 mb-3">
+                                    <div class="card card-enhanced h-100 lavador-card" data-lavador-id="${lavador.id}">
+                                        <div class="card-body text-center">
+                                            <div class="lavador-icon mb-3">
+                                                <img src="${lavador.foto_url || '/static/img/default-avatar.svg'}" 
+                                     alt="${lavador.nombre}" 
+                                     class="rounded-circle" 
+                                     width="80" height="80"
+                                     style="object-fit: cover;"
+                                     onerror="this.src='/static/img/default-avatar.svg'">
+                                            </div>
+                                            <h5 class="card-title">${lavador.nombre}</h5>
+                                            <p class="card-text">${lavador.cargo || 'Lavador'}</p>
+                                            <div class="mb-2">
+                                                <span class="text-warning">
+                                                    ${'★'.repeat(Math.floor(lavador.calificacion || 0))}${'☆'.repeat(5 - Math.floor(lavador.calificacion || 0))}
+                                                </span>
+                                                <small class="text-muted ms-1">(${(lavador.calificacion || 0).toFixed(1)})</small>
+                                            </div>
+                                        </div>
+                                        <div class="card-footer bg-transparent">
+                                            <div class="form-check form-check-enhanced">
+                                                <input class="form-check-input lavador-radio" type="radio" name="lavador" id="lavador${lavador.id}" value="${lavador.id}">
+                                                <label class="form-check-label" for="lavador${lavador.id}">
+                                                    Seleccionar
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            lavadoresContainer.insertAdjacentHTML('beforeend', cardHtml);
+                        });
                         
-                        // Agregar evento de selección a las tarjetas de lavadores
+                        // Agregar eventos a las nuevas tarjetas
                         const lavadorCards = document.querySelectorAll('.lavador-card');
                         const lavadorRadios = document.querySelectorAll('.lavador-radio');
                         let selectedLavador = null;
@@ -2331,7 +2415,7 @@
                                 const radio = document.querySelector('#lavador' + lavadorId);
                                 radio.checked = true;
                                 
-                                // Actualizar estilos con la nueva clase 'selected'
+                                // Actualizar estilos - remover selección previa
                                 lavadorCards.forEach(c => c.classList.remove('selected'));
                                 this.classList.add('selected');
                                 
@@ -2346,7 +2430,7 @@
                                 if (this.checked) {
                                     const lavadorId = this.value;
                                     
-                                    // Actualizar estilos con la nueva clase 'selected'
+                                    // Actualizar estilos - remover selección previa
                                     lavadorCards.forEach(c => c.classList.remove('selected'));
                                     document.querySelector('.lavador-card[data-lavador-id="' + lavadorId + '"]').classList.add('selected');
                                     
@@ -2357,10 +2441,16 @@
                             });
                         });
                     } else {
-                        // No hay lavadores disponibles, pero esto no es un error
+                        // No hay lavadores disponibles
+                        lavadoresContainer.innerHTML = `
+                            <div class="col-12">
+                                <div class="alert alert-info text-center">
+                                    <i class="fas fa-info-circle"></i>
+                                    No hay lavadores disponibles para la fecha y hora seleccionadas.
+                                </div>
+                            </div>
+                        `;
                         console.log('No hay lavadores disponibles para la fecha y hora seleccionadas');
-                        // Opcional: mostrar un mensaje informativo suave
-                        // showAlert('No hay lavadores disponibles para la fecha y hora seleccionadas', 'info');
                     }
                 })
                 .catch(error => {
@@ -2447,6 +2537,16 @@
                 e.preventDefault(); // Evitar que se ejecute la validación del formulario
                 e.stopPropagation(); // Evitar que el evento se propague al formulario padre
                 
+                // Verificar si hay lavadores disponibles en el contenedor
+                const lavadoresContainer = document.querySelector('#lavadoresContainer');
+                const alertWarning = lavadoresContainer.querySelector('.alert-warning');
+                
+                // Si hay un mensaje de indisponibilidad, no permitir continuar
+                if (alertWarning) {
+                    showAlert('No se puede continuar sin seleccionar un lavador. Por favor, seleccione otra fecha u horario.', 'warning');
+                    return false;
+                }
+                
                 // Verificar si se seleccionó un lavador
                 const lavadorSeleccionado = document.querySelector('input[name="lavador"]:checked');
                 let lavadorId = null;
@@ -2456,6 +2556,12 @@
                     document.querySelector('#lavadorInput').value = lavadorId;
                     console.log('Lavador seleccionado:', lavadorId);
                 } else {
+                    // Si no hay lavador seleccionado y hay lavadores disponibles
+                    const lavadorCards = document.querySelectorAll('.lavador-card');
+                    if (lavadorCards.length > 0) {
+                        showAlert('Por favor selecciona un lavador antes de continuar', 'warning');
+                        return false;
+                    }
                     console.log('No hay lavador seleccionado');
                 }
                 

@@ -228,25 +228,62 @@ class Reserva(models.Model):
     def asignar_lavador(self, lavador=None, automatico=True):
         """
         Asigna un lavador a la reserva. Si no se especifica un lavador,
-        se asigna automáticamente uno disponible.
+        se asigna automáticamente uno disponible que no tenga conflictos de horario.
         """
         from empleados.models import Empleado
+        from datetime import datetime, timedelta
         
         if lavador:
             self.lavador = lavador
             self.asignacion_automatica = False
         else:
             # Buscar lavadores disponibles
-            lavadores_disponibles = Empleado.objects.filter(
+            lavadores_base = Empleado.objects.filter(
                 rol=Empleado.ROL_LAVADOR,
                 disponible=True,
                 activo=True
             )
             
-            if lavadores_disponibles.exists():
+            # Filtrar lavadores que no tengan conflictos de horario
+            lavadores_sin_conflicto = []
+            
+            for lavador_candidato in lavadores_base:
+                # Calcular duración del servicio actual
+                duracion_servicio = 1  # Por defecto 1 hora
+                if self.servicio:
+                    duracion_servicio = (self.servicio.duracion_minutos + 59) // 60
+                
+                # Calcular hora de fin de la nueva reserva
+                hora_fin_nueva = self.fecha_hora + timedelta(hours=duracion_servicio)
+                
+                # Verificar si el lavador tiene conflictos
+                reservas_conflicto = Reserva.objects.filter(
+                    lavador=lavador_candidato,
+                    fecha_hora__date=self.fecha_hora.date(),
+                    estado__in=[self.PENDIENTE, self.CONFIRMADA, self.EN_PROCESO]
+                ).exclude(id=self.id)  # Excluir la reserva actual
+                
+                tiene_conflicto = False
+                for reserva_existente in reservas_conflicto:
+                    # Calcular hora de fin de la reserva existente
+                    duracion_existente = 1  # Por defecto 1 hora
+                    if reserva_existente.servicio:
+                        duracion_existente = (reserva_existente.servicio.duracion_minutos + 59) // 60
+                    
+                    hora_fin_existente = reserva_existente.fecha_hora + timedelta(hours=duracion_existente)
+                    
+                    # Verificar solapamiento
+                    if (self.fecha_hora < hora_fin_existente and hora_fin_nueva > reserva_existente.fecha_hora):
+                        tiene_conflicto = True
+                        break
+                
+                if not tiene_conflicto:
+                    lavadores_sin_conflicto.append(lavador_candidato)
+            
+            if lavadores_sin_conflicto:
                 # Asignar el lavador con menos reservas pendientes
                 lavador_asignado = sorted(
-                    lavadores_disponibles,
+                    lavadores_sin_conflicto,
                     key=lambda l: l.reservas_asignadas.filter(
                         estado__in=[self.PENDIENTE, self.CONFIRMADA, self.EN_PROCESO]
                     ).count()
@@ -254,6 +291,9 @@ class Reserva(models.Model):
                 
                 self.lavador = lavador_asignado
                 self.asignacion_automatica = True
+            else:
+                # No hay lavadores disponibles sin conflictos
+                raise ValueError("No hay lavadores disponibles para este horario")
         
         self.save(update_fields=['lavador', 'asignacion_automatica'])
         return self.lavador

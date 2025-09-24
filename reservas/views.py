@@ -9,6 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.conf import settings
 from django.db import IntegrityError
+from django.db.models import Q
 from rest_framework import status, viewsets, filters, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -770,13 +771,9 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
         # Añadir información sobre el tiempo límite para pago
         context['tiempo_limite_pago'] = 15  # minutos
         
-        # Obtener lavadores disponibles
-        lavadores_disponibles = Empleado.objects.filter(
-            rol=Empleado.ROL_LAVADOR,
-            disponible=True,
-            activo=True
-        )
-        context['lavadores_disponibles'] = lavadores_disponibles
+        # No mostrar lavadores inicialmente - se cargarán dinámicamente
+        # cuando el usuario seleccione fecha, hora y servicio
+        context['lavadores_disponibles'] = []
         return context
     
     def post(self, request, *args, **kwargs):
@@ -984,16 +981,94 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
             
             # Verificar si se seleccionó un lavador específico
             lavador_id = request.POST.get('lavador_id')
+            
+            # VALIDACIÓN: Requerir que se seleccione un lavador
+            if not lavador_id:
+                if is_ajax:
+                    response = JsonResponse({'success': False, 'error': 'Debe seleccionar un lavador para continuar con la reserva.'}, status=400)
+                    response['Content-Type'] = 'application/json'
+                    return response
+                messages.error(request, 'Debe seleccionar un lavador para continuar con la reserva.')
+                return redirect('reservas:reservar_turno')
+            
             if lavador_id:
                 try:
                     lavador = Empleado.objects.get(id=lavador_id, rol=Empleado.ROL_LAVADOR, disponible=True, activo=True)
-                    reserva.asignar_lavador(lavador, automatico=False)
+                    
+                    # VALIDACIÓN ADICIONAL: Verificar que el lavador no tenga conflictos de horario
+                    # Calcular hora de fin de la nueva reserva
+                    duracion_servicio = (servicio.duracion_minutos + 59) // 60  # Redondear hacia arriba
+                    hora_fin_nueva = (fecha_hora + timedelta(hours=duracion_servicio)).time()
+                    
+                    # Buscar reservas del lavador que se solapen con la nueva reserva
+                    reservas_conflicto = Reserva.objects.filter(
+                        lavador=lavador,
+                        fecha_hora__date=fecha_hora.date(),
+                        estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA, Reserva.EN_PROCESO]
+                    )
+                    
+                    tiene_conflicto = False
+                    for reserva_existente in reservas_conflicto:
+                        # Calcular hora de fin de la reserva existente
+                        duracion_existente = 1  # Por defecto 1 hora
+                        if reserva_existente.servicio:
+                            duracion_existente = (reserva_existente.servicio.duracion_minutos + 59) // 60
+                        
+                        hora_fin_existente = (reserva_existente.fecha_hora + timedelta(hours=duracion_existente)).time()
+                        
+                        # Verificar solapamiento
+                        if (fecha_hora.time() < hora_fin_existente and hora_fin_nueva > reserva_existente.fecha_hora.time()):
+                            tiene_conflicto = True
+                            break
+                    
+                    if tiene_conflicto:
+                        # El lavador ya no está disponible, eliminar la reserva creada y mostrar error
+                        reserva.delete()
+                        if is_ajax:
+                            response = JsonResponse({'success': False, 'error': f'El lavador {lavador.nombre_completo()} ya no está disponible para este horario. Por favor, selecciona otro lavador.'}, status=400)
+                            response['Content-Type'] = 'application/json'
+                            return response
+                        messages.error(request, f'El lavador {lavador.nombre_completo()} ya no está disponible para este horario. Por favor, selecciona otro lavador.')
+                        return redirect('reservas:reservar_turno')
+                    
+                    # Si no hay conflictos, asignar el lavador
+                    try:
+                        reserva.asignar_lavador(lavador, automatico=False)
+                    except ValueError as e:
+                        # Eliminar la reserva si no se puede asignar el lavador
+                        reserva.delete()
+                        if is_ajax:
+                            response = JsonResponse({'success': False, 'error': str(e)}, status=400)
+                            response['Content-Type'] = 'application/json'
+                            return response
+                        messages.error(request, str(e))
+                        return redirect('reservas:reservar_turno')
                 except (Empleado.DoesNotExist, ValueError):
                     # Si no se encuentra el lavador o hay un error, asignar automáticamente
-                    reserva.asignar_lavador()
+                    try:
+                        reserva.asignar_lavador()
+                    except ValueError as e:
+                        # Eliminar la reserva si no hay lavadores disponibles
+                        reserva.delete()
+                        if is_ajax:
+                            response = JsonResponse({'success': False, 'error': str(e)}, status=400)
+                            response['Content-Type'] = 'application/json'
+                            return response
+                        messages.error(request, str(e))
+                        return redirect('reservas:reservar_turno')
             else:
                 # Asignar automáticamente un lavador disponible
-                reserva.asignar_lavador()
+                try:
+                    reserva.asignar_lavador()
+                except ValueError as e:
+                    # Eliminar la reserva si no hay lavadores disponibles
+                    reserva.delete()
+                    if is_ajax:
+                        response = JsonResponse({'success': False, 'error': str(e)}, status=400)
+                        response['Content-Type'] = 'application/json'
+                        return response
+                    messages.error(request, str(e))
+                    return redirect('reservas:reservar_turno')
             
             # Si el medio de pago es una pasarela, redirigir al proceso de pago
             if medio_pago.es_pasarela():
@@ -1116,16 +1191,16 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
             
             if is_ajax:
                 response = JsonResponse({
-                'success': True, 
-                'tiene_camara': tiene_camara,
-                'qr_url': qr_url,
-                'qr_pago_url': qr_pago_url,
-                'tiene_qr_pago': qr_pago_url is not None,
-                'medio_pago': medio_pago.get_tipo_display(),
-                'reserva_id': reserva.id
-            }, status=200)
-            response['Content-Type'] = 'application/json'
-            return response
+                    'success': True, 
+                    'tiene_camara': tiene_camara,
+                    'qr_url': qr_url,
+                    'qr_pago_url': qr_pago_url,
+                    'tiene_qr_pago': qr_pago_url is not None,
+                    'medio_pago': medio_pago.get_tipo_display(),
+                    'reserva_id': reserva.id
+                }, status=200)
+                response['Content-Type'] = 'application/json'
+                return response
             
             messages.success(request, 'Reserva creada exitosamente. Recibirás una confirmación pronto.')
             return redirect('reservas:mis_turnos')
@@ -1373,12 +1448,82 @@ class ObtenerMediosPagoView(LoginRequiredMixin, View):
 class ObtenerLavadoresDisponiblesView(View):
     def get(self, request, *args, **kwargs):
         try:
-            # Obtener lavadores disponibles
-            lavadores = Empleado.objects.filter(
+            # Obtener parámetros de la solicitud
+            fecha_str = request.GET.get('fecha')
+            hora_str = request.GET.get('hora')
+            servicio_id = request.GET.get('servicio_id')
+            
+            if not fecha_str or not hora_str:
+                return JsonResponse({'error': 'Fecha y hora son requeridos'}, status=400)
+            
+            # Convertir fecha y hora de string a objetos datetime
+            try:
+                from datetime import datetime, timedelta
+                fecha = datetime.strptime(fecha_str, '%Y-%m-%d').date()
+                hora_inicio = datetime.strptime(hora_str, '%H:%M').time()
+                
+                # Obtener duración del servicio si se proporciona
+                duracion_horas = 1  # Por defecto 1 hora
+                if servicio_id:
+                    try:
+                        servicio = Servicio.objects.get(id=servicio_id)
+                        # Convertir duración de minutos a horas (redondeando hacia arriba)
+                        duracion_horas = (servicio.duracion_minutos + 59) // 60  # Redondeo hacia arriba
+                    except Servicio.DoesNotExist:
+                        pass
+                
+                # Calcular hora de fin
+                hora_inicio_dt = datetime.combine(fecha, hora_inicio)
+                hora_fin_dt = hora_inicio_dt + timedelta(hours=duracion_horas)
+                hora_fin = hora_fin_dt.time()
+                
+            except ValueError:
+                return JsonResponse({'error': 'Formato de fecha u hora inválido'}, status=400)
+            
+            # Obtener todos los lavadores activos y disponibles
+            lavadores_base = Empleado.objects.filter(
                 rol=Empleado.ROL_LAVADOR,
                 disponible=True,
                 activo=True
             )
+            
+            lavadores_disponibles = []
+            
+            for lavador in lavadores_base:
+                # Verificar si el lavador tiene reservas que se solapen con el horario solicitado
+                reservas_solapadas = Reserva.objects.filter(
+                    lavador=lavador,
+                    fecha_hora__date=fecha,
+                    estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA, Reserva.EN_PROCESO]
+                )
+                
+                # Verificar solapamiento de horarios más preciso
+                tiene_conflicto = False
+                for reserva in reservas_solapadas:
+                    # Obtener hora de inicio de la reserva existente
+                    hora_reserva_inicio = reserva.fecha_hora.time()
+                    
+                    # Calcular hora de fin de la reserva existente
+                    duracion_reserva = 1  # Por defecto 1 hora
+                    if reserva.servicio:
+                        duracion_reserva = (reserva.servicio.duracion_minutos + 59) // 60
+                    
+                    reserva_inicio_dt = datetime.combine(fecha, hora_reserva_inicio)
+                    reserva_fin_dt = reserva_inicio_dt + timedelta(hours=duracion_reserva)
+                    hora_reserva_fin = reserva_fin_dt.time()
+                    
+                    # Verificar si hay solapamiento usando datetime completos para mejor precisión
+                    nueva_inicio_dt = datetime.combine(fecha, hora_inicio)
+                    nueva_fin_dt = datetime.combine(fecha, hora_fin)
+                    
+                    # Verificar si hay solapamiento
+                    if (nueva_inicio_dt < reserva_fin_dt and nueva_fin_dt > reserva_inicio_dt):
+                        tiene_conflicto = True
+                        break
+                
+                # Si no hay conflictos, el lavador está disponible
+                if not tiene_conflicto:
+                    lavadores_disponibles.append(lavador)
             
             # Formatear los datos para la respuesta JSON
             lavadores_data = [{
@@ -1386,10 +1531,26 @@ class ObtenerLavadoresDisponiblesView(View):
                 'nombre': lavador.nombre_completo(),
                 'foto_url': lavador.fotografia.url if lavador.fotografia else None,
                 'calificacion': lavador.promedio_calificacion(),
-                'cargo': lavador.cargo.nombre,
-            } for lavador in lavadores]
+                'cargo': lavador.cargo.nombre if lavador.cargo else 'Lavador',
+            } for lavador in lavadores_disponibles]
             
-            response = JsonResponse({'lavadores': lavadores_data}, status=200)
+            # Si no hay lavadores disponibles, devolver un mensaje específico
+            if len(lavadores_disponibles) == 0:
+                response = JsonResponse({
+                    'lavadores': [],
+                    'success': False,
+                    'error': 'no_lavadores_disponibles',
+                    'message': 'No se puede realizar la reserva por indisponibilidad de personal - Lavadores. Por favor, seleccione otra fecha u horario.',
+                    'total_disponibles': 0
+                }, status=200)  # Mantenemos 200 para que no sea tratado como error de red
+                response['Content-Type'] = 'application/json'
+                return response
+            
+            response = JsonResponse({
+                'lavadores': lavadores_data,
+                'success': True,
+                'total_disponibles': len(lavadores_disponibles)
+            }, status=200)
             response['Content-Type'] = 'application/json'
             return response
         except Exception as e:
@@ -1415,7 +1576,10 @@ class SeleccionarLavadorView(LoginRequiredMixin, View):
             lavador = get_object_or_404(Empleado, id=lavador_id, rol=Empleado.ROL_LAVADOR, disponible=True, activo=True)
             
             # Asignar el lavador a la reserva
-            reserva.asignar_lavador(lavador, automatico=False)
+            try:
+                reserva.asignar_lavador(lavador, automatico=False)
+            except ValueError as e:
+                return JsonResponse({'success': False, 'error': str(e)}, status=400)
             
             return JsonResponse({'success': True, 'message': f'Lavador {lavador.nombre_completo()} asignado correctamente'})
         except Exception as e:

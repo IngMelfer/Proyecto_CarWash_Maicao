@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#06a7cf;stop-opacity:0.1" />
+      <stop offset="100%" style="stop-color:#056a96;stop-opacity:0.2" />
+    </linearGradient>
+    <linearGradient id="iconGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#06a7cf;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#056a96;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Fondo circular -->
+  <circle cx="60" cy="60" r="60" fill="url(#bgGradient)" stroke="#e9ecef" stroke-width="2"/>
+  
+  <!-- Icono de persona -->
+  <g fill="url(#iconGradient)">
+    <!-- Cabeza -->
+    <circle cx="60" cy="45" r="18"/>
+    <!-- Cuerpo -->
+    <path d="M60 70 C45 70, 35 80, 35 95 L85 95 C85 80, 75 70, 60 70 Z"/>
+  </g>
+  
+  <!-- Efecto de brillo -->
+  <circle cx="60" cy="60" r="58" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1" opacity="0.6"/>
+</svg>
