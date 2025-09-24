@@ -1263,7 +1263,18 @@
                             <i class="fas fa-id-card me-1"></i>
                             Placa
                         </label>
-                        <input type="text" class="form-control form-control-enhanced" id="placa" name="placa">
+                        <div class="input-group">
+                            <input type="text" class="form-control form-control-enhanced" id="placa" name="placa">
+                            <span class="input-group-text" id="placa-status">
+                                <i class="fas fa-circle-notch fa-spin d-none" id="placa-loading"></i>
+                                <i class="fas fa-check text-success d-none" id="placa-valid"></i>
+                                <i class="fas fa-times text-danger d-none" id="placa-invalid"></i>
+                                <i class="fas fa-exclamation-triangle text-warning d-none" id="placa-warning"></i>
+                            </span>
+                        </div>
+                        <div class="invalid-feedback" id="placa-feedback" style="display: none;"></div>
+                        <div class="valid-feedback" id="placa-success-feedback" style="display: none;"></div>
+                        <small class="form-text text-muted">Entre 6 y 10 caracteres alfanuméricos</small>
                     </div>
                 </div>
                 
@@ -1981,6 +1992,145 @@
         const nextToStep7 = document.querySelector('#nextToStep7');
         const backToStep6 = document.querySelector('#backToStep6');
         
+        // Agregar validación en tiempo real para placa y año
+        const placaInput = document.querySelector('#placa');
+        const anioInput = document.querySelector('#anio');
+        
+        if (placaInput) {
+            let timeoutId;
+            let placaValida = false; // Variable para rastrear el estado de validación
+            
+            placaInput.addEventListener('input', function() {
+                this.value = this.value.toUpperCase();
+                const placa = this.value;
+                
+                // Elementos de indicadores visuales
+                const loadingIcon = document.getElementById('placa-loading');
+                const validIcon = document.getElementById('placa-valid');
+                const invalidIcon = document.getElementById('placa-invalid');
+                const warningIcon = document.getElementById('placa-warning');
+                const feedback = document.getElementById('placa-feedback');
+                const successFeedback = document.getElementById('placa-success-feedback');
+                
+                // Limpiar estilos previos
+                this.classList.remove('is-valid', 'is-invalid');
+                placaValida = false; // Reset del estado
+                
+                // Ocultar todos los iconos
+                [loadingIcon, validIcon, invalidIcon, warningIcon].forEach(icon => {
+                    if (icon) icon.classList.add('d-none');
+                });
+                
+                // Limpiar mensajes
+                if (feedback) {
+                    feedback.textContent = '';
+                    feedback.style.display = 'none';
+                }
+                if (successFeedback) {
+                    successFeedback.textContent = '';
+                    successFeedback.style.display = 'none';
+                }
+                
+                // Limpiar timeout anterior
+                if (timeoutId) {
+                    clearTimeout(timeoutId);
+                }
+                
+                if (placa.length > 0) {
+                    // Mostrar icono de carga
+                    if (loadingIcon) loadingIcon.classList.remove('d-none');
+                    
+                    // Debounce para evitar muchas llamadas a la API
+                    timeoutId = setTimeout(async () => {
+                        const resultado = await validarPlaca(placa);
+                        
+                        // Ocultar icono de carga
+                        if (loadingIcon) loadingIcon.classList.add('d-none');
+                        
+                        if (resultado.valido) {
+                            this.classList.add('is-valid');
+                            placaValida = true; // Marcar como válida
+                            
+                            // Mostrar icono de éxito para placa disponible
+                            if (validIcon) validIcon.classList.remove('d-none');
+                            if (successFeedback) {
+                                successFeedback.textContent = resultado.mensaje;
+                                successFeedback.style.display = 'block';
+                            }
+                        } else {
+                            this.classList.add('is-invalid');
+                            placaValida = false; // Marcar como inválida
+                            
+                            if (resultado.advertencia) {
+                                // Mostrar icono de advertencia para placa propia existente
+                                if (warningIcon) warningIcon.classList.remove('d-none');
+                            } else {
+                                // Mostrar icono de error para placa de otro cliente o formato inválido
+                                if (invalidIcon) invalidIcon.classList.remove('d-none');
+                            }
+                            
+                            if (feedback) {
+                                feedback.textContent = resultado.mensaje;
+                                feedback.style.display = 'block';
+                            }
+                        }
+                    }, 500); // Esperar 500ms después de que el usuario deje de escribir
+                }
+            });
+            
+            // Prevenir Tab si la placa no es válida
+            placaInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Tab' && !placaValida && this.value.length > 0) {
+                    e.preventDefault();
+                    showAlert('Por favor, ingresa una placa válida antes de continuar', 'warning');
+                    this.focus();
+                }
+            });
+        }
+        
+        if (anioInput) {
+            anioInput.addEventListener('input', function() {
+                // Permitir solo números - eliminar cualquier carácter no numérico
+                this.value = this.value.replace(/[^0-9]/g, '');
+                
+                const anio = this.value;
+                
+                // Limpiar estilos previos
+                this.classList.remove('is-valid', 'is-invalid');
+                
+                if (anio.length > 0) {
+                    if (validarAnio(anio)) {
+                        this.classList.add('is-valid');
+                    } else {
+                        this.classList.add('is-invalid');
+                    }
+                }
+            });
+            
+            // Prevenir entrada de caracteres no numéricos con keypress
+            anioInput.addEventListener('keypress', function(e) {
+                // Permitir solo números (0-9), backspace, delete, tab, escape, enter
+                const allowedKeys = [8, 9, 27, 13, 46]; // backspace, tab, escape, enter, delete
+                const isNumber = (e.charCode >= 48 && e.charCode <= 57); // 0-9
+                
+                if (!isNumber && allowedKeys.indexOf(e.keyCode) === -1) {
+                    e.preventDefault();
+                }
+            });
+            
+            // Prevenir pegar contenido no numérico
+            anioInput.addEventListener('paste', function(e) {
+                e.preventDefault();
+                const paste = (e.clipboardData || window.clipboardData).getData('text');
+                const numericPaste = paste.replace(/[^0-9]/g, '');
+                this.value = numericPaste;
+                
+                // Disparar evento input para validar
+                const inputEvent = new Event('input', { bubbles: true });
+                this.dispatchEvent(inputEvent);
+            });
+        }
+        
         // Definir el elemento de medio de pago para usarlo en todo el script
         const medioPagoElement = document.querySelector('#medioPago');
         
@@ -2054,7 +2204,7 @@
         }
         
         if (nextToStep4) {
-            nextToStep4.addEventListener('click', function(e) {
+            nextToStep4.addEventListener('click', async function(e) {
             e.preventDefault();
             e.stopPropagation();
             
@@ -2073,6 +2223,27 @@
                 
                 if (!marca || !modelo || !anio || !placa || !tipo_vehiculo || !color) {
                     showAlert('Por favor completa todos los campos obligatorios', 'warning');
+                    return;
+                }
+                
+                // Validar formato y unicidad de placa
+                const resultadoPlaca = await validarPlaca(placa);
+                if (!resultadoPlaca.valido) {
+                    showAlert(resultadoPlaca.mensaje, 'error');
+                    // Enfocar el campo de placa para que el usuario lo corrija
+                    document.querySelector('#placa').focus();
+                    return;
+                }
+                
+                // Mostrar advertencia si la placa ya existe para el mismo cliente
+                if (resultadoPlaca.advertencia) {
+                    showAlert(resultadoPlaca.mensaje, 'info');
+                }
+                
+                // Validar año
+                if (!validarAnio(anio)) {
+                    const currentYear = new Date().getFullYear();
+                    showAlert(`El año debe estar entre 1900 y ${currentYear + 1}`, 'warning');
                     return;
                 }
             }
@@ -2901,6 +3072,69 @@
         function mostrarAlerta(message, type) {
             // Esta función ya no es necesaria, usar showAlert directamente
             showAlert(message, type);
+        }
+        
+        // Funciones de validación
+        async function validarPlaca(placa) {
+            // Validar formato básico primero
+            const placaRegex = /^[A-Z0-9]{6,10}$/;
+            if (!placaRegex.test(placa.toUpperCase())) {
+                return {
+                    valido: false,
+                    mensaje: 'La placa debe tener entre 6 y 10 caracteres alfanuméricos'
+                };
+            }
+            
+            // Validar unicidad en la base de datos
+            try {
+                const response = await fetch('/api/reservas/verificar-placa/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({ placa: placa.toUpperCase() })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (data.existe && !data.es_propio) {
+                        return {
+                            valido: false,
+                            mensaje: data.mensaje
+                        };
+                    } else if (data.existe && data.es_propio) {
+                        return {
+                            valido: false,
+                            mensaje: data.mensaje,
+                            advertencia: true
+                        };
+                    } else {
+                        return {
+                            valido: true,
+                            mensaje: 'Placa disponible'
+                        };
+                    }
+                } else {
+                    return {
+                        valido: false,
+                        mensaje: data.error || 'Error al verificar la placa'
+                    };
+                }
+            } catch (error) {
+                console.error('Error al verificar placa:', error);
+                return {
+                    valido: true, // En caso de error de red, permitir continuar
+                    mensaje: 'No se pudo verificar la placa (sin conexión)'
+                };
+            }
+        }
+        
+        function validarAnio(anio) {
+            const currentYear = new Date().getFullYear();
+            const year = parseInt(anio);
+            return year >= 1900 && year <= (currentYear + 1);
         }
         
         // Inicializar el modal de redención de puntos

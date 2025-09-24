@@ -4,6 +4,10 @@ import uuid
 import qrcode
 import base64
 from io import BytesIO
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from django.http import JsonResponse
 from django.views import View
 from django.utils import timezone
@@ -525,3 +529,55 @@ class GenerarQRView(LoginRequiredMixin, View):
             return JsonResponse({'success': False, 'error': 'Reserva no encontrada'}, status=404)
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def verificar_placa_unica(request):
+    """
+    Endpoint para verificar si una placa ya existe en la base de datos
+    """
+    try:
+        # Usar request.data en lugar de request.body para DRF
+        placa = request.data.get('placa', '').strip().upper()
+        
+        if not placa:
+            return Response({
+                'success': False, 
+                'error': 'La placa es requerida'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Verificar si ya existe un vehículo con la misma placa
+        from .models import Vehiculo
+        vehiculo_existente = Vehiculo.objects.filter(placa=placa).first()
+        
+        if vehiculo_existente:
+            # Verificar si pertenece al cliente actual
+            cliente_actual = request.user.cliente
+            if vehiculo_existente.cliente == cliente_actual:
+                return Response({
+                    'success': True,
+                    'existe': True,
+                    'es_propio': True,
+                    'mensaje': 'Ya tienes un vehículo registrado con esta placa'
+                })
+            else:
+                return Response({
+                    'success': True,
+                    'existe': True,
+                    'es_propio': False,
+                    'mensaje': 'Esta placa ya está registrada para otro cliente'
+                })
+        else:
+            return Response({
+                'success': True,
+                'existe': False,
+                'es_propio': False,
+                'mensaje': 'La placa está disponible'
+            })
+            
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
