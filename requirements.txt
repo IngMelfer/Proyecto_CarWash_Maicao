@@ -9,18 +9,20 @@ tzdata==2023.3
 
 # Base de datos
 mysqlclient==2.2.7
-pymysql==1.1.0
+PyMySQL==1.1.0
 dj-database-url==2.1.0
 
 # Configuración y variables de entorno
 python-dotenv==1.0.0
 
-# Seguridad
+# Seguridad y criptografía
 cryptography==45.0.7
+cffi==2.0.0
+pycparser==2.23
 
 # Generación de códigos QR e imágenes
 qrcode==8.2
-Pillow==11.3.0
+pillow==11.3.0
 
 # Servidor web para producción
 gunicorn==21.2.0
@@ -28,21 +30,31 @@ whitenoise==6.5.0
 
 # Peticiones HTTP
 requests==2.32.4
-
-# AWS S3 para archivos estáticos (opcional)
-django-storages==1.14.6
-boto3==1.40.26
-
-# Utilidades
-packaging==23.2
 certifi==2025.6.15
 charset-normalizer==3.4.2
 idna==3.10
 urllib3==2.4.0
 
-# Para procesamiento de datos (si se necesita)
-beautifulsoup4==4.13.5
+# AWS S3 para archivos estáticos
+django-storages==1.14.6
+boto3==1.40.26
+botocore==1.40.37
+jmespath==1.0.1
+s3transfer==0.13.1
 
-# Monitoreo de errores (opcional)
+# Utilidades de fecha y tiempo
+python-dateutil==2.9.0.post0
+pytz==2025.2
+six==1.17.0
+
+# Utilidades generales
+packaging==23.2
+colorama==0.4.6
+
+# Para procesamiento de datos
+beautifulsoup4==4.13.5
+soupsieve==2.8
+
+# Monitoreo de errores
 sentry-sdk==1.39.1
 
