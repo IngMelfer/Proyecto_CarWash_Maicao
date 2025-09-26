@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views, views_admin, views_csrf, views_api
+from . import views, views_admin, views_csrf, views_api, views_calificacion
 
 urlpatterns = [
     # Rutas para vistas basadas en plantillas
@@ -19,6 +19,11 @@ urlpatterns = [
     path('obtener_lavadores_disponibles/', views.ObtenerLavadoresDisponiblesView.as_view(), name='obtener_lavadores_disponibles'),
     path('seleccionar_lavador/<int:reserva_id>/<int:lavador_id>/', views.SeleccionarLavadorView.as_view(), name='seleccionar_lavador'),
     path('obtener_medios_pago/', views.ObtenerMediosPagoView.as_view(), name='obtener_medios_pago'),
+    # Calificaciones
+    path('calificar-lavador/<int:reserva_id>/', views_calificacion.CalificarLavadorView.as_view(), name='calificar_lavador'),
+    path('calificaciones-lavador/<int:lavador_id>/', views_calificacion.ver_calificaciones_lavador, name='calificaciones_lavador'),
+    
+    path('probar-conectividad-camara/', views.ProbarConectividadCamaraView.as_view(), name='probar_conectividad_camara'),
     # Rutas para pasarelas de pago
     path('procesar-pago/<int:reserva_id>/', views.ProcesarPagoView.as_view(), name='procesar_pago'),
     path('confirmar-pago/<int:reserva_id>/', views.ConfirmarPagoView.as_view(), name='confirmar_pago'),

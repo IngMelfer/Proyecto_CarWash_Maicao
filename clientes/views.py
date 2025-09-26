@@ -8,6 +8,8 @@ from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.db import models
+from datetime import timedelta
+from decimal import Decimal
 from .models import Cliente, HistorialServicio
 from .serializers import ClienteSerializer, HistorialServicioSerializer
 from notificaciones.models import Notificacion
@@ -194,126 +196,78 @@ class HistorialServiciosView(LoginRequiredMixin, View):
 
 class HistorialVehiculoView(LoginRequiredMixin, View):
     """
-    Vista para mostrar el historial de servicios de un vehículo específico.
+    Vista para mostrar el historial de servicios de un vehículo específico
+    Solo muestra servicios que tienen registro en HistorialServicio (servicios realmente completados)
     """
-    template_name = 'clientes/historial_vehiculo.html'
+    login_url = '/autenticacion/login/'
     
     def get(self, request, vehiculo_id):
         try:
-            # Obtener el vehículo del cliente actual
-            vehiculo = get_object_or_404(Vehiculo, id=vehiculo_id, cliente=request.user.cliente)
+            # Verificar que el usuario tenga un cliente asociado
+            if not hasattr(request.user, 'cliente'):
+                return redirect('home')
             
-            # Obtener todas las reservas completadas para este vehículo
-            from reservas.models import Reserva
-            reservas_completadas = Reserva.objects.filter(
-                vehiculo=vehiculo,
-                cliente=request.user.cliente,
-                estado=Reserva.COMPLETADA
-            ).order_by('-fecha_hora')
+            # Obtener el vehículo
+            vehiculo = get_object_or_404(Vehiculo, id=vehiculo_id)
             
-            # Obtener el historial de servicios que coincidan con las fechas de las reservas
+            # Verificar que el vehículo pertenezca al cliente actual
+            if vehiculo.cliente != request.user.cliente:
+                messages.error(request, 'No tienes permiso para ver este vehículo.')
+                return redirect('clientes:dashboard')
+            
+            # Obtener solo los servicios que tienen registro en HistorialServicio
+            # Esto garantiza que solo se muestren servicios realmente completados
+            historial_servicios_db = HistorialServicio.objects.filter(
+                cliente=vehiculo.cliente
+            ).select_related('cliente').order_by('-fecha_servicio')
+            
+            # Filtrar solo los servicios relacionados con este vehículo
+            # Para esto, necesitamos verificar que exista una reserva completada para este vehículo
             historial_servicios = []
+            total_servicios = 0
+            total_gastado = Decimal('0')
+            total_puntos = 0
+            servicios_count = {}
             
-            # Método 1: Servicios con reserva asociada
-            for reserva in reservas_completadas:
-                # Buscar el historial de servicio que coincida con esta reserva
-                historial = HistorialServicio.objects.filter(
-                    cliente=request.user.cliente,
-                    fecha_servicio=reserva.fecha_hora,
-                    servicio=reserva.servicio.nombre
+            from reservas.models import Reserva
+            for historial in historial_servicios_db:
+                # Verificar si existe una reserva completada para este vehículo en la fecha del servicio
+                reserva_relacionada = Reserva.objects.filter(
+                    vehiculo=vehiculo,
+                    cliente=historial.cliente,
+                    servicio__nombre=historial.servicio,
+                    estado=Reserva.COMPLETADA,
+                    fecha_hora__date=historial.fecha_servicio.date()
                 ).first()
                 
-                if historial:
-                    # Agregar información de la reserva al historial
-                    historial.reserva = reserva
-                    historial.vehiculo = vehiculo
+                if reserva_relacionada:
+                    # Agregar la reserva al objeto historial para usar en la plantilla
+                    historial.reserva = reserva_relacionada
                     historial_servicios.append(historial)
-            
-            # Método 2: Buscar servicios adicionales del historial que puedan corresponder a este vehículo
-            # pero que no tienen reserva asociada (servicios antiguos)
-            todos_los_servicios = HistorialServicio.objects.filter(
-                cliente=request.user.cliente
-            ).order_by('-fecha_servicio')
-            
-            # IDs de servicios ya incluidos
-            servicios_incluidos = {s.id for s in historial_servicios}
-            
-            for servicio in todos_los_servicios:
-                if servicio.id not in servicios_incluidos:
-                    # Intentar asociar este servicio con el vehículo usando la misma lógica
-                    # que en HistorialServiciosView
-                    from datetime import timedelta
+                    total_servicios += 1
+                    total_gastado += historial.monto
+                    total_puntos += historial.puntos_ganados
                     
-                    # Buscar reserva por fecha exacta
-                    reserva = Reserva.objects.filter(
-                        cliente=request.user.cliente,
-                        vehiculo=vehiculo,
-                        fecha_hora=servicio.fecha_servicio,
-                        servicio__nombre=servicio.servicio,
-                        estado=Reserva.COMPLETADA
-                    ).first()
-                    
-                    # Si no encuentra, buscar en un rango de ±2 horas
-                    if not reserva:
-                        inicio = servicio.fecha_servicio - timedelta(hours=2)
-                        fin = servicio.fecha_servicio + timedelta(hours=2)
-                        
-                        reserva = Reserva.objects.filter(
-                            cliente=request.user.cliente,
-                            vehiculo=vehiculo,
-                            fecha_hora__range=(inicio, fin),
-                            servicio__nombre=servicio.servicio,
-                            estado=Reserva.COMPLETADA
-                        ).first()
-                    
-                    # Si aún no encuentra, buscar por servicio y fecha del mismo día
-                    if not reserva:
-                        from datetime import date
-                        fecha_servicio = servicio.fecha_servicio.date()
-                        
-                        reserva = Reserva.objects.filter(
-                            cliente=request.user.cliente,
-                            vehiculo=vehiculo,
-                            fecha_hora__date=fecha_servicio,
-                            servicio__nombre=servicio.servicio,
-                            estado=Reserva.COMPLETADA
-                        ).first()
-                    
-                    # Si encontramos una reserva asociada, incluir el servicio
-                    if reserva:
-                        servicio.reserva = reserva
-                        servicio.vehiculo = vehiculo
-                        historial_servicios.append(servicio)
+                    # Contar servicios para estadísticas
+                    servicio_nombre = historial.servicio
+                    servicios_count[servicio_nombre] = servicios_count.get(servicio_nombre, 0) + 1
             
-            # Ordenar por fecha descendente
-            historial_servicios.sort(key=lambda x: x.fecha_servicio, reverse=True)
+            # Determinar el servicio más frecuente
+            servicio_mas_frecuente = max(servicios_count.items(), key=lambda x: x[1]) if servicios_count else None
+            servicio_frecuente = servicio_mas_frecuente[0] if servicio_mas_frecuente else "Ninguno"
             
-            # Calcular estadísticas del vehículo
-            total_servicios = len(historial_servicios)
-            total_gastado = sum(servicio.monto for servicio in historial_servicios)
-            total_puntos = sum(servicio.puntos_ganados for servicio in historial_servicios)
-            
-            # Obtener el servicio más frecuente
-            servicios_count = {}
-            for servicio in historial_servicios:
-                nombre_servicio = servicio.servicio
-                servicios_count[nombre_servicio] = servicios_count.get(nombre_servicio, 0) + 1
-            
-            servicio_frecuente = max(servicios_count.items(), key=lambda x: x[1])[0] if servicios_count else 'N/A'
-            
-            context = {
+            return render(request, 'clientes/historial_vehiculo.html', {
                 'vehiculo': vehiculo,
                 'historial': historial_servicios,
                 'total_servicios': total_servicios,
                 'total_gastado': total_gastado,
                 'total_puntos': total_puntos,
                 'servicio_frecuente': servicio_frecuente,
-            }
-            
-            return render(request, self.template_name, context)
+                'cliente': request.user.cliente
+            })
             
         except Exception as e:
-            messages.error(request, f'Error al cargar el historial del vehículo: {str(e)}')
+            messages.error(request, f'Error al obtener el historial del vehículo: {str(e)}')
             return redirect('clientes:dashboard')
 
 
@@ -348,11 +302,16 @@ class DashboardClienteView(LoginRequiredMixin, View):
         
         # Obtener estadísticas del cliente
         from reservas.models import Reserva, Vehiculo
+        from django.utils import timezone
         
-        # Turnos pendientes
+        # Turnos pendientes (solo los que están en el futuro o máximo 2 horas en el pasado)
+        ahora = timezone.now()
+        limite_pasado = ahora - timedelta(hours=2)  # Dar 2 horas de gracia
+        
         turnos_pendientes = Reserva.objects.filter(
             cliente=cliente,
-            estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA]
+            estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA],
+            fecha_hora__gte=limite_pasado  # Solo contar los que no han pasado hace más de 2 horas
         ).count()
         
         # Servicios completados
@@ -380,14 +339,25 @@ class DashboardClienteView(LoginRequiredMixin, View):
         # Vehículos registrados
         vehiculos_registrados = Vehiculo.objects.filter(cliente=cliente).count()
         
-        # Próximos turnos
+        # Próximos turnos (solo los que están en el futuro o máximo 2 horas en el pasado)
         proximos_turnos = Reserva.objects.filter(
             cliente=cliente,
-            estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA]
+            estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA],
+            fecha_hora__gte=limite_pasado  # Solo mostrar los que no han pasado hace más de 2 horas
         ).order_by('fecha_hora')[:5]
         
-        # Vehículos del cliente
+        # Vehículos del cliente con contadores específicos
         vehiculos = Vehiculo.objects.filter(cliente=cliente)
+        
+        # Agregar contadores específicos para cada vehículo
+        for vehiculo in vehiculos:
+            # Contar servicios completados específicos de este vehículo
+            servicios_vehiculo = Reserva.objects.filter(
+                vehiculo=vehiculo,
+                cliente=cliente,
+                estado=Reserva.COMPLETADA
+            ).count()
+            vehiculo.servicios_completados = servicios_vehiculo
         
         return render(request, 'clientes/dashboard.html', {
             'cliente': cliente,

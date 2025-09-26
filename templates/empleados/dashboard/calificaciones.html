@@ -80,17 +80,6 @@
                     {% endfor %}
                 </div>
             </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card h-100">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Tendencia Mensual</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="tendenciaChart" height="200"></canvas>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Filtros -->
@@ -454,45 +443,6 @@
         .catch(error => {
             console.error('Error:', error);
             alert('Error al enviar la respuesta');
-        });
-    });
-
-    // Gráfico de tendencia
-    document.addEventListener('DOMContentLoaded', function() {
-        const ctx = document.getElementById('tendenciaChart').getContext('2d');
-        
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: {{ tendencia_labels|safe }},
-                datasets: [{
-                    label: 'Promedio Mensual',
-                    data: {{ tendencia_data|safe }},
-                    borderColor: '#ffc107',
-                    backgroundColor: 'rgba(255, 193, 7, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 5,
-                        ticks: {
-                            stepSize: 1
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                }
-            }
         });
     });
 </script>

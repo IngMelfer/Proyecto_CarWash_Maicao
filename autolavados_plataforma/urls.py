@@ -29,6 +29,7 @@ urlpatterns = [
     path('api/reservas/', include('reservas.urls_api')),
     path('api/notificaciones/', include('notificaciones.urls')),
     # Rutas para vistas basadas en plantillas con namespace
+    path('notificaciones/', include(('notificaciones.urls', 'notificaciones'), namespace='notificaciones')),
     path('reservas/', include(('reservas.urls', 'reservas'), namespace='reservas')),
     # Ruta directa para validar clientes
     path('clientes/validar/<int:pk>/', ClienteValidarDirectView.as_view(), name='cliente_validar_direct'),

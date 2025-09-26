@@ -14,6 +14,8 @@ class Notificacion(models.Model):
     RESERVA_CANCELADA = 'RA'
     SERVICIO_INICIADO = 'SI'
     SERVICIO_FINALIZADO = 'SF'
+    CALIFICACION_RECIBIDA = 'CR'
+    SERVICIO_ASIGNADO = 'SA'
     PROMOCION = 'PR'
     PUNTOS_ACUMULADOS = 'PA'
     PUNTOS_REDIMIDOS = 'PR'
@@ -25,6 +27,8 @@ class Notificacion(models.Model):
         (RESERVA_CANCELADA, _('Reserva Cancelada')),
         (SERVICIO_INICIADO, _('Servicio Iniciado')),
         (SERVICIO_FINALIZADO, _('Servicio Finalizado')),
+        (CALIFICACION_RECIBIDA, _('Calificación Recibida')),
+        (SERVICIO_ASIGNADO, _('Servicio Asignado')),
         (PROMOCION, _('Promoción')),
         (PUNTOS_ACUMULADOS, _('Puntos Acumulados')),
         (PUNTOS_REDIMIDOS, _('Puntos Redimidos')),
@@ -32,6 +36,7 @@ class Notificacion(models.Model):
     ]
     
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='notificaciones', verbose_name=_('Cliente'))
+    reserva = models.ForeignKey('reservas.Reserva', on_delete=models.CASCADE, null=True, blank=True, related_name='notificaciones', verbose_name=_('Reserva'))
     tipo = models.CharField(max_length=2, choices=TIPO_CHOICES, verbose_name=_('Tipo'))
     titulo = models.CharField(max_length=100, verbose_name=_('Título'))
     mensaje = models.TextField(verbose_name=_('Mensaje'))

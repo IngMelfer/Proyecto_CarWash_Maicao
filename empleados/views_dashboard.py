@@ -538,8 +538,8 @@ def calificaciones_empleado(request):
     
     # Obtener calificaciones del empleado
     calificaciones = Calificacion.objects.filter(empleado=empleado).select_related(
-        'cliente', 'servicio', 'reserva__vehiculo'
-    ).order_by('-fecha_creacion')
+        'cliente', 'servicio'
+    ).order_by('-fecha_calificacion')
     
     # Aplicar filtros
     calificacion_filtro = request.GET.get('calificacion')
@@ -551,10 +551,10 @@ def calificaciones_empleado(request):
         calificaciones = calificaciones.filter(puntuacion=calificacion_filtro)
     
     if fecha_desde:
-        calificaciones = calificaciones.filter(fecha_creacion__date__gte=fecha_desde)
+        calificaciones = calificaciones.filter(fecha_calificacion__date__gte=fecha_desde)
     
     if fecha_hasta:
-        calificaciones = calificaciones.filter(fecha_creacion__date__lte=fecha_hasta)
+        calificaciones = calificaciones.filter(fecha_calificacion__date__lte=fecha_hasta)
     
     if buscar:
         calificaciones = calificaciones.filter(
@@ -568,8 +568,8 @@ def calificaciones_empleado(request):
         'promedio': calificaciones.aggregate(Avg('puntuacion'))['puntuacion__avg'] or 0,
         'total': calificaciones.count(),
         'este_mes': calificaciones.filter(
-            fecha_creacion__month=timezone.now().month,
-            fecha_creacion__year=timezone.now().year
+            fecha_calificacion__month=timezone.now().month,
+            fecha_calificacion__year=timezone.now().year
         ).count(),
     }
     
@@ -584,20 +584,6 @@ def calificaciones_empleado(request):
             'porcentaje': porcentaje
         })
     
-    # Tendencia mensual (últimos 6 meses)
-    tendencia_labels = []
-    tendencia_data = []
-    for i in range(5, -1, -1):
-        fecha = timezone.now() - timedelta(days=30*i)
-        mes_nombre = fecha.strftime('%b %Y')
-        promedio = calificaciones.filter(
-            fecha_creacion__month=fecha.month,
-            fecha_creacion__year=fecha.year
-        ).aggregate(Avg('puntuacion'))['puntuacion__avg'] or 0
-        
-        tendencia_labels.append(mes_nombre)
-        tendencia_data.append(round(promedio, 1))
-    
     # Paginación
     paginator = Paginator(calificaciones, 8)
     page_number = request.GET.get('page')
@@ -608,8 +594,6 @@ def calificaciones_empleado(request):
         'calificaciones': calificaciones_paginadas,
         'estadisticas': estadisticas,
         'distribucion': distribucion,
-        'tendencia_labels': tendencia_labels,
-        'tendencia_data': tendencia_data,
         'is_paginated': calificaciones_paginadas.has_other_pages(),
         'page_obj': calificaciones_paginadas,
     }

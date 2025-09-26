@@ -1,0 +1,357 @@
+{% extends 'empleados/dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Mis Notificaciones - Dashboard Empleado{% endblock %}
+
+{% block extra_css %}
+<style>
+    .notification-card {
+        border-left: 4px solid #056a96;
+        transition: all 0.3s ease;
+        margin-bottom: 1rem;
+        background: white;
+    }
+    
+    .notification-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(5, 106, 150, 0.15);
+    }
+    
+    .notification-card.unread {
+        background-color: #f8f9fa;
+        border-left-color: #28a745;
+    }
+    
+    .notification-card.read {
+        border-left-color: #6c757d;
+    }
+    
+    .notification-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+    }
+    
+    .notification-icon.calificacion-recibida {
+        background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 193, 7, 0.2));
+        color: #ffc107;
+    }
+    
+    .notification-icon.servicio-asignado {
+        background: linear-gradient(135deg, rgba(23, 162, 184, 0.1), rgba(23, 162, 184, 0.2));
+        color: #17a2b8;
+    }
+    
+    .notification-icon.general {
+        background: linear-gradient(135deg, rgba(5, 106, 150, 0.1), rgba(6, 167, 207, 0.2));
+        color: #056a96;
+    }
+    
+    .notification-date {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    
+    .notification-title {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #056a96;
+    }
+    
+    .notification-message {
+        color: #495057;
+        line-height: 1.5;
+    }
+    
+    .mark-read-btn {
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .notification-card:hover .mark-read-btn {
+        opacity: 1;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 5rem;
+        margin-bottom: 1.5rem;
+        opacity: 0.3;
+        color: #056a96;
+    }
+    
+    .page-header {
+        background: linear-gradient(135deg, #056a96, #06a7cf);
+        color: white;
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, rgba(5, 106, 150, 0.05), rgba(6, 167, 207, 0.1));
+        border: 1px solid rgba(5, 106, 150, 0.1);
+        border-radius: 10px;
+        padding: 1.5rem;
+        text-align: center;
+    }
+    
+    .stats-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #056a96;
+    }
+    
+    .stats-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2><i class="fas fa-bell me-2"></i>Mis Notificaciones</h2>
+                <p class="mb-0">Mantente al día con tus calificaciones y asignaciones</p>
+            </div>
+            <div class="d-flex align-items-center">
+                {% if notificaciones_no_leidas > 0 %}
+                    <button class="btn btn-light me-3" onclick="marcarTodasLeidas()">
+                        <i class="fas fa-check-double me-1"></i>
+                        Marcar todas como leídas
+                    </button>
+                {% endif %}
+                <span class="badge bg-warning fs-6">{{ notificaciones_no_leidas }} sin leer</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Estadísticas rápidas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number">{{ notificaciones_no_leidas }}</div>
+                <div class="stats-label">Sin leer</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number">{{ total_notificaciones }}</div>
+                <div class="stats-label">Total</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number">{{ calificaciones_recibidas }}</div>
+                <div class="stats-label">Calificaciones</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number">{{ servicios_asignados }}</div>
+                <div class="stats-label">Servicios</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lista de notificaciones -->
+    <div class="row">
+        <div class="col-12">
+            {% if notificaciones %}
+                {% for notificacion in notificaciones %}
+                    <div class="card notification-card {% if not notificacion.leida %}unread{% else %}read{% endif %}" 
+                         id="notification-{{ notificacion.id }}">
+                        <div class="card-body">
+                            <div class="d-flex align-items-start">
+                                <div class="notification-icon 
+                                    {% if notificacion.tipo == 'CALIFICACION_RECIBIDA' %}calificacion-recibida
+                                    {% elif notificacion.tipo == 'SERVICIO_ASIGNADO' %}servicio-asignado
+                                    {% else %}general{% endif %}">
+                                    {% if notificacion.tipo == 'CALIFICACION_RECIBIDA' %}
+                                        <i class="fas fa-star"></i>
+                                    {% elif notificacion.tipo == 'SERVICIO_ASIGNADO' %}
+                                        <i class="fas fa-tasks"></i>
+                                    {% else %}
+                                        <i class="fas fa-info-circle"></i>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="notification-title">{{ notificacion.titulo }}</h6>
+                                            <p class="notification-message mb-2">{{ notificacion.mensaje|safe }}</p>
+                                            <small class="notification-date">
+                                                <i class="fas fa-clock me-1"></i>
+                                                {{ notificacion.fecha_creacion|date:"d/m/Y H:i" }}
+                                            </small>
+                                        </div>
+                                        
+                                        <div class="d-flex align-items-center">
+                                            {% if not notificacion.leida %}
+                                                <button class="btn btn-sm btn-outline-success mark-read-btn me-2" 
+                                                        onclick="marcarComoLeida({{ notificacion.id }})"
+                                                        title="Marcar como leída">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            {% endif %}
+                                            
+                                            {% if notificacion.tipo == 'CALIFICACION_RECIBIDA' %}
+                                                <span class="badge bg-warning">
+                                                    <i class="fas fa-star me-1"></i>
+                                                    Calificación
+                                                </span>
+                                            {% elif notificacion.tipo == 'SERVICIO_ASIGNADO' %}
+                                                <span class="badge bg-info">
+                                                    <i class="fas fa-tasks me-1"></i>
+                                                    Servicio
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+                
+                <!-- Paginación -->
+                {% if is_paginated %}
+                    <nav aria-label="Paginación de notificaciones">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1">&laquo; Primera</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                                </li>
+                            {% endif %}
+                            
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                </span>
+                            </li>
+                            
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última &raquo;</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-bell-slash"></i>
+                    <h4>No tienes notificaciones</h4>
+                    <p>Cuando recibas calificaciones o se te asignen servicios, aparecerán aquí.</p>
+                    <a href="{% url 'empleados_dashboard:dashboard' %}" class="btn btn-primary">
+                        <i class="fas fa-arrow-left me-1"></i>
+                        Volver al Dashboard
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function marcarComoLeida(notificacionId) {
+        $.post(`/notificaciones/api/marcar-leida/${notificacionId}/`, {
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+        }, function(data) {
+            if (data.success) {
+                const card = $(`#notification-${notificacionId}`);
+                card.removeClass('unread').addClass('read');
+                card.find('.mark-read-btn').fadeOut();
+                
+                // Actualizar contadores
+                updateCounters(-1);
+                
+                // Mostrar mensaje de éxito
+                showToast('Notificación marcada como leída', 'success');
+            }
+        }).fail(function() {
+            showToast('Error al marcar la notificación', 'error');
+        });
+    }
+    
+    function marcarTodasLeidas() {
+        $.post('/notificaciones/api/marcar-todas-leidas/', {
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+        }, function(data) {
+            if (data.success) {
+                $('.notification-card.unread').removeClass('unread').addClass('read');
+                $('.mark-read-btn').fadeOut();
+                
+                // Actualizar contadores a 0
+                const unreadCount = $('.notification-card.unread').length;
+                updateCounters(-unreadCount);
+                
+                $('.btn:contains("Marcar todas como leídas")').fadeOut();
+                
+                showToast('Todas las notificaciones marcadas como leídas', 'success');
+            }
+        }).fail(function() {
+            showToast('Error al marcar las notificaciones', 'error');
+        });
+    }
+    
+    function updateCounters(change) {
+        // Actualizar badge principal
+        const badge = $('.badge.bg-warning');
+        const currentCount = parseInt(badge.text().split(' ')[0]);
+        const newCount = Math.max(0, currentCount + change);
+        badge.text(`${newCount} sin leer`);
+        
+        // Actualizar estadística
+        const statsNumber = $('.stats-card .stats-number').first();
+        statsNumber.text(newCount);
+        
+        // Actualizar badges del sidebar y header
+        if (typeof cargarContadorNotificacionesEmpleado === 'function') {
+            setTimeout(cargarContadorNotificacionesEmpleado, 500);
+        }
+    }
+    
+    function showToast(message, type) {
+        const toastClass = type === 'success' ? 'bg-success' : 'bg-danger';
+        const toast = $(`
+            <div class="toast align-items-center text-white ${toastClass} border-0" role="alert" aria-live="assertive" aria-atomic="true" style="position: fixed; top: 20px; right: 20px; z-index: 9999;">
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `);
+        
+        $('body').append(toast);
+        const bsToast = new bootstrap.Toast(toast[0]);
+        bsToast.show();
+        
+        toast.on('hidden.bs.toast', function() {
+            toast.remove();
+        });
+    }
+</script>
+{% endblock %}

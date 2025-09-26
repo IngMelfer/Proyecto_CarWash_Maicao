@@ -351,6 +351,13 @@
                     <span>Bonificaciones</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a href="{% url 'notificaciones:lavador_notificaciones' %}" class="nav-link {% if 'notificaciones' in request.resolver_match.url_name %}active{% endif %}">
+                    <i class="fas fa-bell"></i>
+                    <span>Notificaciones</span>
+                    <span class="notification-badge" id="notificaciones-badge-sidebar" style="display: none;"></span>
+                </a>
+            </li>
             <li class="nav-item mt-4">
                 <a href="{% url 'autenticacion:logout' %}" class="nav-link">
                     <i class="fas fa-sign-out-alt"></i>
@@ -369,6 +376,25 @@
             </button>
             
             <div class="user-info">
+                <!-- Dropdown de Notificaciones -->
+                <div class="dropdown me-3">
+                    <button class="btn btn-outline-primary dropdown-toggle position-relative" type="button" id="notificacionesDropdownEmpleado" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-bell"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notificaciones-badge-empleado" style="display: none;">
+                            0
+                        </span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificacionesDropdownEmpleado" style="width: 350px; max-height: 400px; overflow-y: auto;">
+                        <li><h6 class="dropdown-header">Notificaciones</h6></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <div id="notificaciones-lista-empleado">
+                            <li><span class="dropdown-item-text text-muted">Cargando...</span></li>
+                        </div>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-center" href="{% url 'notificaciones:lavador_notificaciones' %}">Ver todas las notificaciones</a></li>
+                    </ul>
+                </div>
+                
                 {% if empleado.fotografia %}
                     <img src="{{ empleado.fotografia.url }}" alt="Avatar" class="user-avatar">
                 {% else %}
@@ -390,6 +416,100 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Sistema de Notificaciones para Empleados -->
+    <script>
+        $(document).ready(function() {
+            // Función para cargar el contador de notificaciones del empleado
+            function cargarContadorNotificacionesEmpleado() {
+                {% if user.is_authenticated %}
+                $.get('{% url "notificaciones:contador_api" %}', function(data) {
+                    const badge = $('#notificaciones-badge-empleado');
+                    const badgeSidebar = $('#notificaciones-badge-sidebar');
+                    
+                    if (data.count > 0) {
+                        badge.text(data.count).show();
+                        badgeSidebar.text(data.count).show();
+                    } else {
+                        badge.hide();
+                        badgeSidebar.hide();
+                    }
+                }).fail(function() {
+                    console.log('Error al cargar contador de notificaciones del empleado');
+                });
+                {% endif %}
+            }
+            
+            // Función para cargar notificaciones del dropdown del empleado
+            function cargarNotificacionesDropdownEmpleado() {
+                {% if user.is_authenticated %}
+                $.get('{% url "notificaciones:dropdown_api" %}', function(data) {
+                    const lista = $('#notificaciones-lista-empleado');
+                    lista.empty();
+                    
+                    if (data.notificaciones.length === 0) {
+                        lista.append('<li><span class="dropdown-item-text text-muted">No hay notificaciones</span></li>');
+                    } else {
+                        data.notificaciones.forEach(function(notif) {
+                            const leida = notif.leida ? '' : 'fw-bold';
+                            let icono = 'fas fa-info-circle text-primary';
+                            
+                            // Iconos específicos para empleados
+                            if (notif.tipo === 'CALIFICACION_RECIBIDA') {
+                                icono = 'fas fa-star text-warning';
+                            } else if (notif.tipo === 'SERVICIO_ASIGNADO') {
+                                icono = 'fas fa-tasks text-info';
+                            }
+                            
+                            const item = `
+                                <li>
+                                    <a class="dropdown-item ${leida}" href="#" onclick="marcarComoLeidaEmpleado(${notif.id})">
+                                        <div class="d-flex align-items-start">
+                                            <i class="${icono} me-2 mt-1"></i>
+                                            <div class="flex-grow-1">
+                                                <div class="fw-bold">${notif.titulo}</div>
+                                                <div class="small text-muted">${notif.mensaje}</div>
+                                                <div class="small text-muted">${notif.fecha}</div>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </li>
+                            `;
+                            lista.append(item);
+                        });
+                    }
+                }).fail(function() {
+                    $('#notificaciones-lista-empleado').html('<li><span class="dropdown-item-text text-danger">Error al cargar notificaciones</span></li>');
+                });
+                {% endif %}
+            }
+            
+            // Función para marcar notificación como leída (empleado)
+            window.marcarComoLeidaEmpleado = function(notificacionId) {
+                $.post(`/notificaciones/api/marcar-leida/${notificacionId}/`, {
+                    'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+                }, function(data) {
+                    if (data.success) {
+                        // Actualizar contador después de marcar como leída
+                        setTimeout(cargarContadorNotificacionesEmpleado, 500);
+                    }
+                });
+            };
+            
+            // Cargar notificaciones cuando se abre el dropdown del empleado
+            $('#notificacionesDropdownEmpleado').on('click', function() {
+                cargarNotificacionesDropdownEmpleado();
+            });
+            
+            // Cargar contador inicial del empleado
+            cargarContadorNotificacionesEmpleado();
+            
+            // Actualizar contador cada 30 segundos
+            setInterval(cargarContadorNotificacionesEmpleado, 30000);
+        });
+    </script>
     
     <script>
         function toggleSidebar() {

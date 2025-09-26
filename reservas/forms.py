@@ -5,15 +5,34 @@ from clientes.models import Cliente
 class BahiaForm(forms.ModelForm):
     class Meta:
         model = Bahia
-        fields = ['nombre', 'descripcion', 'activo', 'tiene_camara', 'tipo_camara', 'ip_camara']
+        fields = ['nombre', 'descripcion', 'activo', 'tiene_camara', 'tipo_camara', 'ip_camara', 
+                 'ip_publica', 'puerto_externo', 'usuario_camara', 'password_camara', 'usar_ssl', 'activa_produccion']
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
             'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'activo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'tiene_camara': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'tipo_camara': forms.Select(attrs={'class': 'form-select'}),
-            'ip_camara': forms.TextInput(attrs={'class': 'form-control'}),
+            'ip_camara': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 192.168.1.100:8080'}),
+            'ip_publica': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: mi-dominio.com o 203.0.113.1'}),
+            'puerto_externo': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 8080'}),
+            'usuario_camara': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Usuario (opcional)'}),
+            'password_camara': forms.PasswordInput(attrs={'class': 'form-control', 'placeholder': 'Contraseña (opcional)'}),
+            'usar_ssl': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'activa_produccion': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Configurar etiquetas y ayudas específicas para los campos de cámara
+        self.fields['ip_camara'].help_text = 'IP local de la cámara (ej: 192.168.1.100:8080)'
+        self.fields['ip_publica'].help_text = 'IP pública o dominio para acceso desde internet (solo para producción)'
+        self.fields['puerto_externo'].help_text = 'Puerto configurado en el router para acceso externo'
+        self.fields['usuario_camara'].help_text = 'Usuario para autenticación (si la cámara lo requiere)'
+        self.fields['password_camara'].help_text = 'Contraseña para autenticación (si la cámara lo requiere)'
+        self.fields['usar_ssl'].help_text = 'Marcar si la cámara usa conexión HTTPS/SSL'
+        self.fields['activa_produccion'].help_text = 'Usar configuración de producción (IP pública) en lugar de local'
 
 class ServicioForm(forms.ModelForm):
     class Meta:

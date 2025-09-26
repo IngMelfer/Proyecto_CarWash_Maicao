@@ -94,12 +94,92 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="{{ form.ip_camara.id_for_label }}" class="form-label">IP de la Cámara:</label>
+                    <label for="{{ form.ip_camara.id_for_label }}" class="form-label">IP de la Cámara (Local):</label>
                     {{ form.ip_camara }}
-                    <small class="form-text text-muted">Ejemplo: 192.168.1.100 o rtsp://usuario:contraseña@192.168.1.100/stream</small>
+                    <small class="form-text text-muted">{{ form.ip_camara.help_text }}</small>
                     {% if form.ip_camara.errors %}
                         <div class="text-danger">{{ form.ip_camara.errors }}</div>
                     {% endif %}
+                </div>
+                
+                <!-- Configuración de Producción -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-cloud"></i> Configuración para Producción (PythonAnywhere)</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group form-check mb-3">
+                            {{ form.activa_produccion }}
+                            <label for="{{ form.activa_produccion.id_for_label }}" class="form-check-label">Activar configuración de producción</label>
+                            <small class="form-text text-muted d-block">{{ form.activa_produccion.help_text }}</small>
+                            {% if form.activa_produccion.errors %}
+                                <div class="text-danger">{{ form.activa_produccion.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div id="produccion-fields" style="display: none;">
+                            <div class="form-group mb-3">
+                                <label for="{{ form.ip_publica.id_for_label }}" class="form-label">IP Pública o Dominio:</label>
+                                {{ form.ip_publica }}
+                                <small class="form-text text-muted">{{ form.ip_publica.help_text }}</small>
+                                {% if form.ip_publica.errors %}
+                                    <div class="text-danger">{{ form.ip_publica.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-group mb-3">
+                                <label for="{{ form.puerto_externo.id_for_label }}" class="form-label">Puerto Externo:</label>
+                                {{ form.puerto_externo }}
+                                <small class="form-text text-muted">{{ form.puerto_externo.help_text }}</small>
+                                {% if form.puerto_externo.errors %}
+                                    <div class="text-danger">{{ form.puerto_externo.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label for="{{ form.usuario_camara.id_for_label }}" class="form-label">Usuario de la Cámara:</label>
+                                        {{ form.usuario_camara }}
+                                        <small class="form-text text-muted">{{ form.usuario_camara.help_text }}</small>
+                                        {% if form.usuario_camara.errors %}
+                                            <div class="text-danger">{{ form.usuario_camara.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label for="{{ form.password_camara.id_for_label }}" class="form-label">Contraseña de la Cámara:</label>
+                                        {{ form.password_camara }}
+                                        <small class="form-text text-muted">{{ form.password_camara.help_text }}</small>
+                                        {% if form.password_camara.errors %}
+                                            <div class="text-danger">{{ form.password_camara.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group form-check mb-3">
+                                {{ form.usar_ssl }}
+                                <label for="{{ form.usar_ssl.id_for_label }}" class="form-check-label">Usar HTTPS/SSL</label>
+                                <small class="form-text text-muted d-block">{{ form.usar_ssl.help_text }}</small>
+                                {% if form.usar_ssl.errors %}
+                                    <div class="text-danger">{{ form.usar_ssl.errors }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="alert alert-warning">
+                                <h6><i class="fas fa-exclamation-triangle"></i> Configuración para PythonAnywhere</h6>
+                                <p class="mb-2">Para que la cámara funcione en producción, necesita:</p>
+                                <ul class="mb-0">
+                                    <li><strong>IP Pública:</strong> Configure su router para tener una IP pública estática o use un servicio de DNS dinámico</li>
+                                    <li><strong>Port Forwarding:</strong> Configure su router para redirigir el puerto externo al puerto interno de la cámara</li>
+                                    <li><strong>Firewall:</strong> Asegúrese de que el puerto esté abierto en su firewall</li>
+                                    <li><strong>Alternativa:</strong> Use un túnel seguro como ngrok o similar</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="alert alert-info mt-3">
@@ -174,6 +254,14 @@
                 </div>
             </div>
             
+            <!-- Botón para probar conectividad -->
+            <div class="form-group">
+                <button type="button" id="probar-camara-btn" class="btn btn-info btn-sm">
+                    <i class="fas fa-wifi"></i> Probar Conectividad
+                </button>
+                <div id="resultado-prueba" class="mt-2"></div>
+            </div>
+            
             <div class="mt-4 d-flex justify-content-between">
                 <a href="{% url 'reservas:bahia_list' %}" class="btn btn-secondary">Cancelar</a>
                 <button type="submit" class="btn btn-primary">Guardar</button>
@@ -189,6 +277,8 @@
         const tieneCamaraCheckbox = document.getElementById('{{ form.tiene_camara.id_for_label }}');
         const cameraOptions = document.getElementById('camera-options');
         const tipoCamaraContainer = document.getElementById('tipo_camara_container');
+        const probarCamaraBtn = document.getElementById('probar-camara-btn');
+        const resultadoPrueba = document.getElementById('resultado-prueba');
         
         // Función para mostrar/ocultar opciones de cámara
         function toggleCameraOptions() {
@@ -206,6 +296,24 @@
         
         // Escuchar cambios en el checkbox
         tieneCamaraCheckbox.addEventListener('change', toggleCameraOptions);
+        
+        // Manejar la visibilidad de los campos de producción
+        const activaProduccionCheckbox = document.getElementById('{{ form.activa_produccion.id_for_label }}');
+        const produccionFields = document.getElementById('produccion-fields');
+        
+        function toggleProduccionFields() {
+            if (activaProduccionCheckbox && activaProduccionCheckbox.checked) {
+                produccionFields.style.display = 'block';
+            } else {
+                produccionFields.style.display = 'none';
+            }
+        }
+        
+        // Inicializar estado de campos de producción
+        if (activaProduccionCheckbox) {
+            toggleProduccionFields();
+            activaProduccionCheckbox.addEventListener('change', toggleProduccionFields);
+        }
         
         // Actualizar el placeholder del campo IP según el tipo de cámara seleccionado
         const tipoCamaraSelect = document.getElementById('{{ form.tipo_camara.id_for_label }}');
@@ -235,12 +343,78 @@
             }
         }
         
+        // Función para probar conectividad de la cámara
+        function probarConectividad() {
+            const formData = {
+                tipo_camara: tipoCamaraSelect.value,
+                ip_camara: ipCamaraInput.value,
+                ip_publica: document.getElementById('{{ form.ip_publica.id_for_label }}').value,
+                puerto_externo: document.getElementById('{{ form.puerto_externo.id_for_label }}').value,
+                usuario_camara: document.getElementById('{{ form.usuario_camara.id_for_label }}').value,
+                password_camara: document.getElementById('{{ form.password_camara.id_for_label }}').value,
+                usar_ssl: document.getElementById('{{ form.usar_ssl.id_for_label }}').checked,
+                activa_produccion: activaProduccionCheckbox.checked
+            };
+
+            // Mostrar indicador de carga
+            probarCamaraBtn.disabled = true;
+            probarCamaraBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Probando...';
+            resultadoPrueba.innerHTML = '';
+
+            // Realizar petición AJAX
+            fetch('{% url "reservas:probar_conectividad_camara" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                let alertClass = data.success ? 'alert-success' : 'alert-danger';
+                let icon = data.success ? 'fa-check-circle' : 'fa-exclamation-triangle';
+                
+                let html = `
+                    <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                        <i class="fas ${icon}"></i> ${data.message}
+                        ${data.url ? `<br><small><strong>URL:</strong> ${data.url}</small>` : ''}
+                        ${data.note ? `<br><small><strong>Nota:</strong> ${data.note}</small>` : ''}
+                        <button type="button" class="close" data-dismiss="alert">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                `;
+                
+                resultadoPrueba.innerHTML = html;
+            })
+            .catch(error => {
+                resultadoPrueba.innerHTML = `
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-triangle"></i> Error al probar la conectividad: ${error.message}
+                        <button type="button" class="close" data-dismiss="alert">
+                            <span>&times;</span>
+                        </button>
+                    </div>
+                `;
+            })
+            .finally(() => {
+                probarCamaraBtn.disabled = false;
+                probarCamaraBtn.innerHTML = '<i class="fas fa-wifi"></i> Probar Conectividad';
+            });
+        }
+        
         // Inicializar el placeholder
         if (tipoCamaraSelect) {
             updateIpCamaraPlaceholder();
             
             // Escuchar cambios en el tipo de cámara
             tipoCamaraSelect.addEventListener('change', updateIpCamaraPlaceholder);
+        }
+        
+        // Event listener para el botón de probar conectividad
+        if (probarCamaraBtn) {
+            probarCamaraBtn.addEventListener('click', probarConectividad);
         }
     });
 </script>

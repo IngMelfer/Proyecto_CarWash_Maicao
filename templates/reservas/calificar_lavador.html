@@ -1,0 +1,299 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Calificar Servicio - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .rating-stars {
+        font-size: 2rem;
+        color: #ddd;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+    
+    .rating-stars.active,
+    .rating-stars:hover {
+        color: #ffc107;
+    }
+    
+    .rating-container {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        margin: 1rem 0;
+    }
+    
+    .service-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .lavador-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .btn-calificar {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 25px;
+        padding: 12px 30px;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn-calificar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        color: white;
+    }
+    
+    .btn-calificar:disabled {
+        opacity: 0.6;
+        transform: none;
+        box-shadow: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <!-- Información del Servicio -->
+            <div class="service-card text-center">
+                <h2><i class="fas fa-star me-2"></i>¡Califica tu Experiencia!</h2>
+                <p class="mb-0">Tu opinión nos ayuda a mejorar nuestros servicios</p>
+            </div>
+            
+            <!-- Información del Lavador -->
+            <div class="lavador-card">
+                <div class="row align-items-center">
+                    <div class="col-md-3 text-center">
+                        {% if lavador.foto %}
+                            <img src="{{ lavador.foto.url }}" alt="{{ lavador.usuario.get_full_name }}" 
+                                 class="img-fluid rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
+                        {% else %}
+                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" 
+                                 style="width: 100px; height: 100px; margin: 0 auto;">
+                                <i class="fas fa-user fa-2x text-white"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-9">
+                        <h4 class="mb-1">{{ lavador.usuario.get_full_name }}</h4>
+                        <p class="text-muted mb-2">
+                            <i class="fas fa-briefcase me-1"></i>
+                            Lavador Profesional
+                        </p>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    Servicio: {{ servicio.nombre }}
+                                </small>
+                            </div>
+                            <div class="col-sm-6">
+                                <small class="text-muted">
+                                    <i class="fas fa-clock me-1"></i>
+                                    Fecha: {{ reserva.fecha_hora|date:"d/m/Y H:i" }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Formulario de Calificación -->
+            <div class="card">
+                <div class="card-body">
+                    <form id="calificacionForm" method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Calificación con Estrellas -->
+                        <div class="mb-4">
+                            <label class="form-label text-center d-block">
+                                <strong>¿Cómo calificarías el servicio?</strong>
+                            </label>
+                            <div class="rating-container">
+                                <i class="fas fa-star rating-stars" data-rating="1"></i>
+                                <i class="fas fa-star rating-stars" data-rating="2"></i>
+                                <i class="fas fa-star rating-stars" data-rating="3"></i>
+                                <i class="fas fa-star rating-stars" data-rating="4"></i>
+                                <i class="fas fa-star rating-stars" data-rating="5"></i>
+                            </div>
+                            <input type="hidden" id="puntuacion" name="puntuacion" value="0" required>
+                            <div class="text-center">
+                                <small id="rating-text" class="text-muted">Selecciona una calificación</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Comentario -->
+                        <div class="mb-4">
+                            <label for="comentario" class="form-label">
+                                <strong>Cuéntanos más sobre tu experiencia (opcional)</strong>
+                            </label>
+                            <textarea class="form-control" id="comentario" name="comentario" rows="4" 
+                                      placeholder="¿Qué te pareció el servicio? ¿Algo que destacar del lavador?"></textarea>
+                            <div class="form-text">Tu comentario ayudará a otros clientes y al lavador a mejorar.</div>
+                        </div>
+                        
+                        <!-- Botones -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                            <button type="submit" class="btn btn-calificar" id="btnCalificar" disabled>
+                                <i class="fas fa-paper-plane me-2"></i>
+                                Enviar Calificación
+                            </button>
+                            <a href="{% url 'clientes:dashboard' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                Volver al Dashboard
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div class="modal fade" id="confirmacionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle text-success me-2"></i>
+                    ¡Calificación Enviada!
+                </h5>
+            </div>
+            <div class="modal-body text-center">
+                <p id="mensajeConfirmacion"></p>
+                <i class="fas fa-heart text-danger fa-2x"></i>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="btnCerrarModal">
+                    Ir al Dashboard
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const stars = document.querySelectorAll('.rating-stars');
+    const puntuacionInput = document.getElementById('puntuacion');
+    const ratingText = document.getElementById('rating-text');
+    const btnCalificar = document.getElementById('btnCalificar');
+    const form = document.getElementById('calificacionForm');
+    
+    const ratingTexts = {
+        1: 'Muy malo',
+        2: 'Malo',
+        3: 'Regular',
+        4: 'Bueno',
+        5: 'Excelente'
+    };
+    
+    // Manejar hover y click en las estrellas
+    stars.forEach((star, index) => {
+        star.addEventListener('mouseenter', function() {
+            highlightStars(index + 1);
+        });
+        
+        star.addEventListener('click', function() {
+            const rating = parseInt(this.dataset.rating);
+            puntuacionInput.value = rating;
+            ratingText.textContent = ratingTexts[rating];
+            btnCalificar.disabled = false;
+            
+            // Mantener las estrellas activas
+            stars.forEach((s, i) => {
+                if (i < rating) {
+                    s.classList.add('active');
+                } else {
+                    s.classList.remove('active');
+                }
+            });
+        });
+    });
+    
+    // Restaurar estrellas al salir del hover
+    document.querySelector('.rating-container').addEventListener('mouseleave', function() {
+        const currentRating = parseInt(puntuacionInput.value);
+        if (currentRating > 0) {
+            highlightStars(currentRating);
+        } else {
+            stars.forEach(star => star.classList.remove('active'));
+        }
+    });
+    
+    function highlightStars(rating) {
+        stars.forEach((star, index) => {
+            if (index < rating) {
+                star.classList.add('active');
+            } else {
+                star.classList.remove('active');
+            }
+        });
+    }
+    
+    // Manejar envío del formulario
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const rating = parseInt(puntuacionInput.value);
+        if (rating === 0) {
+            alert('Por favor, selecciona una calificación.');
+            return;
+        }
+        
+        btnCalificar.disabled = true;
+        btnCalificar.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Enviando...';
+        
+        const formData = new FormData(form);
+        
+        fetch(form.action || window.location.href, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('mensajeConfirmacion').textContent = data.message;
+                const modal = new bootstrap.Modal(document.getElementById('confirmacionModal'));
+                modal.show();
+                
+                // Redirigir después de cerrar el modal
+                document.getElementById('btnCerrarModal').addEventListener('click', function() {
+                    window.location.href = data.redirect_url;
+                });
+            } else {
+                alert('Error: ' + data.error);
+                btnCalificar.disabled = false;
+                btnCalificar.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Enviar Calificación';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Ocurrió un error al enviar la calificación. Por favor, inténtalo de nuevo.');
+            btnCalificar.disabled = false;
+            btnCalificar.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Enviar Calificación';
+        });
+    });
+});
+</script>
+{% endblock %}

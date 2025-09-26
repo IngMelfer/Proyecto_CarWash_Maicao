@@ -1300,7 +1300,6 @@ class MisTurnosView(LoginRequiredMixin, TemplateView):
         # Obtener reservas del cliente
         proximas = Reserva.objects.filter(
             cliente=cliente,
-            fecha_hora__gte=timezone.now(),
             estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA]
         ).order_by('fecha_hora')
         
@@ -2524,3 +2523,143 @@ class CrearVehiculoView(LoginRequiredMixin, View):
         except Exception as e:
             messages.error(request, f'Error al registrar el vehículo: {str(e)}')
             return redirect('reservas:crear_vehiculo')
+
+
+class ProbarConectividadCamaraView(LoginRequiredMixin, View):
+    """
+    Vista para probar la conectividad de una cámara IP.
+    """
+    def post(self, request, *args, **kwargs):
+        try:
+            # Obtener datos del formulario
+            data = json.loads(request.body)
+            
+            # Obtener configuración de la cámara
+            tipo_camara = data.get('tipo_camara', 'ipwebcam')
+            ip_camara = data.get('ip_camara', '')
+            ip_publica = data.get('ip_publica', '')
+            puerto_externo = data.get('puerto_externo')
+            usuario_camara = data.get('usuario_camara', '')
+            password_camara = data.get('password_camara', '')
+            usar_ssl = data.get('usar_ssl', False)
+            activa_produccion = data.get('activa_produccion', False)
+            
+            if not ip_camara:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Debe proporcionar una IP de cámara'
+                })
+            
+            # Construir URL de prueba similar al método get_camera_url del modelo
+            if activa_produccion and ip_publica:
+                base_ip = ip_publica
+                puerto = puerto_externo if puerto_externo else 8080
+            else:
+                base_ip = ip_camara
+                puerto = None
+                
+            # Si la URL ya incluye protocolo, usarla directamente
+            if base_ip.startswith(('http://', 'https://', 'rtsp://')):
+                test_url = base_ip
+            else:
+                # Determinar protocolo
+                protocolo = 'https' if usar_ssl else 'http'
+                
+                # Construir URL con autenticación si es necesaria
+                auth_string = ""
+                if usuario_camara and password_camara:
+                    auth_string = f"{usuario_camara}:{password_camara}@"
+                    
+                # Generar URL según el tipo de cámara
+                if tipo_camara == 'droidcam':
+                    if puerto:
+                        test_url = f"{protocolo}://{auth_string}{base_ip}:{puerto}/video"
+                    elif '/video' in base_ip:
+                        test_url = f"{protocolo}://{auth_string}{base_ip}"
+                    else:
+                        test_url = f"{protocolo}://{auth_string}{base_ip}/video"
+                        
+                elif tipo_camara == 'ipwebcam':
+                    if puerto:
+                        test_url = f"{protocolo}://{auth_string}{base_ip}:{puerto}/video"
+                    elif '/video' in base_ip:
+                        test_url = f"{protocolo}://{auth_string}{base_ip}"
+                    else:
+                        test_url = f"{protocolo}://{auth_string}{base_ip}/video"
+                        
+                elif tipo_camara == 'iriun':
+                    if puerto:
+                        test_url = f"{protocolo}://{auth_string}{base_ip}:{puerto}"
+                    else:
+                        test_url = f"{protocolo}://{auth_string}{base_ip}"
+                        
+                elif tipo_camara == 'rtsp':
+                    if puerto:
+                        test_url = f"rtsp://{auth_string}{base_ip}:{puerto}"
+                    else:
+                        test_url = f"rtsp://{auth_string}{base_ip}"
+                        
+                else:  # http y otros tipos
+                    if puerto:
+                        test_url = f"{protocolo}://{auth_string}{base_ip}:{puerto}"
+                    else:
+                        test_url = f"{protocolo}://{auth_string}{base_ip}"
+            
+            # Probar conectividad
+            try:
+                if test_url.startswith('rtsp://'):
+                    # Para RTSP, solo verificamos que la URL esté bien formada
+                    return JsonResponse({
+                        'success': True,
+                        'message': f'URL RTSP generada correctamente: {test_url}',
+                        'url': test_url,
+                        'note': 'No se puede probar conectividad RTSP desde el navegador. Verifique manualmente con un reproductor de video.'
+                    })
+                else:
+                    # Para HTTP/HTTPS, hacer una petición HEAD
+                    response = requests.head(test_url, timeout=10, allow_redirects=True)
+                    
+                    if response.status_code == 200:
+                        return JsonResponse({
+                            'success': True,
+                            'message': f'Conexión exitosa a la cámara',
+                            'url': test_url,
+                            'status_code': response.status_code
+                        })
+                    else:
+                        return JsonResponse({
+                            'success': False,
+                            'message': f'La cámara respondió con código {response.status_code}',
+                            'url': test_url,
+                            'status_code': response.status_code
+                        })
+                        
+            except requests.exceptions.Timeout:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Tiempo de espera agotado. Verifique que la cámara esté encendida y accesible.',
+                    'url': test_url
+                })
+            except requests.exceptions.ConnectionError:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'No se pudo conectar a la cámara. Verifique la IP y el puerto.',
+                    'url': test_url
+                })
+            except Exception as e:
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Error al probar la conexión: {str(e)}',
+                    'url': test_url
+                })
+                
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'message': 'Datos JSON inválidos'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error interno: {str(e)}'
+            })

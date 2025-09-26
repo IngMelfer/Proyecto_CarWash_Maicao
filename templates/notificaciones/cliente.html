@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mis Notificaciones - CarWash Maicao{% endblock %}
+
+{% block extra_css %}
+<style>
+    .notification-card {
+        border-left: 4px solid #007bff;
+        transition: all 0.3s ease;
+        margin-bottom: 1rem;
+    }
+    
+    .notification-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .notification-card.unread {
+        background-color: #f8f9fa;
+        border-left-color: #28a745;
+    }
+    
+    .notification-card.read {
+        border-left-color: #6c757d;
+    }
+    
+    .notification-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+    }
+    
+    .notification-icon.servicio-finalizado {
+        background-color: rgba(40, 167, 69, 0.1);
+        color: #28a745;
+    }
+    
+    .notification-icon.general {
+        background-color: rgba(0, 123, 255, 0.1);
+        color: #007bff;
+    }
+    
+    .notification-date {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    
+    .notification-title {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .notification-message {
+        color: #495057;
+        line-height: 1.5;
+    }
+    
+    .mark-read-btn {
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .notification-card:hover .mark-read-btn {
+        opacity: 1;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #6c757d;
+    }
+    
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-bell me-2"></i>Mis Notificaciones</h2>
+                <div>
+                    {% if notificaciones_no_leidas > 0 %}
+                        <button class="btn btn-outline-primary me-2" onclick="marcarTodasLeidas()">
+                            <i class="fas fa-check-double me-1"></i>
+                            Marcar todas como leídas
+                        </button>
+                    {% endif %}
+                    <span class="badge bg-primary">{{ notificaciones_no_leidas }} sin leer</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            {% if notificaciones %}
+                {% for notificacion in notificaciones %}
+                    <div class="card notification-card {% if not notificacion.leida %}unread{% else %}read{% endif %}" 
+                         id="notification-{{ notificacion.id }}">
+                        <div class="card-body">
+                            <div class="d-flex align-items-start">
+                                <div class="notification-icon {% if notificacion.tipo == 'SERVICIO_FINALIZADO' %}servicio-finalizado{% else %}general{% endif %}">
+                                    {% if notificacion.tipo == 'SERVICIO_FINALIZADO' %}
+                                        <i class="fas fa-check-circle"></i>
+                                    {% else %}
+                                        <i class="fas fa-info-circle"></i>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="notification-title">{{ notificacion.titulo }}</h6>
+                                            <p class="notification-message mb-2">{{ notificacion.mensaje|safe }}</p>
+                                            <small class="notification-date">
+                                                <i class="fas fa-clock me-1"></i>
+                                                {{ notificacion.fecha_creacion|date:"d/m/Y H:i" }}
+                                            </small>
+                                        </div>
+                                        
+                                        <div class="d-flex align-items-center">
+                                            {% if not notificacion.leida %}
+                                                <button class="btn btn-sm btn-outline-success mark-read-btn me-2" 
+                                                        onclick="marcarComoLeida({{ notificacion.id }})"
+                                                        title="Marcar como leída">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            {% endif %}
+                                            
+                                            {% if notificacion.tipo == 'SERVICIO_FINALIZADO' and notificacion.reserva %}
+                                                <a href="{% url 'reservas:calificar_lavador' notificacion.reserva.id %}" 
+                                                   class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-star me-1"></i>
+                                                    Calificar
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+                
+                <!-- Paginación -->
+                {% if is_paginated %}
+                    <nav aria-label="Paginación de notificaciones">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1">&laquo; Primera</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                                </li>
+                            {% endif %}
+                            
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                </span>
+                            </li>
+                            
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última &raquo;</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-bell-slash"></i>
+                    <h4>No tienes notificaciones</h4>
+                    <p>Cuando tengas nuevas notificaciones, aparecerán aquí.</p>
+                    <a href="{% url 'clientes:dashboard' %}" class="btn btn-primary">
+                        <i class="fas fa-arrow-left me-1"></i>
+                        Volver al Dashboard
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function marcarComoLeida(notificacionId) {
+        $.post(`/notificaciones/api/marcar-leida/${notificacionId}/`, {
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+        }, function(data) {
+            if (data.success) {
+                const card = $(`#notification-${notificacionId}`);
+                card.removeClass('unread').addClass('read');
+                card.find('.mark-read-btn').fadeOut();
+                
+                // Actualizar contador
+                const badge = $('.badge.bg-primary');
+                const currentCount = parseInt(badge.text().split(' ')[0]);
+                if (currentCount > 1) {
+                    badge.text(`${currentCount - 1} sin leer`);
+                } else {
+                    badge.text('0 sin leer');
+                    $('.btn:contains("Marcar todas como leídas")').fadeOut();
+                }
+                
+                // Mostrar mensaje de éxito
+                showToast('Notificación marcada como leída', 'success');
+            }
+        }).fail(function() {
+            showToast('Error al marcar la notificación', 'error');
+        });
+    }
+    
+    function marcarTodasLeidas() {
+        $.post('/notificaciones/api/marcar-todas-leidas/', {
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+        }, function(data) {
+            if (data.success) {
+                $('.notification-card.unread').removeClass('unread').addClass('read');
+                $('.mark-read-btn').fadeOut();
+                $('.badge.bg-primary').text('0 sin leer');
+                $('.btn:contains("Marcar todas como leídas")').fadeOut();
+                
+                showToast('Todas las notificaciones marcadas como leídas', 'success');
+            }
+        }).fail(function() {
+            showToast('Error al marcar las notificaciones', 'error');
+        });
+    }
+    
+    function showToast(message, type) {
+        const toastClass = type === 'success' ? 'bg-success' : 'bg-danger';
+        const toast = $(`
+            <div class="toast align-items-center text-white ${toastClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `);
+        
+        $('body').append(toast);
+        const bsToast = new bootstrap.Toast(toast[0]);
+        bsToast.show();
+        
+        toast.on('hidden.bs.toast', function() {
+            toast.remove();
+        });
+    }
+</script>
+{% endblock %}

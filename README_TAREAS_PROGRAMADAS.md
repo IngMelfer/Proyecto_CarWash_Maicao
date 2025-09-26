@@ -24,7 +24,18 @@ Este documento describe las tareas programadas implementadas en el sistema de au
 - [Instrucciones para Windows](scripts/INSTRUCCIONES_TAREA_PROGRAMADA_DETALLADAS.md)
 - [Instrucciones para PythonAnywhere](scripts/INSTRUCCIONES_PYTHONANYWHERE_DETALLADAS.md)
 
-### 2. Verificación de Reservas Vencidas
+### 2. Cancelación de Reservas Vencidas
+
+**Propósito:** Cancelar automáticamente las reservas que han pasado su fecha y hora programada y siguen en estado PENDIENTE o CONFIRMADA, liberando los horarios reservados.
+
+**Comando Django:** `python manage.py cancelar_reservas_vencidas [--dry-run] [--horas=2]`
+
+**Archivos relacionados:**
+- Comando: `reservas/management/commands/cancelar_reservas_vencidas.py`
+
+**Frecuencia recomendada:** Cada 15 minutos
+
+### 3. Verificación de Reservas Vencidas
 
 **Propósito:** Identificar y marcar como INCUMPLIDAS las reservas que ya pasaron su fecha y hora programada y no fueron completadas.
 
@@ -84,6 +95,9 @@ Consulte [Instrucciones detalladas para PythonAnywhere](scripts/INSTRUCCIONES_PY
    ```
    # Cancelar reservas sin pago cada 5 minutos
    */5 * * * * cd /ruta/a/autolavados-plataforma && python manage.py cancelar_reservas_sin_pago
+   
+   # Cancelar reservas vencidas cada 15 minutos
+   */15 * * * * cd /ruta/a/autolavados-plataforma && python manage.py cancelar_reservas_vencidas
    
    # Verificar reservas vencidas cada hora
    0 * * * * cd /ruta/a/autolavados-plataforma && python manage.py verificar_reservas_vencidas

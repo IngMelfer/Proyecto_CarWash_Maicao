@@ -380,6 +380,7 @@ class Reserva(models.Model):
         Elimina el código QR si existe.
         Busca la siguiente reserva pendiente para esa bahía y la asigna automáticamente.
         Crea un registro en el historial de servicios del cliente.
+        Crea una notificación para que el cliente califique al lavador.
         """
         if self.estado == self.EN_PROCESO:
             self.estado = self.COMPLETADA
@@ -415,6 +416,31 @@ class Reserva(models.Model):
             
             # Acumular puntos al cliente
             self.cliente.acumular_puntos(self.servicio.puntos_otorgados)
+            
+            # Crear notificación para calificar al lavador
+            if self.lavador:
+                from notificaciones.models import Notificacion
+                from django.urls import reverse
+                
+                # Crear URL para calificar al lavador
+                url_calificacion = reverse('reservas:calificar_lavador', kwargs={'reserva_id': self.id})
+                
+                mensaje = f"""¡Tu servicio de {self.servicio.nombre} ha sido completado exitosamente!
+                
+Tu lavador {self.lavador.usuario.get_full_name()} ha terminado el servicio. 
+¿Qué tal estuvo? Tu opinión es muy importante para nosotros.
+
+Haz clic aquí para calificar el servicio: {url_calificacion}
+
+¡Gracias por confiar en nosotros!"""
+                
+                Notificacion.objects.create(
+                    cliente=self.cliente,
+                    reserva=self,
+                    tipo=Notificacion.SERVICIO_FINALIZADO,
+                    titulo=f'Servicio completado - ¡Califica tu experiencia!',
+                    mensaje=mensaje
+                )
             
             # Decrementar contador de reservas en el horario si existe
             horario = HorarioDisponible.objects.filter(
@@ -595,6 +621,15 @@ class Bahia(models.Model):
     tiene_camara = models.BooleanField(default=False, verbose_name=_('Tiene Cámara Web'))
     tipo_camara = models.CharField(max_length=20, choices=TIPO_CAMARA_CHOICES, default='ipwebcam', blank=True, null=True, verbose_name=_('Tipo de Cámara'))
     ip_camara = models.CharField(max_length=200, blank=True, null=True, verbose_name=_('URL/IP de la Cámara'))
+    
+    # Campos adicionales para configuración en producción
+    ip_publica = models.CharField(max_length=200, blank=True, null=True, verbose_name=_('IP Pública/Dominio'), help_text=_('IP pública o dominio para acceso desde internet'))
+    puerto_externo = models.PositiveIntegerField(blank=True, null=True, verbose_name=_('Puerto Externo'), help_text=_('Puerto configurado en el router para acceso externo'))
+    usuario_camara = models.CharField(max_length=50, blank=True, null=True, verbose_name=_('Usuario de la Cámara'), help_text=_('Usuario para autenticación (si es requerido)'))
+    password_camara = models.CharField(max_length=100, blank=True, null=True, verbose_name=_('Contraseña de la Cámara'), help_text=_('Contraseña para autenticación (si es requerido)'))
+    usar_ssl = models.BooleanField(default=False, verbose_name=_('Usar HTTPS/SSL'), help_text=_('Marcar si la cámara usa conexión segura'))
+    activa_produccion = models.BooleanField(default=False, verbose_name=_('Activa en Producción'), help_text=_('Usar configuración de producción (IP pública) en lugar de local'))
+    
     codigo_qr = models.ImageField(upload_to='bahias/qr/', blank=True, null=True, verbose_name=_('Código QR'))
     
     class Meta:
@@ -606,40 +641,71 @@ class Bahia(models.Model):
         return self.nombre
         
     def get_camera_url(self):
-        """Obtiene la URL completa de la cámara según su tipo"""
+        """Obtiene la URL completa de la cámara según su tipo y configuración"""
         if not self.tiene_camara or not self.ip_camara:
             return None
+        
+        # Determinar qué IP usar según la configuración
+        if self.activa_produccion and self.ip_publica:
+            # Usar configuración de producción
+            base_ip = self.ip_publica
+            puerto = self.puerto_externo if self.puerto_externo else 8080
+        else:
+            # Usar configuración local
+            base_ip = self.ip_camara
+            puerto = None
             
-        # Si la URL ya incluye http:// o rtsp://, usarla directamente
-        if self.ip_camara.startswith(('http://', 'https://', 'rtsp://')): 
-            return self.ip_camara
+        # Si la URL ya incluye protocolo, usarla directamente
+        if base_ip.startswith(('http://', 'https://', 'rtsp://')): 
+            return base_ip
+            
+        # Determinar protocolo
+        protocolo = 'https' if self.usar_ssl else 'http'
+        
+        # Construir URL con autenticación si es necesaria
+        auth_string = ""
+        if self.usuario_camara and self.password_camara:
+            auth_string = f"{self.usuario_camara}:{self.password_camara}@"
             
         # Generar URL según el tipo de cámara
         if self.tipo_camara == 'droidcam':
             # DroidCam usa el formato http://IP:PUERTO/video
-            if '/video' in self.ip_camara:
-                return f"http://{self.ip_camara}"
+            if puerto:
+                return f"{protocolo}://{auth_string}{base_ip}:{puerto}/video"
+            elif '/video' in base_ip:
+                return f"{protocolo}://{auth_string}{base_ip}"
             else:
-                return f"http://{self.ip_camara}/video"
+                return f"{protocolo}://{auth_string}{base_ip}/video"
                 
         elif self.tipo_camara == 'ipwebcam':
             # IP Webcam usa el formato http://IP:PUERTO/video
-            if '/video' in self.ip_camara:
-                return f"http://{self.ip_camara}"
+            if puerto:
+                return f"{protocolo}://{auth_string}{base_ip}:{puerto}/video"
+            elif '/video' in base_ip:
+                return f"{protocolo}://{auth_string}{base_ip}"
             else:
-                return f"http://{self.ip_camara}/video"
+                return f"{protocolo}://{auth_string}{base_ip}/video"
                 
         elif self.tipo_camara == 'iriun':
             # Iriun Webcam - usar la URL proporcionada
-            return f"http://{self.ip_camara}"
-            
+            if puerto:
+                return f"{protocolo}://{auth_string}{base_ip}:{puerto}"
+            else:
+                return f"{protocolo}://{auth_string}{base_ip}"
+                
         elif self.tipo_camara == 'rtsp':
             # Cámaras RTSP
-            return f"rtsp://{self.ip_camara}"
-            
+            if puerto:
+                return f"rtsp://{auth_string}{base_ip}:{puerto}"
+            else:
+                return f"rtsp://{auth_string}{base_ip}"
+                
         else:  # http y otros tipos
             # Para cámaras HTTP genéricas
-            return f"http://{self.ip_camara}"
+            if puerto:
+                return f"{protocolo}://{auth_string}{base_ip}:{puerto}"
+            else:
+                return f"{protocolo}://{auth_string}{base_ip}"
     
     def save(self, *args, **kwargs):
         """Sobrescribir el método save para generar el código QR si tiene cámara y una IP asignada"""
