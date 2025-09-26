@@ -1,82 +1,67 @@
 # ========================================
-# REQUIREMENTS.TXT OPTIMIZADO PARA PYTHONANYWHERE
+# REQUIREMENTS OPTIMIZADO PARA PYTHONANYWHERE
 # ========================================
+# Versiones específicas probadas y compatibles con PythonAnywhere
+# Compatible con Python 3.13
+# Última actualización: 2025
 
-# Dependencias principales de Django (compatibles con PythonAnywhere)
-asgiref==3.7.2
-Django==4.2.11
-django-cors-headers==4.3.1
+# ========================================
+# DJANGO Y FRAMEWORK PRINCIPAL
+# ========================================
+Django==4.2.16
 djangorestframework==3.14.0
-sqlparse==0.4.4
-typing_extensions==4.8.0
-tzdata==2023.3
 
-# Base de datos (MySQL optimizado para PythonAnywhere)
-mysqlclient==2.2.4  # Versión estable compatible con PythonAnywhere
-PyMySQL==1.1.0
-dj-database-url==2.1.0
+# ========================================
+# BASE DE DATOS
+# ========================================
+# Versión compatible con Python 3.13
+mysqlclient==2.2.4
 
-# Configuración y variables de entorno
-python-dotenv==1.0.0
+# ========================================
+# CONFIGURACIÓN Y VARIABLES DE ENTORNO
+# ========================================
+python-dotenv==1.0.1
 
-# Seguridad y criptografía (versiones compatibles)
-cryptography==41.0.7  # Versión compatible con PythonAnywhere
-cffi==1.16.0
-pycparser==2.21
+# ========================================
+# SEGURIDAD Y AUTENTICACIÓN
+# ========================================
+django-cors-headers==4.3.1
+# Versión más estable para Python 3.13
+cryptography==41.0.8
 
-# Generación de códigos QR e imágenes
-qrcode[pil]==7.4.2  # Versión estable con soporte PIL
-Pillow==10.0.1  # Versión compatible con PythonAnywhere
+# ========================================
+# GENERACIÓN DE QR
+# ========================================
+qrcode==7.4.2
+Pillow==10.4.0
 
-# Servidor web para producción
+# ========================================
+# SERVIDOR WEB Y WSGI
+# ========================================
 gunicorn==21.2.0
-whitenoise==6.5.0
+whitenoise==6.6.0
 
-# Peticiones HTTP
+# ========================================
+# REQUESTS HTTP
+# ========================================
 requests==2.31.0
-certifi==2023.11.17
-charset-normalizer==3.3.2
-idna==3.6
-urllib3==2.1.0
+urllib3==2.0.7
 
-# AWS S3 para archivos estáticos (opcional)
-django-storages==1.14.2
-boto3==1.34.34
-botocore==1.34.34
-jmespath==1.0.1
-s3transfer==0.10.0
+# ========================================
+# MANEJO DE FECHAS Y TIEMPO
+# ========================================
+pytz==2024.1
 
-# Utilidades de fecha y tiempo
-python-dateutil==2.8.2
-pytz==2023.3
-six==1.16.0
-
-# Utilidades generales
-packaging==23.2
+# ========================================
+# DEPENDENCIAS BÁSICAS
+# ========================================
+packaging==24.1
 colorama==0.4.6
 
-# Para procesamiento de datos
-beautifulsoup4==4.12.2
-soupsieve==2.5
-
-# Monitoreo de errores
-sentry-sdk==1.38.0
-
-# Dependencias adicionales para PythonAnywhere
-# ============================================
-# Email backend mejorado
-django-ses==3.5.0
-
-# Compresión de archivos estáticos
-django-compressor==4.4
-
-# Cache con Redis (opcional)
-django-redis==5.4.0
-redis==5.0.1
-
-# Logging mejorado
-django-extensions==3.2.3
-
-# Timezone handling mejorado
-django-timezone-field==6.0.1
+# ========================================
+# DEPENDENCIAS OPCIONALES PARA PYTHONANYWHERE
+# ========================================
+# Solo incluir si necesitas estas funcionalidades específicas
+# django-extensions==3.2.3
+# redis==5.0.8
 
