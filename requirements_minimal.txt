@@ -1,34 +1,40 @@
-# ========================================
-# REQUIREMENTS MÍNIMO PARA PYTHONANYWHERE
-# ========================================
-# Versión ultra-simplificada para evitar errores de instalación
-# Compatible con Python 3.13 en PythonAnywhere
+# REQUIREMENTS MÍNIMOS PARA PRODUCCIÓN
+# Solo las dependencias absolutamente esenciales
 
-# Django básico
-Django==4.2.16
+# Django Framework
+Django==4.2.11
+asgiref==3.7.2
+sqlparse==0.4.4
+tzdata==2023.3
 
 # Base de datos MySQL
-mysqlclient==2.2.4
+mysqlclient==2.2.7
 
-# Variables de entorno
-python-dotenv==1.0.1
+# API REST
+djangorestframework==3.14.0
 
-# CORS para API
+# CORS
 django-cors-headers==4.3.1
 
-# QR básico (sin PIL extras)
-qrcode==7.4.2
-Pillow==10.4.0
+# Archivos estáticos
+whitenoise==6.5.0
 
-# Servidor web
+# Servidor de producción
 gunicorn==21.2.0
-whitenoise==6.6.0
 
-# HTTP requests
-requests==2.31.0
+# Variables de entorno
+python-dotenv==1.0.0
 
-# Timezone
-pytz==2024.1
+# Zona horaria
+pytz==2025.2
 
-# Utilidades básicas
-packaging==24.1
+# Requests HTTP
+requests==2.32.4
+urllib3==2.4.0
+certifi==2025.6.15
+
+# Manejo de imágenes
+Pillow==11.3.0
+
+# Seguridad
+cryptography==45.0.7

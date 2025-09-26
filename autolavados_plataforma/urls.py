@@ -27,7 +27,6 @@ urlpatterns = [
     path('api/auth/', include('autenticacion.urls', namespace='api_autenticacion')),
     path('api/clientes/', include('clientes.urls')),
     path('api/reservas/', include('reservas.urls_api')),
-    path('api/notificaciones/', include('notificaciones.urls')),
     # Rutas para vistas basadas en plantillas con namespace
     path('notificaciones/', include(('notificaciones.urls', 'notificaciones'), namespace='notificaciones')),
     path('reservas/', include(('reservas.urls', 'reservas'), namespace='reservas')),

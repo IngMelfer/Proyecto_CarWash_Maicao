@@ -207,7 +207,7 @@ def perfil_empleado(request):
         if form.is_valid():
             form.save()
             messages.success(request, 'Perfil actualizado correctamente.')
-            return redirect('perfil_empleado')
+            return redirect('empleados_dashboard:perfil')
     else:
         form = EmpleadoPerfilForm(instance=empleado)
     
