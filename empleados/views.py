@@ -71,10 +71,16 @@ class EmpleadoCreateView(LoginRequiredMixin, RolRequiredMixin, CreateView):
         else:
             password_info = 'Contraseña personalizada asignada'
         
+        # Verificar si el usuario fue creado correctamente
+        if hasattr(empleado, 'usuario') and empleado.usuario:
+            usuario_info = f'Usuario: {empleado.usuario.email}. '
+        else:
+            usuario_info = 'Usuario: No se pudo crear el usuario. '
+        
         messages.success(
             self.request, 
             f'Empleado {empleado.nombre} {empleado.apellido} creado correctamente. '
-            f'Usuario: {empleado.usuario.email}. {password_info}'
+            f'{usuario_info}{password_info}'
         )
         return super().form_valid(form)
     
@@ -162,7 +168,7 @@ def registrar_tiempo_view(request, empleado_id):
     empleado = get_object_or_404(Empleado, pk=empleado_id)
     
     # Verificar que el usuario sea el empleado o tenga permisos
-    if request.user.rol not in [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO, Usuario.ROL_GERENTE] and request.user != empleado.usuario:
+    if request.user.rol not in [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO, Usuario.ROL_GERENTE] and (not hasattr(empleado, 'usuario') or request.user != empleado.usuario):
         messages.error(request, 'No tienes permisos para registrar tiempo para este empleado')
         return redirect('empleados_dashboard:dashboard')
     
@@ -340,7 +346,7 @@ def api_calificaciones_empleado(request, empleado_id):
     empleado = get_object_or_404(Empleado, pk=empleado_id)
     
     # Verificar permisos
-    if request.user.rol not in [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO, Usuario.ROL_GERENTE] and request.user != empleado.usuario:
+    if request.user.rol not in [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO, Usuario.ROL_GERENTE] and (not hasattr(empleado, 'usuario') or request.user != empleado.usuario):
         return JsonResponse({'error': 'No tienes permisos para ver esta información'}, status=403)
     
     # Obtener calificaciones agrupadas por puntuación
@@ -366,7 +372,7 @@ def api_tiempo_empleado(request, empleado_id):
     empleado = get_object_or_404(Empleado, pk=empleado_id)
     
     # Verificar permisos
-    if request.user.rol not in [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO, Usuario.ROL_GERENTE] and request.user != empleado.usuario:
+    if request.user.rol not in [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_AUTOLAVADO, Usuario.ROL_GERENTE] and (not hasattr(empleado, 'usuario') or request.user != empleado.usuario):
         return JsonResponse({'error': 'No tienes permisos para ver esta información'}, status=403)
     
     # Obtener registros de tiempo completados (con hora_fin)

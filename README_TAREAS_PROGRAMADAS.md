@@ -8,9 +8,9 @@ Este documento describe las tareas programadas implementadas en el sistema de au
 
 ### 1. Cancelación de Reservas Sin Pago
 
-**Propósito:** Cancelar automáticamente las reservas que permanecen en estado PENDIENTE sin completar el pago después de un tiempo determinado (15 minutos por defecto).
+**Propósito:** Cancelar automáticamente las reservas que permanecen en estado PENDIENTE sin completar el pago después de un tiempo determinado (5 minutos por defecto).
 
-**Comando Django:** `python manage.py cancelar_reservas_sin_pago [--dry-run] [--minutos=15]`
+**Comando Django:** `python manage.py cancelar_reservas_sin_pago [--dry-run] [--minutos=5]`
 
 **Archivos relacionados:**
 - Comando: `reservas/management/commands/cancelar_reservas_sin_pago.py`

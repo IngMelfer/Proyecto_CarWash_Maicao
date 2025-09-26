@@ -11,7 +11,7 @@
     </ol>
     
     <div class="row justify-content-center">
-        <div class="col-lg-8">
+        <div class="col-lg-10">
             <div class="card shadow-lg border-0 rounded-lg mt-2 mb-4">
                 <div class="card-header">
                     <h3 class="text-center font-weight-light my-2">
@@ -30,6 +30,7 @@
                             </div>
                         {% endif %}
                         
+                        <!-- Información básica -->
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <div class="form-floating mb-3">
@@ -62,11 +63,11 @@
                         <div class="row mb-3">
                             <div class="col-md-12">
                                 <div class="form-floating mb-3">
-                                    {{ form.api_key }}
-                                    <label for="{{ form.api_key.id_for_label }}">API Key (opcional)</label>
-                                    {% if form.api_key.errors %}
+                                    {{ form.descripcion }}
+                                    <label for="{{ form.descripcion.id_for_label }}">Descripción</label>
+                                    {% if form.descripcion.errors %}
                                         <div class="invalid-feedback d-block">
-                                            {% for error in form.api_key.errors %}
+                                            {% for error in form.descripcion.errors %}
                                                 {{ error }}
                                             {% endfor %}
                                         </div>
@@ -75,6 +76,182 @@
                             </div>
                         </div>
                         
+                        <!-- Configuración de pasarela -->
+                        <div id="gateway-config" style="display: none;">
+                            <h5 class="mb-3"><i class="fas fa-cog me-2"></i>Configuración de Pasarela</h5>
+                            
+                            <!-- Campos comunes -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3">
+                                        {{ form.api_key }}
+                                        <label for="{{ form.api_key.id_for_label }}">API Key</label>
+                                        <div class="form-text">{{ form.api_key.help_text }}</div>
+                                        {% if form.api_key.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.api_key.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3">
+                                        {{ form.api_secret }}
+                                        <label for="{{ form.api_secret.id_for_label }}">API Secret</label>
+                                        <div class="form-text">{{ form.api_secret.help_text }}</div>
+                                        {% if form.api_secret.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.api_secret.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Campos específicos para Nequi -->
+                            <div class="nequi-fields gateway-specific" style="display: none;">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <div class="form-floating mb-3">
+                                            {{ form.client_id }}
+                                            <label for="{{ form.client_id.id_for_label }}">Client ID</label>
+                                            <div class="form-text">{{ form.client_id.help_text }}</div>
+                                            {% if form.client_id.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {% for error in form.client_id.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating mb-3">
+                                            {{ form.client_secret }}
+                                            <label for="{{ form.client_secret.id_for_label }}">Client Secret</label>
+                                            <div class="form-text">{{ form.client_secret.help_text }}</div>
+                                            {% if form.client_secret.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {% for error in form.client_secret.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Campos específicos para Wompi y ePayco -->
+                            <div class="wompi-epayco-fields gateway-specific" style="display: none;">
+                                <div class="row mb-3">
+                                    <div class="col-md-12">
+                                        <div class="form-floating mb-3">
+                                            {{ form.public_key }}
+                                            <label for="{{ form.public_key.id_for_label }}">Public Key</label>
+                                            <div class="form-text">{{ form.public_key.help_text }}</div>
+                                            {% if form.public_key.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {% for error in form.public_key.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Campos específicos para PayU, ePayco y PSE -->
+                            <div class="payu-epayco-pse-fields gateway-specific" style="display: none;">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <div class="form-floating mb-3">
+                                            {{ form.merchant_id }}
+                                            <label for="{{ form.merchant_id.id_for_label }}">Merchant ID</label>
+                                            <div class="form-text">{{ form.merchant_id.help_text }}</div>
+                                            {% if form.merchant_id.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {% for error in form.merchant_id.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating mb-3">
+                                            {{ form.account_id }}
+                                            <label for="{{ form.account_id.id_for_label }}">Account ID</label>
+                                            <div class="form-text">{{ form.account_id.help_text }}</div>
+                                            {% if form.account_id.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {% for error in form.account_id.errors %}
+                                                        {{ error }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- URLs de configuración -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3">
+                                        {{ form.base_url }}
+                                        <label for="{{ form.base_url.id_for_label }}">URL Base</label>
+                                        <div class="form-text">{{ form.base_url.help_text }}</div>
+                                        {% if form.base_url.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.base_url.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3">
+                                        {{ form.webhook_url }}
+                                        <label for="{{ form.webhook_url.id_for_label }}">Webhook URL</label>
+                                        <div class="form-text">{{ form.webhook_url.help_text }}</div>
+                                        {% if form.webhook_url.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.webhook_url.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Modo sandbox -->
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <div class="form-check form-switch">
+                                        {{ form.sandbox }}
+                                        <label class="form-check-label" for="{{ form.sandbox.id_for_label }}">Modo Sandbox</label>
+                                        <div class="form-text">{{ form.sandbox.help_text }}</div>
+                                        {% if form.sandbox.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {% for error in form.sandbox.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Estado activo -->
                         <div class="row mb-3">
                             <div class="col-md-12">
                                 <div class="form-check form-switch">
@@ -111,4 +288,55 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoSelect = document.getElementById('id_tipo');
+    const gatewayConfig = document.getElementById('gateway-config');
+    const gatewaySpecificFields = document.querySelectorAll('.gateway-specific');
+    
+    // Tipos de pasarelas electrónicas
+    const electronicGateways = ['WO', 'PY', 'EP', 'NQ', 'PS']; // Wompi, PayU, ePayco, Nequi, PSE
+    
+    function toggleGatewayFields() {
+        const selectedType = tipoSelect.value;
+        
+        // Mostrar/ocultar configuración de pasarela
+        if (electronicGateways.includes(selectedType)) {
+            gatewayConfig.style.display = 'block';
+        } else {
+            gatewayConfig.style.display = 'none';
+        }
+        
+        // Ocultar todos los campos específicos
+        gatewaySpecificFields.forEach(field => {
+            field.style.display = 'none';
+        });
+        
+        // Mostrar campos específicos según el tipo
+        switch(selectedType) {
+            case 'NQ': // Nequi
+                document.querySelector('.nequi-fields').style.display = 'block';
+                break;
+            case 'WO': // Wompi
+                document.querySelector('.wompi-epayco-fields').style.display = 'block';
+                break;
+            case 'EP': // ePayco
+                document.querySelector('.wompi-epayco-fields').style.display = 'block';
+                document.querySelector('.payu-epayco-pse-fields').style.display = 'block';
+                break;
+            case 'PY': // PayU
+            case 'PS': // PSE
+                document.querySelector('.payu-epayco-pse-fields').style.display = 'block';
+                break;
+        }
+    }
+    
+    // Ejecutar al cargar la página
+    toggleGatewayFields();
+    
+    // Ejecutar cuando cambie el tipo
+    tipoSelect.addEventListener('change', toggleGatewayFields);
+});
+</script>
 {% endblock %}

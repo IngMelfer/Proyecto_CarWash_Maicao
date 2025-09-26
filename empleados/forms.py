@@ -42,6 +42,18 @@ class EmpleadoRegistroForm(forms.ModelForm):
         })
     )
     
+    # Campo para indicar si no tiene correo personal
+    no_tiene_correo = forms.BooleanField(
+        label=_('No tengo correo electrónico personal'),
+        required=False,
+        initial=False,
+        help_text=_('Si se marca, el sistema generará un correo automático para el empleado.'),
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input',
+            'id': 'no_tiene_correo'
+        })
+    )
+    
     class Meta:
         model = Empleado
         fields = [
@@ -144,8 +156,8 @@ class EmpleadoRegistroForm(forms.ModelForm):
         self.fields['ciudad'].required = False
         self.fields['fotografia'].required = False
         
-        # El campo email_personal es requerido para crear la cuenta de usuario
-        self.fields['email_personal'].required = True
+        # El campo email_personal es requerido solo si no se marca "no_tiene_correo"
+        self.fields['email_personal'].required = False
         
         # Los campos de contraseña no son requeridos por defecto
         # La validación se hace en el método clean()
@@ -167,20 +179,30 @@ class EmpleadoRegistroForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        email_personal = cleaned_data.get('email_personal')
+        no_tiene_correo = cleaned_data.get('no_tiene_correo', False)
         password1 = cleaned_data.get('password1')
         password2 = cleaned_data.get('password2')
-        generar_automatico = cleaned_data.get('generar_password_automatico')
+        generar_password_automatico = cleaned_data.get('generar_password_automatico', True)
         
-        # Si no se genera automáticamente, validar las contraseñas
-        if not generar_automatico:
+        # Validar que se proporcione correo o se marque "no tiene correo"
+        if not no_tiene_correo and not email_personal:
+            raise ValidationError(_('Debe proporcionar un correo electrónico personal o marcar "No tengo correo electrónico personal".'))
+        
+        # Si tiene correo personal, validar que no exista otro usuario con ese email
+        if email_personal and not no_tiene_correo:
+            from autenticacion.models import Usuario
+            if Usuario.objects.filter(email=email_personal).exists():
+                raise ValidationError(_('Ya existe un usuario registrado con este correo electrónico.'))
+        
+        # Validar contraseñas solo si no se genera automáticamente
+        if not generar_password_automatico:
             if not password1:
-                raise forms.ValidationError(_('Debe ingresar una contraseña o marcar la opción de generar automáticamente.'))
-            
+                raise ValidationError(_('La contraseña es requerida cuando no se genera automáticamente.'))
             if password1 != password2:
-                raise forms.ValidationError(_('Las contraseñas no coinciden.'))
-            
+                raise ValidationError(_('Las contraseñas no coinciden.'))
             if len(password1) < 8:
-                raise forms.ValidationError(_('La contraseña debe tener al menos 8 caracteres.'))
+                raise ValidationError(_('La contraseña debe tener al menos 8 caracteres.'))
         
         return cleaned_data
 
@@ -188,43 +210,93 @@ class EmpleadoRegistroForm(forms.ModelForm):
         empleado = super().save(commit=False)
         
         if commit:
-            # Crear el usuario asociado usando el email_personal del empleado
-            email = empleado.email_personal
+            from autenticacion.models import Usuario
+            from django.db import transaction
             
-            # Verificar que no exista un usuario con este email
-            if Usuario.objects.filter(email=email).exists():
-                # Si existe, usar un email alternativo basado en el documento
-                email = f"empleado_{empleado.numero_documento}@autolavado.com"
+            # La validación del número de documento ya se hace en clean_numero_documento()
+            # No necesitamos duplicar la validación aquí
             
-            # Determinar el rol del usuario basado en el rol del empleado
-            if empleado.rol == Empleado.ROL_LAVADOR:
-                rol_usuario = Usuario.ROL_LAVADOR
-            elif empleado.rol == Empleado.ROL_SUPERVISOR:
-                rol_usuario = Usuario.ROL_GERENTE
-            else:
-                rol_usuario = Usuario.ROL_CLIENTE
-            
-            # Determinar la contraseña
-            generar_automatico = self.cleaned_data.get('generar_password_automatico', True)
-            if generar_automatico:
-                password = empleado.numero_documento
-            else:
-                password = self.cleaned_data['password1']
-            
-            # Crear el usuario
-            usuario = Usuario.objects.create_user(
-                email=email,
-                password=password,
-                first_name=empleado.nombre,
-                last_name=empleado.apellido,
-                rol=rol_usuario,
-                is_active=True
-            )
-            
-            empleado.usuario = usuario
-            empleado.save()
+            # USAR TRANSACCIÓN ATÓMICA PARA EVITAR DUPLICADOS
+            with transaction.atomic():
+                # Verificar si el empleado ya tiene un usuario asignado (solo para empleados existentes)
+                if empleado.pk and hasattr(empleado, 'usuario') and empleado.usuario:
+                    # El empleado ya existe y tiene usuario, no crear otro
+                    return empleado
+                
+                # Determinar el email a usar con lógica simplificada
+                no_tiene_correo = self.cleaned_data.get('no_tiene_correo', False)
+                email_personal = self.cleaned_data.get('email_personal')
+                numero_documento = self.cleaned_data.get('numero_documento')
+                
+                if no_tiene_correo or not email_personal or email_personal.strip() == '':
+                    # Caso 1: No tiene correo personal o está vacío -> generar automático
+                    email = self._generar_email_unico(numero_documento)
+                else:
+                    # Caso 2: Tiene correo personal -> verificar si está disponible
+                    if Usuario.objects.filter(email=email_personal).exists():
+                        # El correo personal ya existe, generar uno automático
+                        email = self._generar_email_unico(numero_documento)
+                    else:
+                        # El correo personal está disponible
+                        email = email_personal
+                
+                # Determinar el rol del usuario basado en el rol del empleado
+                if empleado.rol == Empleado.ROL_LAVADOR:
+                    rol_usuario = Usuario.ROL_LAVADOR
+                elif empleado.rol == Empleado.ROL_SUPERVISOR:
+                    rol_usuario = Usuario.ROL_GERENTE
+                else:
+                    rol_usuario = Usuario.ROL_CLIENTE
+                
+                # Determinar la contraseña
+                generar_automatico = self.cleaned_data.get('generar_password_automatico', True)
+                if generar_automatico:
+                    password = empleado.numero_documento
+                else:
+                    password = self.cleaned_data['password1']
+                
+                # CREAR USUARIO DE FORMA ATÓMICA
+                try:
+                    # Verificar una vez más antes de crear (dentro de la transacción)
+                    if Usuario.objects.filter(email=email).exists():
+                        # Si el email ya existe, generar uno nuevo
+                        email = self._generar_email_unico(numero_documento)
+                    
+                    usuario = Usuario.objects.create_user(
+                        email=email,
+                        password=password,
+                        first_name=empleado.nombre,
+                        last_name=empleado.apellido,
+                        rol=rol_usuario,
+                        is_active=True
+                    )
+                    
+                    # Asignar el usuario al empleado y guardar
+                    empleado.usuario = usuario
+                    empleado.save()
+                    
+                except Exception as e:
+                    # Si algo falla, la transacción se revierte automáticamente
+                    raise ValidationError(f'Error al crear el empleado: {str(e)}')
         
         return empleado
+    
+    def _generar_email_unico(self, numero_documento):
+        """Genera un email único basado en el número de documento"""
+        base_email = f"empleado_{numero_documento}@autolavado.com"
+        email_final = base_email
+        contador = 1
+        
+        # Buscar un email único
+        while Usuario.objects.filter(email=email_final).exists():
+            email_final = f"empleado_{numero_documento}_{contador}@autolavado.com"
+            contador += 1
+            
+            # Prevenir bucles infinitos
+            if contador > 100:
+                raise ValidationError('No se pudo generar un email único para el empleado')
+        
+        return email_final
 
 
 class EmpleadoEditForm(forms.ModelForm):
@@ -445,6 +517,16 @@ class CambiarPasswordForm(forms.Form):
         })
     )
     
+    def __init__(self, user, *args, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+    
+    def clean_password_actual(self):
+        password_actual = self.cleaned_data.get('password_actual')
+        if password_actual and not self.user.check_password(password_actual):
+            raise ValidationError(_('La contraseña actual es incorrecta.'))
+        return password_actual
+    
     def clean(self):
         cleaned_data = super().clean()
         password_nueva = cleaned_data.get('password_nueva')
@@ -455,3 +537,10 @@ class CambiarPasswordForm(forms.Form):
                 raise ValidationError(_('Las contraseñas no coinciden.'))
         
         return cleaned_data
+    
+    def save(self):
+        """Guarda la nueva contraseña del usuario"""
+        password_nueva = self.cleaned_data['password_nueva']
+        self.user.set_password(password_nueva)
+        self.user.save()
+        return self.user

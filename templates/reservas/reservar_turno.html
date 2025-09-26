@@ -1496,7 +1496,11 @@
                                             <div class="card card-enhanced h-100 medio-pago-card" data-medio-id="{{ medio.id }}">
                                                 <div class="card-body text-center">
                                                     <div class="medio-pago-icon mb-3">
-                                                        <i class="fas fa-qrcode fa-3x text-dark"></i>
+                                                        {% if medio.tipo == 'NQ' %}
+                                            <img src="{% load static %}{% static 'img/logo-nequi.svg' %}" alt="Nequi Logo" class="img-fluid" style="max-height: 60px; width: auto;">
+                                        {% else %}
+                                                            <i class="fas fa-qrcode fa-3x text-dark"></i>
+                                                        {% endif %}
                                                     </div>
                                                     <h5 class="card-title">{{ medio.nombre }}</h5>
                                                 </div>

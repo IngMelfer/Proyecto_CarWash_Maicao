@@ -588,7 +588,7 @@
                     
                     <div class="col-md-4 mb-3">
                         <label for="{{ form.email_personal.id_for_label }}" class="form-label fw-bold">
-                            <i class="fas fa-envelope me-2 text-primary"></i>Correo Electrónico
+                            <i class="fas fa-envelope me-2 text-primary"></i>Correo Electrónico Personal
                         </label>
                         {{ form.email_personal }}
                         {% if form.email_personal.errors %}
@@ -599,6 +599,17 @@
                                 {% endfor %}
                             </div>
                         {% endif %}
+                        
+                        <!-- Checkbox para "No tengo correo" -->
+                        <div class="form-check mt-2">
+                            {{ form.no_tiene_correo }}
+                            <label class="form-check-label" for="{{ form.no_tiene_correo.id_for_label }}">
+                                {{ form.no_tiene_correo.label }}
+                            </label>
+                            {% if form.no_tiene_correo.help_text %}
+                                <div class="form-text">{{ form.no_tiene_correo.help_text }}</div>
+                            {% endif %}
+                        </div>
                     </div>
                     
                     <div class="col-md-4 mb-3">
@@ -889,6 +900,10 @@
             const password1 = document.getElementById('id_password1');
             const password2 = document.getElementById('id_password2');
 
+            // Funcionalidad para el checkbox de "No tengo correo"
+            const checkboxNoCorreo = document.getElementById('id_no_tiene_correo');
+            const emailField = document.getElementById('id_email_personal');
+
             function togglePasswordFields() {
                 console.log('Toggle ejecutado. Checkbox checked:', checkboxAutomatico.checked);
                 if (checkboxAutomatico && passwordFields) {
@@ -906,6 +921,23 @@
                 }
             }
 
+            function toggleEmailField() {
+                if (checkboxNoCorreo && emailField) {
+                    if (checkboxNoCorreo.checked) {
+                        emailField.disabled = true;
+                        emailField.value = '';
+                        emailField.required = false;
+                        emailField.style.backgroundColor = '#f8f9fa';
+                        emailField.placeholder = 'Se generará automáticamente';
+                    } else {
+                        emailField.disabled = false;
+                        emailField.required = false; // El campo sigue siendo opcional
+                        emailField.style.backgroundColor = '';
+                        emailField.placeholder = 'Ingrese su correo electrónico personal';
+                    }
+                }
+            }
+
             if (checkboxAutomatico) {
                 console.log('Checkbox encontrado, agregando event listener');
                 checkboxAutomatico.addEventListener('change', togglePasswordFields);
@@ -913,6 +945,12 @@
                 setTimeout(togglePasswordFields, 100);
             } else {
                 console.log('Checkbox no encontrado');
+            }
+
+            if (checkboxNoCorreo) {
+                checkboxNoCorreo.addEventListener('change', toggleEmailField);
+                // Ejecutar al cargar la página
+                setTimeout(toggleEmailField, 100);
             }
 
             // Animaciones suaves para las secciones del formulario

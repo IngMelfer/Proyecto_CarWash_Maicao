@@ -31,17 +31,39 @@ class ServicioForm(forms.ModelForm):
 class MedioPagoForm(forms.ModelForm):
     class Meta:
         model = MedioPago
-        fields = ['tipo', 'nombre', 'descripcion', 'activo', 'api_key', 'api_secret', 'merchant_id', 'sandbox']
+        fields = ['tipo', 'nombre', 'descripcion', 'activo', 'api_key', 'api_secret', 'merchant_id', 
+                 'client_id', 'client_secret', 'public_key', 'account_id', 'base_url', 'webhook_url', 'sandbox']
         widgets = {
-            'tipo': forms.Select(attrs={'class': 'form-select'}),
+            'tipo': forms.Select(attrs={'class': 'form-select', 'id': 'id_tipo'}),
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
             'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'activo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'api_key': forms.TextInput(attrs={'class': 'form-control'}),
             'api_secret': forms.TextInput(attrs={'class': 'form-control'}),
             'merchant_id': forms.TextInput(attrs={'class': 'form-control'}),
+            'client_id': forms.TextInput(attrs={'class': 'form-control'}),
+            'client_secret': forms.TextInput(attrs={'class': 'form-control'}),
+            'public_key': forms.TextInput(attrs={'class': 'form-control'}),
+            'account_id': forms.TextInput(attrs={'class': 'form-control'}),
+            'base_url': forms.URLInput(attrs={'class': 'form-control'}),
+            'webhook_url': forms.URLInput(attrs={'class': 'form-control'}),
             'sandbox': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Configurar etiquetas y ayudas específicas
+        self.fields['api_key'].help_text = 'Clave API proporcionada por la pasarela de pago'
+        self.fields['api_secret'].help_text = 'Clave secreta para autenticación'
+        self.fields['merchant_id'].help_text = 'ID del comercio en la pasarela'
+        self.fields['client_id'].help_text = 'ID del cliente (requerido para Nequi)'
+        self.fields['client_secret'].help_text = 'Secreto del cliente (requerido para Nequi)'
+        self.fields['public_key'].help_text = 'Clave pública (requerida para Wompi y ePayco)'
+        self.fields['account_id'].help_text = 'ID de la cuenta (requerido para PayU y PSE)'
+        self.fields['base_url'].help_text = 'URL base de la API (opcional, se usa valor por defecto si está vacío)'
+        self.fields['webhook_url'].help_text = 'URL para recibir notificaciones de la pasarela'
+        self.fields['sandbox'].help_text = 'Activar modo de pruebas (sandbox)'
 
 class DisponibilidadHorariaForm(forms.ModelForm):
     class Meta:

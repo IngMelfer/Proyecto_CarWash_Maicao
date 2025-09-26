@@ -1,13 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 100" width="300" height="100">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
   <!-- Fondo azul característico de Nequi -->
-  <rect width="300" height="100" rx="15" ry="15" fill="#210049"/>
+  <rect width="100" height="100" rx="15" ry="15" fill="#210049"/>
   
-  <!-- Texto Nequi -->
-  <text x="150" y="60" font-family="Arial, sans-serif" font-size="40" font-weight="bold" text-anchor="middle" fill="white">Nequi</text>
-  
-  <!-- Símbolo de Nequi (simplificado) -->
-  <g transform="translate(50, 50) scale(0.6)">
-    <circle cx="0" cy="0" r="30" fill="#FF0082" opacity="0.8"/>
-    <path d="M-15,-15 L15,15 M-15,15 L15,-15" stroke="white" stroke-width="5" stroke-linecap="round"/>
+  <!-- Símbolo de Nequi centrado y más grande -->
+  <g transform="translate(50, 50) scale(1.2)">
+    <circle cx="0" cy="0" r="25" fill="#FF0082" opacity="0.9"/>
+    <path d="M-12,-12 L12,12 M-12,12 L12,-12" stroke="white" stroke-width="4" stroke-linecap="round"/>
   </g>
 </svg>

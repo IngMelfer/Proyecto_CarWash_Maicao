@@ -230,7 +230,7 @@ python manage.py test
 
 ## Sistema de Cancelación Automática de Reservas
 
-El proyecto incluye un sistema automatizado para cancelar reservas pendientes sin pago después de un tiempo configurable (por defecto 15 minutos). Esto permite liberar horarios y recursos cuando los clientes no completan el proceso de pago.
+El proyecto incluye un sistema automatizado para cancelar reservas pendientes sin pago después de un tiempo configurable (por defecto 5 minutos). Esto permite liberar horarios y recursos cuando los clientes no completan el proceso de pago.
 
 ### Componentes del Sistema
 

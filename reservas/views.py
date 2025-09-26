@@ -17,6 +17,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.views import APIView
 from .models import Servicio, Reserva, Vehiculo, HorarioDisponible, Bahia, DisponibilidadHoraria, MedioPago
 from .serializers import ServicioSerializer, ReservaSerializer, ReservaUpdateSerializer, BahiaSerializer
+from .nequi_views import NequiCallbackView, NequiStatusView, NequiReturnView
 from notificaciones.models import Notificacion
 from clientes.models import Cliente, HistorialServicio
 from empleados.models import Empleado, Calificacion
@@ -164,6 +165,7 @@ class ProcesarPagoView(LoginRequiredMixin, View):
         puntos_a_redimir = request.session.get('puntos_a_redimir', 0)
         descuento_aplicado = request.session.get('descuento_aplicado', 0)
         recompensa_seleccionada = request.session.get('recompensa_seleccionada', '')
+        recompensa_seleccionada = request.session.get('recompensa_seleccionada', '')
         
         # Datos para el formulario de pago
         context = {
@@ -196,6 +198,7 @@ class ProcesarPagoView(LoginRequiredMixin, View):
         usar_puntos = request.session.get('usar_puntos', False)
         puntos_a_redimir = request.session.get('puntos_a_redimir', 0)
         descuento_aplicado = request.session.get('descuento_aplicado', 0)
+        recompensa_seleccionada = request.session.get('recompensa_seleccionada', '')
         
         # Datos para el formulario de pago
         context = {
@@ -252,26 +255,73 @@ class ProcesarPagoView(LoginRequiredMixin, View):
     
     def _procesar_nequi(self, request, reserva, medio_pago, monto, referencia, descripcion):
         """
-        Procesa el pago con Nequi (simulación).
+        Procesa el pago con Nequi usando la API oficial.
         """
+        from .nequi_service import nequi_service
+        
         # Obtener información de puntos y descuento de la sesión
         usar_puntos = request.session.get('usar_puntos', False)
         puntos_a_redimir = request.session.get('puntos_a_redimir', 0)
         descuento_aplicado = request.session.get('descuento_aplicado', 0)
         recompensa_seleccionada = request.session.get('recompensa_seleccionada', '')
         
-        # Datos para la plantilla de simulación de pago
-        context = {
-            'reserva': reserva,
-            'medio_pago': medio_pago,
-            'monto': monto,
-            'referencia': referencia,
-            'descripcion': descripcion,
-            'usar_puntos': usar_puntos,
-            'puntos_a_redimir': puntos_a_redimir,
-            'descuento_aplicado': descuento_aplicado,
-            'recompensa_seleccionada': recompensa_seleccionada,
-        }
+        # Obtener el número de teléfono del cliente
+        telefono_cliente = getattr(reserva.cliente, 'telefono', None)
+        
+        if not telefono_cliente:
+            messages.error(request, 'No se encontró el número de teléfono del cliente. Por favor, actualiza tu perfil.')
+            return redirect('reservas:reservar_turno')
+        
+        # Formatear el número de teléfono para Nequi (debe incluir código de país)
+        if not telefono_cliente.startswith('57'):
+            telefono_nequi = f"57{telefono_cliente}"
+        else:
+            telefono_nequi = telefono_cliente
+        
+        # Crear el pago push en Nequi
+        resultado_pago = nequi_service.create_push_payment(
+            phone_number=telefono_nequi,
+            amount=float(monto),
+            description=descripcion,
+            reference=referencia
+        )
+        
+        if resultado_pago['success']:
+            # Guardar información del pago en la sesión
+            request.session['nequi_transaction_id'] = resultado_pago['transaction_id']
+            request.session['nequi_nequi_id'] = resultado_pago.get('nequi_transaction_id')
+            
+            # Datos para la plantilla
+            context = {
+                'reserva': reserva,
+                'medio_pago': medio_pago,
+                'monto': monto,
+                'referencia': referencia,
+                'descripcion': descripcion,
+                'usar_puntos': usar_puntos,
+                'puntos_a_redimir': puntos_a_redimir,
+                'descuento_aplicado': descuento_aplicado,
+                'recompensa_seleccionada': recompensa_seleccionada,
+                'telefono_nequi': telefono_nequi,
+                'transaction_id': resultado_pago['transaction_id'],
+                'pago_enviado': True,
+                'mensaje_exito': 'Se ha enviado una notificación de pago a tu teléfono Nequi.'
+            }
+        else:
+            # Error al crear el pago
+            context = {
+                'reserva': reserva,
+                'medio_pago': medio_pago,
+                'monto': monto,
+                'referencia': referencia,
+                'descripcion': descripcion,
+                'usar_puntos': usar_puntos,
+                'puntos_a_redimir': puntos_a_redimir,
+                'descuento_aplicado': descuento_aplicado,
+                'recompensa_seleccionada': recompensa_seleccionada,
+                'error_pago': True,
+                'mensaje_error': resultado_pago.get('error', 'Error al procesar el pago con Nequi.')
+            }
         
         return render(request, 'reservas/pasarelas/nequi_checkout.html', context)
     
@@ -769,7 +819,7 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
         medios_pago = MedioPago.objects.filter(activo=True)
         context['medios_pago'] = [mp for mp in medios_pago if mp.es_electronico()]
         # Añadir información sobre el tiempo límite para pago
-        context['tiempo_limite_pago'] = 15  # minutos
+        context['tiempo_limite_pago'] = 5  # minutos
         
         # No mostrar lavadores inicialmente - se cargarán dinámicamente
         # cuando el usuario seleccione fecha, hora y servicio

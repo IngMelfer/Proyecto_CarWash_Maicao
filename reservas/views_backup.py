@@ -767,7 +767,7 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
         medios_pago = MedioPago.objects.filter(activo=True)
         context['medios_pago'] = [mp for mp in medios_pago if mp.es_electronico()]
         # Añadir información sobre el tiempo límite para pago
-        context['tiempo_limite_pago'] = 15  # minutos
+        context['tiempo_limite_pago'] = 5  # minutos
         
         # Obtener lavadores disponibles
         lavadores_disponibles = Empleado.objects.filter(

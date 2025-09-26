@@ -1,0 +1,313 @@
+{% extends 'empleados/dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Servicios Completados - {{ empleado.nombre_completo }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Encabezado -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1"><i class="fas fa-check-circle me-2"></i>Servicios Completados</h2>
+                            <p class="text-muted mb-0">Historial de servicios realizados exitosamente</p>
+                        </div>
+                        <div>
+                            <a href="{% url 'empleados_dashboard:dashboard' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas Rápidas -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card bg-success">
+                <div class="stat-number">{{ estadisticas_filtro.servicios_completados }}</div>
+                <div class="stat-label">Completados</div>
+                <i class="fas fa-check-circle position-absolute" style="top: 15px; right: 15px; font-size: 2rem; opacity: 0.3;"></i>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card bg-info">
+                <div class="stat-number">{{ estadisticas_filtro.total_servicios }}</div>
+                <div class="stat-label">Total Filtrados</div>
+                <i class="fas fa-list position-absolute" style="top: 15px; right: 15px; font-size: 2rem; opacity: 0.3;"></i>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card bg-warning">
+                <div class="stat-number">{{ empleado.promedio_calificacion|floatformat:1 }}</div>
+                <div class="stat-label">Calificación Promedio</div>
+                <i class="fas fa-star position-absolute" style="top: 15px; right: 15px; font-size: 2rem; opacity: 0.3;"></i>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stat-card bg-primary">
+                <div class="stat-number">{{ estadisticas_filtro.servicios_pendientes }}</div>
+                <div class="stat-label">Pendientes</div>
+                <i class="fas fa-clock position-absolute" style="top: 15px; right: 15px; font-size: 2rem; opacity: 0.3;"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filtros</h5>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label for="fecha_desde" class="form-label">Fecha Desde</label>
+                            <input type="date" class="form-control" id="fecha_desde" name="fecha_desde" value="{{ fecha_desde }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="fecha_hasta" class="form-label">Fecha Hasta</label>
+                            <input type="date" class="form-control" id="fecha_hasta" name="fecha_hasta" value="{{ fecha_hasta }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="servicio_tipo" class="form-label">Tipo de Servicio</label>
+                            <select class="form-select" id="servicio_tipo" name="servicio_tipo">
+                                <option value="">Todos los servicios</option>
+                                {% for servicio in tipos_servicio %}
+                                    <option value="{{ servicio.id }}" {% if servicio_tipo == servicio.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ servicio.nombre }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-search me-2"></i>Filtrar
+                            </button>
+                            <a href="{% url 'empleados_dashboard:servicios_atendidos' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Limpiar
+                            </a>
+                        </div>
+                        <input type="hidden" name="estado" value="completados">
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Servicios Completados -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>Servicios Completados</h5>
+                </div>
+                <div class="card-body">
+                    {% if page_obj %}
+                        {% for servicio in page_obj %}
+                            <div class="service-card completed mb-3">
+                                <div class="row align-items-center">
+                                    <div class="col-md-2 text-center">
+                                        <div class="service-icon">
+                                            <i class="fas fa-check-circle fa-2x text-success"></i>
+                                        </div>
+                                        <small class="text-muted">{{ servicio.servicio.nombre }}</small>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <h6 class="mb-1">{{ servicio.servicio.nombre }}</h6>
+                                        <p class="mb-1">
+                                            <i class="fas fa-user me-2"></i>{{ servicio.cliente.nombre_completo }}
+                                        </p>
+                                        <p class="mb-1">
+                                            <i class="fas fa-car me-2"></i>{{ servicio.vehiculo.marca }} {{ servicio.vehiculo.modelo }} - {{ servicio.vehiculo.placa }}
+                                        </p>
+                                        <p class="mb-0">
+                                            <i class="fas fa-map-marker-alt me-2"></i>Bahía {{ servicio.bahia.numero }}
+                                        </p>
+                                    </div>
+                                    <div class="col-md-2 text-center">
+                                        <div class="service-datetime completed">
+                                            <div class="service-date">{{ servicio.fecha_hora|date:"d/m/Y" }}</div>
+                                            <div class="service-time">{{ servicio.fecha_hora|date:"H:i" }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 text-center">
+                                        {% if servicio.calificacion_set.first %}
+                                            <div class="rating-display">
+                                                <div class="stars mb-1">
+                                                    {% for i in "12345" %}
+                                                        {% if forloop.counter <= servicio.calificacion_set.first.puntuacion %}
+                                                            <i class="fas fa-star text-warning"></i>
+                                                        {% else %}
+                                                            <i class="far fa-star text-muted"></i>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </div>
+                                                <small class="text-muted">{{ servicio.calificacion_set.first.puntuacion }}/5</small>
+                                            </div>
+                                        {% else %}
+                                            <div class="rating-display">
+                                                <small class="text-muted">Sin calificar</small>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-1 text-center">
+                                        <span class="status-badge status-completado">Completado</span>
+                                        <div class="mt-2">
+                                            <small class="text-success">
+                                                <i class="fas fa-check me-1"></i>Finalizado
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Comentario de la calificación (si existe) -->
+                                {% if servicio.calificacion_set.first.comentario %}
+                                    <div class="row mt-3">
+                                        <div class="col-12">
+                                            <div class="comment-section">
+                                                <h6 class="mb-2"><i class="fas fa-comment me-2"></i>Comentario del Cliente:</h6>
+                                                <p class="mb-0 text-muted fst-italic">"{{ servicio.calificacion_set.first.comentario }}"</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+
+                        <!-- Paginación -->
+                        {% if page_obj.has_other_pages %}
+                            <nav aria-label="Paginación de servicios">
+                                <ul class="pagination justify-content-center">
+                                    {% if page_obj.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if fecha_desde %}&fecha_desde={{ fecha_desde }}{% endif %}{% if fecha_hasta %}&fecha_hasta={{ fecha_hasta }}{% endif %}{% if servicio_tipo %}&servicio_tipo={{ servicio_tipo }}{% endif %}&estado=completados">
+                                                Anterior
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    {% for num in page_obj.paginator.page_range %}
+                                        {% if page_obj.number == num %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ num }}</span>
+                                            </li>
+                                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page={{ num }}{% if fecha_desde %}&fecha_desde={{ fecha_desde }}{% endif %}{% if fecha_hasta %}&fecha_hasta={{ fecha_hasta }}{% endif %}{% if servicio_tipo %}&servicio_tipo={{ servicio_tipo }}{% endif %}&estado=completados">
+                                                    {{ num }}
+                                                </a>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if page_obj.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if fecha_desde %}&fecha_desde={{ fecha_desde }}{% endif %}{% if fecha_hasta %}&fecha_hasta={{ fecha_hasta }}{% endif %}{% if servicio_tipo %}&servicio_tipo={{ servicio_tipo }}{% endif %}&estado=completados">
+                                                Siguiente
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-check-circle text-muted fa-4x mb-3"></i>
+                            <h4 class="text-muted">No hay servicios completados</h4>
+                            <p class="text-muted">No tienes servicios completados que coincidan con los filtros seleccionados.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .service-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        border-left: 4px solid #28a745;
+        transition: all 0.3s ease;
+    }
+    
+    .service-card.completed {
+        border-left-color: #28a745;
+    }
+    
+    .service-card:hover {
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+    }
+    
+    .service-icon {
+        margin-bottom: 10px;
+    }
+    
+    .service-datetime {
+        background: #fff;
+        border-radius: 8px;
+        padding: 10px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .service-datetime.completed {
+        background: #d4edda;
+        border-color: #c3e6cb;
+    }
+    
+    .service-date {
+        font-weight: bold;
+        color: #495057;
+    }
+    
+    .service-time {
+        font-size: 1.1em;
+        color: #28a745;
+        font-weight: bold;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85em;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+    
+    .status-completado {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .rating-display {
+        background: #fff;
+        border-radius: 8px;
+        padding: 10px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .stars {
+        font-size: 1.1em;
+    }
+    
+    .comment-section {
+        background: #e9ecef;
+        border-radius: 8px;
+        padding: 15px;
+        border-left: 3px solid #6c757d;
+    }
+</style>
+{% endblock %}

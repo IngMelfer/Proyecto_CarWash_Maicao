@@ -282,3 +282,13 @@ EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+
+# Configuración de Nequi API
+NEQUI_API_KEY = os.getenv('NEQUI_API_KEY', '')
+NEQUI_CLIENT_ID = os.getenv('NEQUI_CLIENT_ID', '')
+NEQUI_CLIENT_SECRET = os.getenv('NEQUI_CLIENT_SECRET', '')
+NEQUI_BASE_URL = os.getenv('NEQUI_BASE_URL', 'https://api.nequi.com.co')
+NEQUI_SANDBOX = os.getenv('NEQUI_SANDBOX', 'True').lower() == 'true'
+NEQUI_WEBHOOK_URL = os.getenv('NEQUI_WEBHOOK_URL', f"{SITE_URL}/reservas/callback/nequi/")
+NEQUI_SUCCESS_URL = os.getenv('NEQUI_SUCCESS_URL', f"{SITE_URL}/reservas/confirmar-pago/")
+NEQUI_CANCEL_URL = os.getenv('NEQUI_CANCEL_URL', f"{SITE_URL}/reservas/cancelar-pago/")

@@ -26,6 +26,11 @@ urlpatterns = [
     path('callback/wompi/', views.WompiCallbackView.as_view(), name='wompi_callback'),
     path('callback/payu/', views.PayUCallbackView.as_view(), name='payu_callback'),
     path('callback/epayco/', views.EpaycoCallbackView.as_view(), name='epayco_callback'),
+    path('callback/nequi/', views.NequiCallbackView.as_view(), name='nequi_callback'),
+    
+    # URLs específicas de Nequi
+    path('nequi/status/', views.NequiStatusView.as_view(), name='nequi_status'),
+    path('nequi/return/', views.NequiReturnView.as_view(), name='nequi_return'),
     
     # Dashboard de administrador
     path('dashboard-admin/', views_admin.DashboardAdminView.as_view(), name='dashboard_admin'),

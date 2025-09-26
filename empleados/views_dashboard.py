@@ -10,7 +10,7 @@ from decimal import Decimal
 import json
 from .models import Empleado, Calificacion, Incentivo
 from .forms import EmpleadoPerfilForm
-from reservas.models import Reserva
+from reservas.models import Reserva, Servicio
 
 
 @login_required
@@ -34,6 +34,7 @@ def dashboard_lavador(request):
     
     # Fechas para filtros
     hoy = timezone.now().date()
+    ahora = timezone.now()
     inicio_semana = hoy - timedelta(days=hoy.weekday())
     inicio_mes = hoy.replace(day=1)
     
@@ -64,19 +65,28 @@ def dashboard_lavador(request):
         }
         return render(request, 'empleados/dashboard/dashboard.html', context)
     
-    # Estadísticas generales (solo si hay empleado)
-    reservas_hoy = empleado.reservas_asignadas.filter(
-        fecha_hora__date=hoy,
-        estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA, Reserva.EN_PROCESO]
+    # Servicios pendientes (asignados pero aún no es tiempo)
+    servicios_pendientes = empleado.reservas_asignadas.filter(
+        fecha_hora__gt=ahora,
+        estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA]
     ).count()
     
-    reservas_semana = empleado.reservas_asignadas.filter(
-        fecha_hora__date__gte=inicio_semana,
+    # Servicios completados del mes
+    servicios_completados = empleado.reservas_asignadas.filter(
+        estado=Reserva.COMPLETADA,
+        fecha_hora__date__gte=inicio_mes
+    ).count()
+    
+    # Servicios completados hoy
+    servicios_hoy = empleado.reservas_asignadas.filter(
+        fecha_hora__date=hoy,
         estado=Reserva.COMPLETADA
     ).count()
     
-    reservas_mes = empleado.reservas_asignadas.filter(
-        fecha_hora__date__gte=inicio_mes,
+    # Servicios completados esta semana
+    servicios_semana = empleado.reservas_asignadas.filter(
+        fecha_hora__date__gte=inicio_semana,
+        fecha_hora__date__lte=hoy,
         estado=Reserva.COMPLETADA
     ).count()
     
@@ -84,18 +94,29 @@ def dashboard_lavador(request):
     promedio_calificacion = empleado.promedio_calificacion()
     total_calificaciones = empleado.calificaciones.count()
     
-    # Próximas reservas (hoy y mañana)
-    proximas_reservas = empleado.reservas_asignadas.filter(
-        fecha_hora__gte=timezone.now(),
-        fecha_hora__date__lte=hoy + timedelta(days=1),
-        estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA, Reserva.EN_PROCESO]
-    ).order_by('fecha_hora')[:5]
+    # Bonificaciones del mes
+    bonificaciones_mes = empleado.incentivos.filter(
+        fecha_otorgado__gte=inicio_mes
+    ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
+    
+    # Próximos servicios (próximos 5 servicios programados)
+    servicios_proximos = empleado.reservas_asignadas.filter(
+        fecha_hora__gt=ahora,
+        estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA]
+    ).select_related('servicio', 'vehiculo', 'bahia', 'cliente').order_by('fecha_hora')[:5]
+    
+    # Servicios recientes (últimos 5 servicios completados o cancelados)
+    servicios_recientes = empleado.reservas_asignadas.filter(
+        estado__in=[Reserva.COMPLETADA, Reserva.CANCELADA]
+    ).select_related('servicio', 'vehiculo', 'cliente').order_by('-fecha_hora')[:5]
+    
+    # Calificaciones recientes (últimas 6 calificaciones)
+    calificaciones_recientes = empleado.calificaciones.select_related(
+        'cliente', 'servicio'
+    ).order_by('-fecha_calificacion')[:6]
     
     # Incentivos recientes
     incentivos_recientes = empleado.incentivos.all()[:3]
-    total_incentivos_mes = empleado.incentivos.filter(
-        fecha_otorgado__gte=inicio_mes
-    ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
     
     # Distribución de estados de reservas (últimos 30 días)
     fecha_30_dias = hoy - timedelta(days=30)
@@ -116,14 +137,14 @@ def dashboard_lavador(request):
     for i in range(4):
         inicio_semana_i = inicio_semana - timedelta(weeks=i)
         fin_semana_i = inicio_semana_i + timedelta(days=6)
-        servicios_semana = empleado.reservas_asignadas.filter(
+        servicios_semana_i = empleado.reservas_asignadas.filter(
             fecha_hora__date__gte=inicio_semana_i,
             fecha_hora__date__lte=fin_semana_i,
             estado=Reserva.COMPLETADA
         ).count()
         rendimiento_semanal.append({
             'semana': f"Sem {4-i}",
-            'servicios': servicios_semana
+            'servicios': servicios_semana_i
         })
     
     # Datos para el gráfico de servicios de los últimos 7 días
@@ -140,23 +161,27 @@ def dashboard_lavador(request):
     
     context = {
         'empleado': empleado,
-        'reservas_hoy': reservas_hoy,
-        'reservas_semana': reservas_semana,
-        'reservas_mes': reservas_mes,
+        'reservas_hoy': servicios_hoy,
+        'reservas_semana': servicios_semana,
+        'reservas_mes': servicios_completados,
         'promedio_calificacion': promedio_calificacion,
         'total_calificaciones': total_calificaciones,
-        'proximas_reservas': proximas_reservas,
+        'proximas_reservas': servicios_proximos,
+        'servicios_recientes': servicios_recientes,
+        'calificaciones_recientes': calificaciones_recientes,
         'incentivos_recientes': incentivos_recientes,
-        'total_incentivos_mes': total_incentivos_mes,
+        'total_incentivos_mes': bonificaciones_mes,
         'estados_data': json.dumps(estados_data),
         'rendimiento_semanal': json.dumps(rendimiento_semanal),
         'grafico_labels': json.dumps(grafico_labels),
         'grafico_data': json.dumps(grafico_data),
         'estadisticas': {
-            'servicios_pendientes': empleado.reservas_asignadas.filter(estado=Reserva.PENDIENTE).count(),
-            'servicios_completados': empleado.reservas_asignadas.filter(estado=Reserva.COMPLETADA).count(),
+            'servicios_pendientes': servicios_pendientes,
+            'servicios_completados': servicios_completados,
+            'servicios_hoy': servicios_hoy,
+            'servicios_semana': servicios_semana,
             'calificacion_promedio': promedio_calificacion,
-            'bonificaciones_mes': total_incentivos_mes,
+            'bonificaciones_mes': bonificaciones_mes,
         }
     }
     
@@ -289,12 +314,12 @@ def calificaciones_empleado(request):
         mes = hoy.replace(day=1) - timedelta(days=30*i)
         mes_siguiente = (mes.replace(day=28) + timedelta(days=4)).replace(day=1)
         count = calificaciones.filter(
-            fecha_calificacion__date__gte=mes,
-            fecha_calificacion__date__lt=mes_siguiente
+            fecha_calificacion__gte=mes,
+            fecha_calificacion__lt=mes_siguiente
         ).count()
         promedio = calificaciones.filter(
-            fecha_calificacion__date__gte=mes,
-            fecha_calificacion__date__lt=mes_siguiente
+            fecha_calificacion__gte=mes,
+            fecha_calificacion__lt=mes_siguiente
         ).aggregate(promedio=Avg('puntuacion'))['promedio'] or 0
         
         calificaciones_mensuales.append({
@@ -370,30 +395,71 @@ def incentivos_empleado(request):
 
 
 @login_required
-def servicios_empleado(request):
+def servicios_empleado(request, estado_filtro=None):
     """Vista para mostrar todos los servicios del empleado con filtros"""
-    empleado = get_object_or_404(Empleado, usuario=request.user)
+    try:
+        empleado = request.user.empleado
+        if not empleado.es_lavador():
+            messages.error(request, 'No tienes permisos para acceder a esta sección.')
+            return redirect('home')
+    except Empleado.DoesNotExist:
+        messages.error(request, 'No se encontró información de empleado para tu usuario.')
+        return redirect('home')
     
-    # Obtener servicios del empleado
-    servicios = Reserva.objects.filter(lavador=empleado).select_related(
-        'cliente', 'servicio', 'vehiculo', 'bahia'
-    ).prefetch_related('calificacion_empleado')
-    
-    # Aplicar filtros
-    estado = request.GET.get('estado')
+    # Obtener parámetros de filtro
+    # Si se pasa estado_filtro como parámetro de URL, usarlo; sino, obtenerlo de GET
+    if estado_filtro is None:
+        estado_filtro = request.GET.get('estado', 'todos')
     fecha_desde = request.GET.get('fecha_desde')
     fecha_hasta = request.GET.get('fecha_hasta')
+    servicio_tipo = request.GET.get('servicio_tipo')
     buscar = request.GET.get('buscar')
     
-    if estado:
-        servicios = servicios.filter(estado=estado)
+    # Query base
+    servicios = empleado.reservas_asignadas.select_related(
+        'servicio', 'vehiculo', 'cliente', 'bahia'
+    ).order_by('-fecha_hora')
     
+    # Aplicar filtros
+    if estado_filtro == 'pendientes':
+        servicios = servicios.filter(
+            estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA]
+        )
+    elif estado_filtro == 'completados':
+        servicios = servicios.filter(estado=Reserva.COMPLETADA)
+    elif estado_filtro == 'cancelados':
+        servicios = servicios.filter(estado=Reserva.CANCELADA)
+    elif estado_filtro == 'en_proceso':
+        servicios = servicios.filter(estado=Reserva.EN_PROCESO)
+    elif estado_filtro == 'hoy':
+        servicios = servicios.filter(fecha_hora__date=timezone.now().date())
+    elif estado_filtro == 'esta_semana':
+        inicio_semana = timezone.now().date() - timedelta(days=timezone.now().weekday())
+        servicios = servicios.filter(fecha_hora__date__gte=inicio_semana)
+    elif estado_filtro == 'este_mes':
+        inicio_mes = timezone.now().date().replace(day=1)
+        servicios = servicios.filter(fecha_hora__date__gte=inicio_mes)
+    
+    # Filtro por fechas
     if fecha_desde:
-        servicios = servicios.filter(fecha_hora__date__gte=fecha_desde)
+        try:
+            fecha_desde_obj = datetime.strptime(fecha_desde, '%Y-%m-%d').date()
+            servicios = servicios.filter(fecha_hora__date__gte=fecha_desde_obj)
+        except ValueError:
+            pass
     
     if fecha_hasta:
-        servicios = servicios.filter(fecha_hora__date__lte=fecha_hasta)
+        try:
+            fecha_hasta_obj = datetime.strptime(fecha_hasta, '%Y-%m-%d').date()
+            servicios = servicios.filter(fecha_hora__date__lte=fecha_hasta_obj)
+        except ValueError:
+            pass
     
+    # Filtro por tipo de servicio
+    if servicio_tipo:
+        servicios = servicios.filter(servicio_id=servicio_tipo)
+    
+    # Filtro de búsqueda
     if buscar:
         servicios = servicios.filter(
             Q(cliente__nombre__icontains=buscar) |
@@ -402,14 +468,34 @@ def servicios_empleado(request):
             Q(servicio__nombre__icontains=buscar)
         )
     
-    # Ordenar por fecha más reciente
-    servicios = servicios.order_by('-fecha_hora')
+    # Estadísticas para el filtro actual
+    total_servicios = servicios.count()
+    servicios_completados = servicios.filter(estado=Reserva.COMPLETADA).count()
+    servicios_pendientes = servicios.filter(
+        fecha_hora__gt=timezone.now(),
+        estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA]
+    ).count()
+    servicios_cancelados = servicios.filter(estado=Reserva.CANCELADA).count()
+    servicios_incumplidos = servicios.filter(estado=Reserva.INCUMPLIDA).count()
     
-    # Estadísticas
+    # Estadísticas generales (sin filtros)
+    servicios_base = empleado.reservas_asignadas.all()
     estadisticas = {
-        'pendientes': servicios.filter(estado__in=['pendiente', 'confirmado']).count(),
-        'atendidos': servicios.filter(estado='completado').count(),
-        'cancelados': servicios.filter(estado='cancelado').count(),
+        'total_servicios': servicios_base.count(),
+        'servicios_pendientes': servicios_base.filter(
+            estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA]
+        ).count(),
+        'servicios_proceso': servicios_base.filter(estado=Reserva.EN_PROCESO).count(),
+        'servicios_completados': servicios_base.filter(estado=Reserva.COMPLETADA).count(),
+        'servicios_cancelados': servicios_base.filter(estado=Reserva.CANCELADA).count(),
+        'servicios_incumplidos': servicios_base.filter(estado=Reserva.INCUMPLIDA).count(),
+        'pendientes': servicios_base.filter(
+            estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA]
+        ).count(),
+        'atendidos': servicios_base.filter(estado=Reserva.COMPLETADA).count(),
+        'cancelados': servicios_base.filter(
+            estado__in=[Reserva.CANCELADA, Reserva.INCUMPLIDA]
+        ).count(),
     }
     
     # Paginación
@@ -420,9 +506,26 @@ def servicios_empleado(request):
     context = {
         'empleado': empleado,
         'servicios': servicios_paginados,
-        'estadisticas': estadisticas,
+        'estado_filtro': estado_filtro,
+        'fecha_desde': fecha_desde,
+        'fecha_hasta': fecha_hasta,
+        'servicio_tipo': servicio_tipo,
+        'buscar': buscar,
+        'estado_filtro': estado_filtro,  # Agregar estado_filtro al contexto
+        'estadisticas': estadisticas,  # Estadísticas generales
+        'estadisticas_filtro': {
+            'total_servicios': total_servicios,
+            'servicios_completados': servicios_completados,
+            'servicios_pendientes': servicios_pendientes,
+            'servicios_cancelados': servicios_cancelados,
+            'servicios_incumplidos': servicios_incumplidos,
+        },
         'is_paginated': servicios_paginados.has_other_pages(),
         'page_obj': servicios_paginados,
+        'tipos_servicio': Servicio.objects.all(),  # Para el filtro de tipos de servicio
+        'estado': request.GET.get('estado'),
+        'ordenar_por': request.GET.get('ordenar_por', '-fecha_hora'),
+        'now': timezone.now(),
     }
     
     return render(request, 'empleados/dashboard/servicios.html', context)
@@ -673,8 +776,13 @@ def actualizar_disponibilidad(request):
     """
     if request.method == 'POST':
         try:
+            import json
             empleado = request.user.empleado
-            disponible = request.POST.get('disponible') == 'true'
+            
+            # Obtener datos del JSON body
+            data = json.loads(request.body)
+            disponible = data.get('disponible', False)
+            
             empleado.disponible = disponible
             empleado.save()
             
@@ -689,6 +797,148 @@ def actualizar_disponibilidad(request):
             return JsonResponse({'success': False, 'error': str(e)})
     
     return JsonResponse({'success': False, 'error': 'Método no permitido'})
+
+
+@login_required
+def servicios_completados(request):
+    """Vista para mostrar servicios completados del lavador"""
+    try:
+        empleado = request.user.empleado
+        if not empleado.es_lavador():
+            messages.error(request, 'No tienes permisos para acceder a esta sección.')
+            return redirect('home')
+    except Empleado.DoesNotExist:
+        messages.error(request, 'No se encontró información de empleado para tu usuario.')
+        return redirect('home')
+    
+    # Filtros
+    fecha_desde = request.GET.get('fecha_desde')
+    fecha_hasta = request.GET.get('fecha_hasta')
+    servicio_tipo = request.GET.get('servicio_tipo')
+    
+    # Query base para servicios completados
+    servicios = empleado.reservas_asignadas.filter(
+        estado=Reserva.COMPLETADA
+    ).select_related(
+        'cliente', 'vehiculo', 'servicio', 'bahia'
+    ).order_by('-fecha_hora')
+    
+    # Aplicar filtros
+    if fecha_desde:
+        servicios = servicios.filter(fecha_hora__date__gte=fecha_desde)
+    if fecha_hasta:
+        servicios = servicios.filter(fecha_hora__date__lte=fecha_hasta)
+    if servicio_tipo:
+        servicios = servicios.filter(servicio_id=servicio_tipo)
+    
+    # Estadísticas para el filtro actual
+    estadisticas_filtro = {
+        'servicios_completados': servicios.count(),
+        'total_servicios': empleado.reservas_asignadas.count(),
+        'servicios_pendientes': empleado.reservas_asignadas.filter(
+            estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA]
+        ).count(),
+    }
+    
+    # Paginación
+    paginator = Paginator(servicios, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'empleado': empleado,
+        'page_obj': page_obj,
+        'estadisticas_filtro': estadisticas_filtro,
+        'fecha_desde': fecha_desde,
+        'fecha_hasta': fecha_hasta,
+        'servicio_tipo': servicio_tipo,
+    }
+    
+    return render(request, 'empleados/dashboard/servicios_completados.html', context)
+
+
+@login_required
+def historial_servicios(request):
+    """Vista para mostrar el historial completo de servicios del lavador"""
+    try:
+        empleado = request.user.empleado
+        if not empleado.es_lavador():
+            messages.error(request, 'No tienes permisos para acceder a esta sección.')
+            return redirect('home')
+    except Empleado.DoesNotExist:
+        messages.error(request, 'No se encontró información de empleado para tu usuario.')
+        return redirect('home')
+    
+    # Filtros
+    estado = request.GET.get('estado')
+    fecha_desde = request.GET.get('fecha_desde')
+    fecha_hasta = request.GET.get('fecha_hasta')
+    servicio_tipo = request.GET.get('servicio_tipo')
+    ordenar_por = request.GET.get('ordenar_por', '-fecha_hora')
+    
+    # Query base
+    servicios = empleado.reservas_asignadas.select_related(
+        'cliente', 'vehiculo', 'servicio', 'bahia'
+    )
+    
+    # Aplicar filtros
+    if estado:
+        if estado == 'pendiente':
+            servicios = servicios.filter(estado=Reserva.PENDIENTE)
+        elif estado == 'confirmada':
+            servicios = servicios.filter(estado=Reserva.CONFIRMADA)
+        elif estado == 'en_proceso':
+            servicios = servicios.filter(estado=Reserva.EN_PROCESO)
+        elif estado == 'completada':
+            servicios = servicios.filter(estado=Reserva.COMPLETADA)
+        elif estado == 'cancelada':
+            servicios = servicios.filter(estado=Reserva.CANCELADA)
+    
+    if fecha_desde:
+        servicios = servicios.filter(fecha_hora__date__gte=fecha_desde)
+    if fecha_hasta:
+        servicios = servicios.filter(fecha_hora__date__lte=fecha_hasta)
+    if servicio_tipo:
+        servicios = servicios.filter(servicio_id=servicio_tipo)
+    
+    # Ordenar
+    servicios = servicios.order_by(ordenar_por)
+    
+    # Estadísticas generales
+    estadisticas = {
+        'total_servicios': empleado.reservas_asignadas.count(),
+        'servicios_pendientes': empleado.reservas_asignadas.filter(
+            estado=Reserva.PENDIENTE
+        ).count(),
+        'servicios_proceso': empleado.reservas_asignadas.filter(
+            estado=Reserva.EN_PROCESO
+        ).count(),
+        'servicios_completados': empleado.reservas_asignadas.filter(
+            estado=Reserva.COMPLETADA
+        ).count(),
+        'servicios_cancelados': empleado.reservas_asignadas.filter(
+            estado=Reserva.CANCELADA
+        ).count(),
+    }
+    
+    # Paginación
+    paginator = Paginator(servicios, 15)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'empleado': empleado,
+        'page_obj': page_obj,
+        'estadisticas': estadisticas,
+        'estado': estado,
+        'fecha_desde': fecha_desde,
+        'fecha_hasta': fecha_hasta,
+        'servicio_tipo': servicio_tipo,
+        'ordenar_por': ordenar_por,
+        'now': timezone.now(),
+    }
+    
+    return render(request, 'empleados/dashboard/historial_servicios.html', context)
 
 
 @login_required

@@ -46,6 +46,15 @@ class MedioPago(models.Model):
     api_key = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('API Key'))
     api_secret = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('API Secret'))
     merchant_id = models.CharField(max_length=100, blank=True, null=True, verbose_name=_('ID de Comercio'))
+    
+    # Campos adicionales para configuraciones específicas
+    client_id = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Client ID'))
+    client_secret = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Client Secret'))
+    public_key = models.CharField(max_length=255, blank=True, null=True, verbose_name=_('Public Key'))
+    account_id = models.CharField(max_length=100, blank=True, null=True, verbose_name=_('Account ID'))
+    base_url = models.URLField(blank=True, null=True, verbose_name=_('URL Base'))
+    webhook_url = models.URLField(blank=True, null=True, verbose_name=_('URL Webhook'))
+    
     sandbox = models.BooleanField(default=True, verbose_name=_('Modo Sandbox'))
     
     class Meta:
@@ -87,11 +96,42 @@ class MedioPago(models.Model):
             'sandbox': self.sandbox,
         }
         
-        if self.tipo in [self.WOMPI, self.PAYU, self.EPAYCO]:
-            config['api_secret'] = self.api_secret
-            
-        if self.tipo in [self.PAYU, self.EPAYCO]:
-            config['merchant_id'] = self.merchant_id
+        # Configuraciones específicas por tipo de pasarela
+        if self.tipo == self.NEQUI:
+            config.update({
+                'client_id': self.client_id,
+                'client_secret': self.client_secret,
+                'base_url': self.base_url or 'https://api.nequi.com.co',
+                'webhook_url': self.webhook_url,
+            })
+        elif self.tipo == self.WOMPI:
+            config.update({
+                'public_key': self.public_key,
+                'api_secret': self.api_secret,
+                'webhook_url': self.webhook_url,
+            })
+        elif self.tipo == self.PAYU:
+            config.update({
+                'api_secret': self.api_secret,
+                'merchant_id': self.merchant_id,
+                'account_id': self.account_id,
+                'webhook_url': self.webhook_url,
+            })
+        elif self.tipo == self.EPAYCO:
+            config.update({
+                'api_secret': self.api_secret,
+                'merchant_id': self.merchant_id,
+                'public_key': self.public_key,
+                'webhook_url': self.webhook_url,
+            })
+        elif self.tipo == self.PSE:
+            # PSE generalmente usa PayU como procesador
+            config.update({
+                'api_secret': self.api_secret,
+                'merchant_id': self.merchant_id,
+                'account_id': self.account_id,
+                'webhook_url': self.webhook_url,
+            })
             
         return config
 

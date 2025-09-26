@@ -1,6 +1,6 @@
 @echo off
 ::=========================================================================
-:: Script para cancelar reservas pendientes sin pago después de 15 minutos
+:: Script para cancelar reservas pendientes sin pago después de 5 minutos
 ::=========================================================================
 ::
 :: DESCRIPCIÓN:

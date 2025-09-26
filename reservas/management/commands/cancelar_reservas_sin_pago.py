@@ -2,15 +2,15 @@
 Comando Django para cancelar automáticamente reservas pendientes sin pago.
 
 Este comando identifica reservas que han permanecido en estado pendiente por más
-del tiempo configurado (por defecto 15 minutos) y las cancela automáticamente,
+del tiempo configurado (por defecto 5 minutos) y las cancela automáticamente,
 liberando los horarios reservados y notificando a los clientes.
 
 Uso:
-    python manage.py cancelar_reservas_sin_pago [--dry-run] [--minutos=15]
+    python manage.py cancelar_reservas_sin_pago [--dry-run] [--minutos=5]
 
 Opciones:
     --dry-run: Ejecuta en modo simulación sin realizar cambios reales
-    --minutos: Tiempo en minutos para considerar una reserva como abandonada (default: 15)
+    --minutos: Tiempo en minutos para considerar una reserva como abandonada (default: 5)
 """
 
 from django.core.management.base import BaseCommand
@@ -22,11 +22,11 @@ class Command(BaseCommand):
     """Comando para cancelar reservas pendientes sin pago.
     
     Este comando identifica y cancela automáticamente las reservas que han permanecido
-    en estado pendiente por más del tiempo configurado (por defecto 15 minutos).
+    en estado pendiente por más del tiempo configurado (por defecto 5 minutos).
     Al cancelar las reservas, también libera los horarios y notifica a los clientes.
     """
     
-    help = 'Cancela las reservas pendientes que llevan más de 15 minutos sin pago'
+    help = 'Cancela las reservas pendientes que llevan más de 5 minutos sin pago'
 
     def add_arguments(self, parser):
         """Configura los argumentos del comando.
@@ -42,8 +42,8 @@ class Command(BaseCommand):
         parser.add_argument(
             '--minutos',
             type=int,
-            default=15,
-            help='Tiempo en minutos para cancelar reservas pendientes (por defecto: 15)',
+            default=5,
+            help='Tiempo en minutos para cancelar reservas pendientes (por defecto: 5)',
         )
 
     def handle(self, *args, **options):
@@ -57,7 +57,7 @@ class Command(BaseCommand):
             **options: Opciones del comando, incluyendo 'dry-run' y 'minutos'
         """
         dry_run = options.get('dry_run', False)
-        minutos = options.get('minutos', 15)
+        minutos = options.get('minutos', 5)
         now = timezone.now()
         
         # Calcular el tiempo límite (ahora menos los minutos configurados)
