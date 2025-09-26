@@ -298,7 +298,7 @@ REST_FRAMEWORK = {
 }
 
 # ========================================
-# CONFIGURACIÓN DE CORS
+# CONFIGURACIÓN DE CORS Y CSRF
 # ========================================
 CORS_ALLOWED_ORIGINS = [
     f"https://{os.getenv('PYTHONANYWHERE_USERNAME', 'tu_usuario')}.pythonanywhere.com",
@@ -307,6 +307,19 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOWED_ORIGINS = [origin for origin in CORS_ALLOWED_ORIGINS if origin]
 
 CORS_ALLOW_CREDENTIALS = True
+
+# Configuración de CSRF para PythonAnywhere
+CSRF_TRUSTED_ORIGINS = [
+    f"https://{os.getenv('PYTHONANYWHERE_USERNAME', 'tu_usuario')}.pythonanywhere.com",
+    os.getenv('CUSTOM_DOMAIN', ''),
+]
+CSRF_TRUSTED_ORIGINS = [origin for origin in CSRF_TRUSTED_ORIGINS if origin]
+
+# Configuración adicional de CSRF para producción
+CSRF_COOKIE_HTTPONLY = False  # Permitir acceso JavaScript al token CSRF
+CSRF_COOKIE_SAMESITE = 'Lax'  # Cross-site requests
+CSRF_USE_SESSIONS = False  # No usar sesiones para CSRF
+CSRF_COOKIE_SECURE = True  # Requerir HTTPS para cookies CSRF en producción
 
 # ========================================
 # CONFIGURACIÓN DE NEQUI
