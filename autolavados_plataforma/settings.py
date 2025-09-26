@@ -31,7 +31,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-k03^2#n1=kuog)$x+9n6#+i)yz
 DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
 # Permitir acceso desde localhost, IP local y cualquier host a través de port forwarding
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0,*').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,0.0.0.0,testserver,*').split(',')
 
 
 # Application definition

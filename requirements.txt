@@ -1,4 +1,8 @@
-# Dependencias principales de Django
+# ========================================
+# REQUIREMENTS.TXT OPTIMIZADO PARA PYTHONANYWHERE
+# ========================================
+
+# Dependencias principales de Django (compatibles con PythonAnywhere)
 asgiref==3.7.2
 Django==4.2.11
 django-cors-headers==4.3.1
@@ -7,54 +11,72 @@ sqlparse==0.4.4
 typing_extensions==4.8.0
 tzdata==2023.3
 
-# Base de datos
-mysqlclient==2.2.7
+# Base de datos (MySQL optimizado para PythonAnywhere)
+mysqlclient==2.2.4  # Versión estable compatible con PythonAnywhere
 PyMySQL==1.1.0
 dj-database-url==2.1.0
 
 # Configuración y variables de entorno
 python-dotenv==1.0.0
 
-# Seguridad y criptografía
-cryptography==45.0.7
-cffi==2.0.0
-pycparser==2.23
+# Seguridad y criptografía (versiones compatibles)
+cryptography==41.0.7  # Versión compatible con PythonAnywhere
+cffi==1.16.0
+pycparser==2.21
 
 # Generación de códigos QR e imágenes
-qrcode==8.2
-pillow==11.3.0
+qrcode[pil]==7.4.2  # Versión estable con soporte PIL
+Pillow==10.0.1  # Versión compatible con PythonAnywhere
 
 # Servidor web para producción
 gunicorn==21.2.0
 whitenoise==6.5.0
 
 # Peticiones HTTP
-requests==2.32.4
-certifi==2025.6.15
-charset-normalizer==3.4.2
-idna==3.10
-urllib3==2.4.0
+requests==2.31.0
+certifi==2023.11.17
+charset-normalizer==3.3.2
+idna==3.6
+urllib3==2.1.0
 
-# AWS S3 para archivos estáticos
-django-storages==1.14.6
-boto3==1.40.26
-botocore==1.40.37
+# AWS S3 para archivos estáticos (opcional)
+django-storages==1.14.2
+boto3==1.34.34
+botocore==1.34.34
 jmespath==1.0.1
-s3transfer==0.13.1
+s3transfer==0.10.0
 
 # Utilidades de fecha y tiempo
-python-dateutil==2.9.0.post0
-pytz==2025.2
-six==1.17.0
+python-dateutil==2.8.2
+pytz==2023.3
+six==1.16.0
 
 # Utilidades generales
 packaging==23.2
 colorama==0.4.6
 
 # Para procesamiento de datos
-beautifulsoup4==4.13.5
-soupsieve==2.8
+beautifulsoup4==4.12.2
+soupsieve==2.5
 
 # Monitoreo de errores
-sentry-sdk==1.39.1
+sentry-sdk==1.38.0
+
+# Dependencias adicionales para PythonAnywhere
+# ============================================
+# Email backend mejorado
+django-ses==3.5.0
+
+# Compresión de archivos estáticos
+django-compressor==4.4
+
+# Cache con Redis (opcional)
+django-redis==5.4.0
+redis==5.0.1
+
+# Logging mejorado
+django-extensions==3.2.3
+
+# Timezone handling mejorado
+django-timezone-field==6.0.1
 

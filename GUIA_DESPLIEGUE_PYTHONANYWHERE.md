@@ -1,326 +1,272 @@
-# Guía de Despliegue en PythonAnywhere
+# 🚀 Guía de Despliegue en PythonAnywhere
 
-## Sistema de Autolavado - Maicao
+## Flujo GitHub → PythonAnywhere
 
-Esta guía te ayudará a desplegar el sistema de autolavado en PythonAnywhere después de subirlo a GitHub.
-
----
-
-## 📋 Requisitos Previos
-
-- [ ] Cuenta en PythonAnywhere (plan Hacker o superior para MySQL)
-- [ ] Repositorio en GitHub con el código actualizado
-- [ ] Acceso a la configuración de base de datos MySQL en PythonAnywhere
+Esta guía está optimizada para tu flujo de trabajo específico: **GitHub → PythonAnywhere**.
 
 ---
 
-## 🚀 Paso 1: Preparación del Repositorio en GitHub
+## 📋 Prerrequisitos
 
-### 1.1 Verificar archivos importantes
-Asegúrate de que estos archivos estén en tu repositorio:
-- `requirements.txt` (actualizado)
-- `.env.example` (configuración de ejemplo)
-- `manage.py`
-- Todas las migraciones en `*/migrations/`
+### En PythonAnywhere:
+- [ ] Cuenta activa en PythonAnywhere
+- [ ] Entorno virtual creado: `carwash_env`
+- [ ] Acceso a consola Bash
+- [ ] Base de datos MySQL configurada
 
-### 1.2 Archivos a NO subir (verificar .gitignore)
-```
-.env
-*.pyc
-__pycache__/
-db.sqlite3
-staticfiles/
-media/
-sent_emails/
-```
+### En GitHub:
+- [ ] Repositorio con el código actualizado
+- [ ] Archivos de configuración incluidos
 
 ---
 
-## 🔧 Paso 2: Configuración en PythonAnywhere
+## 🔧 Configuración Inicial (Solo la primera vez)
 
-### 2.1 Clonar el repositorio
+### 1. Crear Entorno Virtual
 ```bash
-# En la consola Bash de PythonAnywhere
+# En la consola de PythonAnywhere
+mkvirtualenv --python=/usr/bin/python3.10 carwash_env
+```
+
+### 2. Clonar Repositorio
+```bash
 cd ~
-git clone https://github.com/tu_usuario/tu_repositorio.git
-cd tu_repositorio
+git clone https://github.com/tu-usuario/Proyecto_CarWash_Maicao.git
+cd Proyecto_CarWash_Maicao
 ```
 
-### 2.2 Crear entorno virtual
+### 3. Configurar Variables de Entorno
 ```bash
-# Crear entorno virtual con Python 3.10
-mkvirtualenv --python=/usr/bin/python3.10 autolavados_env
+# Copiar archivo de configuración
+cp .env.pythonanywhere .env
 
-# Activar entorno virtual
-workon autolavados_env
-
-# Instalar dependencias
-pip install -r requirements.txt
-```
-
-### 2.3 Configurar variables de entorno
-```bash
-# Crear archivo .env
-cp .env.example .env
+# Editar con tus valores reales
 nano .env
 ```
 
-Configurar las siguientes variables en `.env`:
-```env
-# CONFIGURACIÓN DE SEGURIDAD
-SECRET_KEY=tu_clave_secreta_muy_larga_y_segura_generada
+**Valores importantes a configurar en `.env`:**
+```bash
+SECRET_KEY=tu_clave_secreta_unica_y_segura
 DEBUG=False
-ALLOWED_HOSTS=tu_usuario.pythonanywhere.com
-
-# BASE DE DATOS MYSQL
-USE_MYSQL=True
-DB_NAME=tu_usuario$autolavados_db
+ALLOWED_HOSTS=tu_usuario.pythonanywhere.com,localhost,127.0.0.1
+PYTHONANYWHERE_USERNAME=tu_usuario
+DB_NAME=tu_usuario$autolavados
 DB_USER=tu_usuario
-DB_PASSWORD=tu_contraseña_mysql_pythonanywhere
+DB_PASSWORD=tu_password_mysql
 DB_HOST=tu_usuario.mysql.pythonanywhere-services.com
-DB_PORT=3306
-
-# ARCHIVOS ESTÁTICOS
-STATIC_URL=/static/
-STATIC_ROOT=/home/tu_usuario/tu_repositorio/staticfiles
-STATIC_DIR=/home/tu_usuario/tu_repositorio/static
-
-# ARCHIVOS MEDIA
-MEDIA_URL=/media/
-MEDIA_ROOT=/home/tu_usuario/tu_repositorio/media
-
-# CSRF Y SESIONES
-CSRF_TRUSTED_ORIGINS=https://tu_usuario.pythonanywhere.com
-SESSION_COOKIE_SECURE=True
-
-# CORREO ELECTRÓNICO (opcional)
-EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_HOST_USER=tu_correo@gmail.com
-EMAIL_HOST_PASSWORD=tu_contraseña_de_aplicacion
-EMAIL_USE_TLS=True
-
-# URL DEL SITIO
-SITE_URL=https://tu_usuario.pythonanywhere.com
-
-# LOGGING
-LOG_LEVEL=INFO
-DJANGO_LOG_LEVEL=INFO
-APP_LOG_LEVEL=INFO
 ```
 
----
-
-## 🗄️ Paso 3: Configuración de Base de Datos
-
-### 3.1 Crear base de datos MySQL
-1. Ve a la pestaña "Databases" en tu dashboard de PythonAnywhere
-2. Crea una nueva base de datos llamada `autolavados_db`
-3. Anota las credenciales de conexión
-
-### 3.2 Ejecutar migraciones
+### 4. Configurar Base de Datos MySQL
 ```bash
 # Activar entorno virtual
-workon autolavados_env
-cd ~/tu_repositorio
+workon carwash_env
 
-# Verificar configuración de base de datos
-python manage.py check
+# Instalar dependencias
+pip install -r requirements.txt
 
 # Ejecutar migraciones
-python manage.py migrate
+python manage.py migrate --noinput
 
 # Crear superusuario
 python manage.py createsuperuser
+```
 
+### 5. Configurar Aplicación Web
+1. Ve al panel de PythonAnywhere → **Web**
+2. Crea nueva aplicación web
+3. Selecciona **Manual configuration** → **Python 3.10**
+4. Configura el archivo WSGI usando `wsgi_pythonanywhere.py`
+
+### 6. Configurar Archivos Estáticos
+```bash
 # Recolectar archivos estáticos
 python manage.py collectstatic --noinput
 ```
 
----
-
-## 🌐 Paso 4: Configuración de la Aplicación Web
-
-### 4.1 Crear aplicación web
-1. Ve a la pestaña "Web" en tu dashboard
-2. Clic en "Add a new web app"
-3. Selecciona "Manual configuration"
-4. Selecciona Python 3.10
-
-### 4.2 Configurar WSGI
-Edita el archivo WSGI (`/var/www/tu_usuario_pythonanywhere_com_wsgi.py`):
-
-```python
-import os
-import sys
-
-# Agregar el directorio del proyecto al path
-path = '/home/tu_usuario/tu_repositorio'
-if path not in sys.path:
-    sys.path.insert(0, path)
-
-# Configurar Django
-os.environ['DJANGO_SETTINGS_MODULE'] = 'autolavados_plataforma.settings'
-
-# Cargar variables de entorno
-from dotenv import load_dotenv
-load_dotenv(os.path.join(path, '.env'))
-
-# Configurar aplicación WSGI
-from django.core.wsgi import get_wsgi_application
-application = get_wsgi_application()
-```
-
-### 4.3 Configurar entorno virtual
-En la pestaña "Web", sección "Virtualenv":
-```
-/home/tu_usuario/.virtualenvs/autolavados_env
-```
-
-### 4.4 Configurar archivos estáticos
-En la pestaña "Web", sección "Static files":
-- URL: `/static/`
-- Directory: `/home/tu_usuario/tu_repositorio/staticfiles/`
-
-- URL: `/media/`
-- Directory: `/home/tu_usuario/tu_repositorio/media/`
+En el panel Web de PythonAnywhere:
+- **Static files URL**: `/static/`
+- **Static files directory**: `/home/tu_usuario/Proyecto_CarWash_Maicao/staticfiles/`
 
 ---
 
-## 🔒 Paso 5: Configuración de Seguridad
+## 🔄 Proceso de Despliegue (Tu flujo actual)
 
-### 5.1 Generar SECRET_KEY segura
-```python
-# En la consola Python de PythonAnywhere
-from django.core.management.utils import get_random_secret_key
-print(get_random_secret_key())
-```
-
-### 5.2 Configurar HTTPS
-- PythonAnywhere proporciona HTTPS automáticamente
-- Asegúrate de que `SESSION_COOKIE_SECURE=True` en producción
-
----
-
-## 📊 Paso 6: Datos Iniciales (Opcional)
-
-### 6.1 Crear datos de prueba
+### Comandos que ejecutas:
 ```bash
-# Ejecutar script de creación de bahías
-python manage.py shell < scripts/crear_bahias.py
-
-# O crear manualmente desde el admin
-python manage.py runserver
-# Ir a /admin/ y crear servicios, bahías, etc.
-```
-
----
-
-## 🧪 Paso 7: Pruebas de Funcionamiento
-
-### 7.1 Verificar la aplicación
-1. Ve a `https://tu_usuario.pythonanywhere.com`
-2. Verifica que la página principal carga correctamente
-3. Prueba el login en `/autenticacion/login/`
-4. Verifica el panel de administración en `/admin/`
-
-### 7.2 Pruebas de funcionalidad
-- [ ] Registro de usuarios
-- [ ] Login/logout
-- [ ] Creación de reservas
-- [ ] Panel de administración
-- [ ] API endpoints
-- [ ] Archivos estáticos (CSS, JS, imágenes)
-
----
-
-## 🔄 Paso 8: Actualizaciones Futuras
-
-### 8.1 Script de actualización
-Crea un script `update.sh`:
-```bash
-#!/bin/bash
-cd ~/tu_repositorio
-git pull origin main
-workon autolavados_env
-pip install -r requirements.txt
-python manage.py migrate
+cd ~/Proyecto_CarWash_Maicao 
+git fetch origin 
+git checkout -B main origin/main 
+git reset --hard origin/main 
+git clean -fd 
+workon carwash_env 
+pip install -r requirements.txt   # si cambió 
+python manage.py migrate --noinput 
 python manage.py collectstatic --noinput
-# Reiniciar aplicación web desde el dashboard
 ```
 
-### 8.2 Proceso de actualización
-1. Hacer cambios en el código local
-2. Commit y push a GitHub
-3. En PythonAnywhere: ejecutar script de actualización
-4. Reiniciar la aplicación web desde el dashboard
+### Script automatizado (opcional):
+```bash
+# Usar el script incluido en el proyecto
+bash deploy_pythonanywhere.sh
+```
+
+### Después del despliegue:
+1. **Recargar aplicación web** en el panel de PythonAnywhere
+2. **Verificar logs** si hay errores
+3. **Probar funcionalidad** en tu dominio
+
+---
+
+## 📁 Estructura de Archivos en PythonAnywhere
+
+```
+/home/tu_usuario/
+├── Proyecto_CarWash_Maicao/          # Tu proyecto
+│   ├── .env                          # Variables de entorno (NO en GitHub)
+│   ├── .env.pythonanywhere          # Plantilla de configuración
+│   ├── wsgi_pythonanywhere.py       # Configuración WSGI
+│   ├── settings_production.py       # Settings de producción
+│   ├── deploy_pythonanywhere.sh     # Script de despliegue
+│   ├── requirements.txt             # Dependencias
+│   ├── manage.py
+│   ├── autolavados_plataforma/
+│   ├── autenticacion/
+│   ├── reservas/
+│   ├── empleados/
+│   ├── clientes/
+│   ├── notificaciones/
+│   ├── static/
+│   ├── templates/
+│   └── staticfiles/                 # Archivos estáticos recolectados
+└── .virtualenvs/
+    └── carwash_env/                 # Entorno virtual
+```
+
+---
+
+## 🔍 Verificación Post-Despliegue
+
+### 1. Verificar Aplicación Web
+- [ ] Aplicación carga sin errores
+- [ ] CSS y JavaScript funcionan
+- [ ] Formularios responden correctamente
+
+### 2. Verificar Base de Datos
+```bash
+# Probar conexión
+python manage.py check --database default
+
+# Verificar migraciones
+python manage.py showmigrations
+```
+
+### 3. Verificar Logs
+```bash
+# Ver logs de error
+tail -f /var/log/tu_usuario.pythonanywhere.com.error.log
+
+# Ver logs de acceso
+tail -f /var/log/tu_usuario.pythonanywhere.com.access.log
+```
 
 ---
 
 ## 🚨 Solución de Problemas Comunes
 
-### Error de base de datos
+### Error: "DisallowedHost"
+**Solución:** Verificar `ALLOWED_HOSTS` en `.env`
 ```bash
-# Verificar conexión
-python manage.py dbshell
-
-# Verificar configuración
-python manage.py check --database default
+ALLOWED_HOSTS=tu_usuario.pythonanywhere.com,localhost,127.0.0.1
 ```
 
-### Error de archivos estáticos
+### Error: "No module named 'django'"
+**Solución:** Activar entorno virtual
 ```bash
-# Recolectar archivos estáticos
-python manage.py collectstatic --clear --noinput
-
-# Verificar permisos
-ls -la staticfiles/
+workon carwash_env
 ```
 
-### Error de importación
+### Error: Base de datos
+**Solución:** Verificar configuración MySQL en `.env`
 ```bash
-# Verificar path de Python
-python -c "import sys; print(sys.path)"
-
-# Verificar instalación de dependencias
-pip list
+DB_HOST=tu_usuario.mysql.pythonanywhere-services.com
+DB_NAME=tu_usuario$autolavados
 ```
+
+### Archivos estáticos no cargan
+**Solución:** 
+1. Ejecutar `python manage.py collectstatic --noinput`
+2. Verificar configuración en panel Web
+3. Recargar aplicación
 
 ### Error 500
-1. Revisar logs de error en la pestaña "Web"
-2. Verificar configuración de `DEBUG=False`
-3. Verificar `ALLOWED_HOSTS`
-4. Revisar archivo WSGI
+**Solución:**
+1. Revisar logs de error
+2. Verificar archivo `.env`
+3. Comprobar permisos de archivos
 
 ---
 
-## 📝 Lista de Verificación Final
+## 📝 Checklist de Despliegue
 
-- [ ] Repositorio subido a GitHub
-- [ ] Entorno virtual creado y activado
-- [ ] Dependencias instaladas
-- [ ] Variables de entorno configuradas
-- [ ] Base de datos creada y migrada
-- [ ] Superusuario creado
-- [ ] Archivos estáticos recolectados
-- [ ] Aplicación web configurada
-- [ ] WSGI configurado correctamente
-- [ ] Archivos estáticos mapeados
-- [ ] Aplicación funcionando en producción
-- [ ] Pruebas de funcionalidad completadas
+### Antes de cada despliegue:
+- [ ] Código probado localmente
+- [ ] Cambios commitados y pusheados a GitHub
+- [ ] Variables de entorno actualizadas si es necesario
+
+### Durante el despliegue:
+- [ ] Ejecutar comandos de actualización
+- [ ] Verificar que no hay errores en la consola
+- [ ] Recargar aplicación web
+
+### Después del despliegue:
+- [ ] Probar funcionalidades principales
+- [ ] Verificar que no hay errores 500
+- [ ] Comprobar logs si hay warnings
+
+---
+
+## 🔐 Seguridad
+
+### Variables Sensibles:
+- **NUNCA** subas el archivo `.env` a GitHub
+- Usa claves secretas únicas y seguras
+- Mantén `DEBUG=False` en producción
+- Configura `ALLOWED_HOSTS` correctamente
+
+### Backup:
+- Realiza backups regulares de la base de datos
+- Mantén copias de seguridad del archivo `.env`
+- Documenta cambios importantes
 
 ---
 
 ## 📞 Soporte
 
-Si encuentras problemas durante el despliegue:
+### Recursos Útiles:
+- [Documentación PythonAnywhere](https://help.pythonanywhere.com/)
+- [Documentación Django](https://docs.djangoproject.com/)
+- Logs de la aplicación en PythonAnywhere
 
-1. Revisa los logs de error en PythonAnywhere
-2. Verifica la configuración paso a paso
-3. Consulta la documentación de PythonAnywhere
-4. Revisa los issues del repositorio en GitHub
+### Comandos de Diagnóstico:
+```bash
+# Verificar configuración Django
+python manage.py check
+
+# Ver configuración actual
+python manage.py diffsettings
+
+# Probar conexión DB
+python manage.py dbshell
+```
 
 ---
 
-**¡Felicidades! Tu sistema de autolavado está ahora desplegado en PythonAnywhere.**
+## 🎉 ¡Listo!
+
+Tu aplicación CarWash está ahora desplegada en PythonAnywhere siguiendo tu flujo de trabajo preferido: **GitHub → PythonAnywhere**.
+
+**URL de tu aplicación:** `https://tu_usuario.pythonanywhere.com`
+
+---
+
+*Guía optimizada para el flujo GitHub → PythonAnywhere*
