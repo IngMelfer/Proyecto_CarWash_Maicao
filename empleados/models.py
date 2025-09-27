@@ -136,6 +136,7 @@ class Calificacion(models.Model):
     empleado = models.ForeignKey('Empleado', on_delete=models.CASCADE, related_name='calificaciones', verbose_name=_('Empleado'))
     servicio = models.ForeignKey('reservas.Servicio', on_delete=models.CASCADE, related_name='calificaciones_empleado', verbose_name=_('Servicio'))
     cliente = models.ForeignKey('clientes.Cliente', on_delete=models.CASCADE, related_name='calificaciones_dadas', verbose_name=_('Cliente'))
+    reserva = models.ForeignKey('reservas.Reserva', on_delete=models.CASCADE, related_name='calificacion', verbose_name=_('Reserva'), null=True, blank=True)
     puntuacion = models.PositiveSmallIntegerField(verbose_name=_('Puntuación'), help_text=_('Calificación de 1 a 5 estrellas'))
     comentario = models.TextField(blank=True, verbose_name=_('Comentario'))
     fecha_calificacion = models.DateTimeField(auto_now_add=True, verbose_name=_('Fecha de Calificación'))
@@ -144,8 +145,8 @@ class Calificacion(models.Model):
         verbose_name = _('Calificación')
         verbose_name_plural = _('Calificaciones')
         ordering = ['-fecha_calificacion']
-        # Un cliente solo puede calificar una vez a un empleado por servicio
-        unique_together = ['empleado', 'servicio', 'cliente']
+        # Un cliente solo puede calificar una vez por reserva específica
+        unique_together = ['reserva', 'cliente']
     
     def __str__(self):
         return f"{self.cliente} calificó a {self.empleado} con {self.puntuacion} estrellas"

@@ -6,7 +6,7 @@ from clientes.models import Cliente
 
 class Notificacion(models.Model):
     """
-    Modelo para almacenar las notificaciones enviadas a los clientes.
+    Modelo para almacenar las notificaciones enviadas a los clientes y empleados.
     """
     # Tipos de notificación
     RESERVA_CREADA = 'RC'
@@ -35,7 +35,8 @@ class Notificacion(models.Model):
         (OTRO, _('Otro')),
     ]
     
-    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='notificaciones', verbose_name=_('Cliente'))
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, null=True, blank=True, related_name='notificaciones', verbose_name=_('Cliente'))
+    empleado = models.ForeignKey('empleados.Empleado', on_delete=models.CASCADE, null=True, blank=True, related_name='notificaciones', verbose_name=_('Empleado'))
     reserva = models.ForeignKey('reservas.Reserva', on_delete=models.CASCADE, null=True, blank=True, related_name='notificaciones', verbose_name=_('Reserva'))
     tipo = models.CharField(max_length=2, choices=TIPO_CHOICES, verbose_name=_('Tipo'))
     titulo = models.CharField(max_length=100, verbose_name=_('Título'))
@@ -50,7 +51,12 @@ class Notificacion(models.Model):
         ordering = ['-fecha_creacion']
     
     def __str__(self):
-        return f"{self.cliente} - {self.get_tipo_display()} - {self.fecha_creacion}"
+        if self.cliente:
+            return f"{self.cliente} - {self.get_tipo_display()} - {self.fecha_creacion}"
+        elif self.empleado:
+            return f"{self.empleado} - {self.get_tipo_display()} - {self.fecha_creacion}"
+        else:
+            return f"Notificación - {self.get_tipo_display()} - {self.fecha_creacion}"
     
     def marcar_como_leida(self):
         """

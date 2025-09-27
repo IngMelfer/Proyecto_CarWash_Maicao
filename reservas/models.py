@@ -425,12 +425,16 @@ class Reserva(models.Model):
                 # Crear URL para calificar al lavador
                 url_calificacion = reverse('reservas:calificar_lavador', kwargs={'reserva_id': self.id})
                 
-                mensaje = f"""¡Tu servicio de {self.servicio.nombre} ha sido completado exitosamente!
+                mensaje = f"""¡Tu servicio de <strong>{self.servicio.nombre}</strong> ha sido completado exitosamente!
                 
-Tu lavador {self.lavador.usuario.get_full_name()} ha terminado el servicio. 
+Tu lavador <strong>{self.lavador.usuario.get_full_name()}</strong> ha terminado el servicio. 
 ¿Qué tal estuvo? Tu opinión es muy importante para nosotros.
 
-Haz clic aquí para calificar el servicio: {url_calificacion}
+<div class="mt-3 mb-3">
+    <a href="{url_calificacion}" class="btn btn-primary btn-sm">
+        <i class="fas fa-star me-1"></i>Haz clic aquí para calificar el servicio
+    </a>
+</div>
 
 ¡Gracias por confiar en nosotros!"""
                 

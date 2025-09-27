@@ -147,9 +147,9 @@ class NotificacionesLavadorView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         if hasattr(self.request.user, 'empleado'):
-            # Solo mostrar notificaciones específicas para lavadores
+            # Mostrar notificaciones específicas para el empleado
             return Notificacion.objects.filter(
-                reserva__lavador=self.request.user.empleado,
+                empleado=self.request.user.empleado,
                 tipo__in=[Notificacion.CALIFICACION_RECIBIDA, Notificacion.SERVICIO_ASIGNADO]
             ).order_by('-fecha_creacion')
         return Notificacion.objects.none()
@@ -158,20 +158,20 @@ class NotificacionesLavadorView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         if hasattr(self.request.user, 'empleado'):
             notificaciones_no_leidas = Notificacion.objects.filter(
-                reserva__lavador=self.request.user.empleado,
+                empleado=self.request.user.empleado,
                 tipo__in=[Notificacion.CALIFICACION_RECIBIDA, Notificacion.SERVICIO_ASIGNADO],
                 leida=False
             ).count()
             total_notificaciones = Notificacion.objects.filter(
-                reserva__lavador=self.request.user.empleado,
+                empleado=self.request.user.empleado,
                 tipo__in=[Notificacion.CALIFICACION_RECIBIDA, Notificacion.SERVICIO_ASIGNADO]
             ).count()
             calificaciones_recibidas = Notificacion.objects.filter(
-                reserva__lavador=self.request.user.empleado,
+                empleado=self.request.user.empleado,
                 tipo=Notificacion.CALIFICACION_RECIBIDA
             ).count()
             servicios_asignados = Notificacion.objects.filter(
-                reserva__lavador=self.request.user.empleado,
+                empleado=self.request.user.empleado,
                 tipo=Notificacion.SERVICIO_ASIGNADO
             ).count()
             
@@ -197,8 +197,8 @@ def contador_notificaciones_api(request):
         ).count()
     elif hasattr(request.user, 'empleado'):
         count = Notificacion.objects.filter(
-            reserva__lavador=request.user.empleado,
-            tipo__in=['CALIFICACION_RECIBIDA', 'SERVICIO_ASIGNADO'],
+            empleado=request.user.empleado,
+            tipo__in=[Notificacion.CALIFICACION_RECIBIDA, Notificacion.SERVICIO_ASIGNADO],
             leida=False
         ).count()
     
@@ -217,7 +217,7 @@ def marcar_todas_leidas(request):
             )
         elif hasattr(request.user, 'empleado'):
             notificaciones = Notificacion.objects.filter(
-                reserva__lavador=request.user.empleado,
+                empleado=request.user.empleado,
                 tipo__in=[Notificacion.CALIFICACION_RECIBIDA, Notificacion.SERVICIO_ASIGNADO],
                 leida=False
             )
@@ -253,7 +253,7 @@ def marcar_notificacion_leida(request, notificacion_id):
             notificacion = get_object_or_404(
                 Notificacion, 
                 id=notificacion_id, 
-                reserva__lavador=request.user.empleado,
+                empleado=request.user.empleado,
                 tipo__in=[Notificacion.CALIFICACION_RECIBIDA, Notificacion.SERVICIO_ASIGNADO]
             )
         else:
@@ -279,7 +279,7 @@ def notificaciones_dropdown_api(request):
         ).order_by('-fecha_creacion')[:5]
     elif hasattr(request.user, 'empleado'):
         notificaciones = Notificacion.objects.filter(
-            reserva__lavador=request.user.empleado,
+            empleado=request.user.empleado,
             tipo__in=[Notificacion.CALIFICACION_RECIBIDA, Notificacion.SERVICIO_ASIGNADO]
         ).order_by('-fecha_creacion')[:5]
     else:

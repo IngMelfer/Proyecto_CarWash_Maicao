@@ -78,8 +78,8 @@
             <div class="lavador-card">
                 <div class="row align-items-center">
                     <div class="col-md-3 text-center">
-                        {% if lavador.foto %}
-                            <img src="{{ lavador.foto.url }}" alt="{{ lavador.usuario.get_full_name }}" 
+                        {% if lavador.fotografia %}
+                            <img src="{{ lavador.fotografia.url }}" alt="{{ lavador.usuario.get_full_name }}" 
                                  class="img-fluid rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
                         {% else %}
                             <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" 

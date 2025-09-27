@@ -37,8 +37,7 @@ class CalificarLavadorView(LoginRequiredMixin, View):
         
         # Verificar si ya fue calificado
         calificacion_existente = Calificacion.objects.filter(
-            empleado=reserva.lavador,
-            servicio=reserva.servicio,
+            reserva=reserva,
             cliente=request.user.cliente
         ).first()
         
@@ -69,8 +68,7 @@ class CalificarLavadorView(LoginRequiredMixin, View):
         
         # Verificar si ya fue calificado
         calificacion_existente = Calificacion.objects.filter(
-            empleado=reserva.lavador,
-            servicio=reserva.servicio,
+            reserva=reserva,
             cliente=request.user.cliente
         ).first()
         
@@ -91,6 +89,7 @@ class CalificarLavadorView(LoginRequiredMixin, View):
                 empleado=reserva.lavador,
                 servicio=reserva.servicio,
                 cliente=request.user.cliente,
+                reserva=reserva,
                 puntuacion=puntuacion,
                 comentario=comentario
             )
@@ -110,21 +109,21 @@ class CalificarLavadorView(LoginRequiredMixin, View):
                 notificacion.marcar_como_leida()
             
             # Crear notificación para el lavador
-            # Nota: Las notificaciones se asocian al cliente de la reserva pero se filtran por lavador en las vistas
+            vehiculo_info = f"{reserva.vehiculo.marca} {reserva.vehiculo.modelo} ({reserva.vehiculo.placa})" if reserva.vehiculo else "Vehículo no especificado"
+            
             mensaje_lavador = f"""¡Has recibido una nueva calificación!
 
 Has sido calificado con {puntuacion} estrella{'s' if puntuacion != 1 else ''} por el servicio de {reserva.servicio.nombre}.
 
-Cliente: {reserva.cliente.nombre_completo()}
+Vehículo: {vehiculo_info}
 
 {f'Comentario: "{comentario}"' if comentario else 'Sin comentarios adicionales.'}
 
 ¡Sigue así, excelente trabajo!"""
             
-            # Crear la notificación asociada al cliente de la reserva
-            # Las vistas de empleados filtrarán por reserva.lavador para mostrar solo las del empleado
+            # Crear la notificación específica para el empleado lavador
             Notificacion.objects.create(
-                cliente=reserva.cliente,  # Asociamos al cliente de la reserva
+                empleado=reserva.lavador,
                 reserva=reserva,
                 tipo=Notificacion.CALIFICACION_RECIBIDA,
                 titulo=f'Nueva calificación recibida - {puntuacion} estrella{"s" if puntuacion != 1 else ""}',

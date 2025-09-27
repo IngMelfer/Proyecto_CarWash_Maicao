@@ -421,6 +421,15 @@
     
     <!-- Sistema de Notificaciones para Empleados -->
     <script>
+        // Configurar CSRF token para todas las solicitudes AJAX
+        $.ajaxSetup({
+            beforeSend: function(xhr, settings) {
+                if (!this.crossDomain) {
+                    xhr.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
+                }
+            }
+        });
+        
         $(document).ready(function() {
             // Función para cargar el contador de notificaciones del empleado
             function cargarContadorNotificacionesEmpleado() {
@@ -436,8 +445,10 @@
                         badge.hide();
                         badgeSidebar.hide();
                     }
-                }).fail(function() {
-                    console.log('Error al cargar contador de notificaciones del empleado');
+                }).fail(function(xhr, status, error) {
+                    console.error('Error al cargar contador de notificaciones del empleado:', error);
+                    console.log('Status:', status);
+                    console.log('Response:', xhr.responseText);
                 });
                 {% endif %}
             }
@@ -480,7 +491,10 @@
                             lista.append(item);
                         });
                     }
-                }).fail(function() {
+                }).fail(function(xhr, status, error) {
+                    console.error('Error al cargar notificaciones del dropdown:', error);
+                    console.log('Status:', status);
+                    console.log('Response:', xhr.responseText);
                     $('#notificaciones-lista-empleado').html('<li><span class="dropdown-item-text text-danger">Error al cargar notificaciones</span></li>');
                 });
                 {% endif %}
@@ -489,12 +503,14 @@
             // Función para marcar notificación como leída (empleado)
             window.marcarComoLeidaEmpleado = function(notificacionId) {
                 $.post(`/notificaciones/api/marcar-leida/${notificacionId}/`, {
-                    'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
                 }, function(data) {
                     if (data.success) {
                         // Actualizar contador después de marcar como leída
                         setTimeout(cargarContadorNotificacionesEmpleado, 500);
                     }
+                }).fail(function(xhr, status, error) {
+                    console.error('Error al marcar notificación como leída:', error);
                 });
             };
             
