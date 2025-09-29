@@ -30,6 +30,12 @@ urlpatterns = [
     path('cargos/<int:pk>/editar/', views.CargoUpdateView.as_view(), name='cargo_update'),
     path('cargos/<int:pk>/eliminar/', views.CargoDeleteView.as_view(), name='cargo_delete'),
     
+    # Rutas para gestión de tipos de documento
+    path('tipos-documento/', views.TipoDocumentoListView.as_view(), name='tipo_documento_list'),
+    path('tipos-documento/crear/', views.TipoDocumentoCreateView.as_view(), name='tipo_documento_create'),
+    path('tipos-documento/<int:pk>/editar/', views.TipoDocumentoUpdateView.as_view(), name='tipo_documento_update'),
+    path('tipos-documento/<int:pk>/eliminar/', views.TipoDocumentoDeleteView.as_view(), name='tipo_documento_delete'),
+    
     # Dashboard de empleados - ruta directa y sistema específico
     path('dashboard-empleado/', views.dashboard_empleado_view, name='dashboard'),
     path('dashboard/', include('empleados.urls_dashboard')),

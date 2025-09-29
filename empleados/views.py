@@ -12,7 +12,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from autenticacion.mixins import RolRequiredMixin
 from autenticacion.models import Usuario
 from reservas.models import Reserva
-from .models import Empleado, RegistroTiempo, Calificacion, Incentivo, Cargo
+from .models import Empleado, RegistroTiempo, Calificacion, Incentivo, Cargo, TipoDocumento
 from .forms import EmpleadoPerfilForm, RegistroTiempoForm, EmpleadoRegistroForm, CambiarPasswordForm, EmpleadoEditForm
 
 # Create your views here.
@@ -466,3 +466,54 @@ def perfil_empleado(request):
         'form': form,
         'empleado': empleado
     })
+
+
+# ========== VISTAS PARA GESTIÓN DE TIPO DE DOCUMENTO ==========
+
+class TipoDocumentoListView(LoginRequiredMixin, RolRequiredMixin, ListView):
+    """Vista para listar todos los tipos de documento"""
+    model = TipoDocumento
+    template_name = 'empleados/tipo_documento_list.html'
+    context_object_name = 'tipos_documento'
+    roles_permitidos = [Usuario.ROL_ADMIN_SISTEMA]
+    
+    def get_queryset(self):
+        return TipoDocumento.objects.all().order_by('nombre')
+
+
+class TipoDocumentoCreateView(LoginRequiredMixin, RolRequiredMixin, CreateView):
+    """Vista para crear un nuevo tipo de documento"""
+    model = TipoDocumento
+    template_name = 'empleados/tipo_documento_form.html'
+    fields = ['codigo', 'nombre', 'activo']
+    success_url = reverse_lazy('empleados:tipo_documento_list')
+    roles_permitidos = [Usuario.ROL_ADMIN_SISTEMA]
+    
+    def form_valid(self, form):
+        messages.success(self.request, 'Tipo de documento creado exitosamente.')
+        return super().form_valid(form)
+
+
+class TipoDocumentoUpdateView(LoginRequiredMixin, RolRequiredMixin, UpdateView):
+    """Vista para actualizar un tipo de documento"""
+    model = TipoDocumento
+    template_name = 'empleados/tipo_documento_form.html'
+    fields = ['codigo', 'nombre', 'activo']
+    success_url = reverse_lazy('empleados:tipo_documento_list')
+    roles_permitidos = [Usuario.ROL_ADMIN_SISTEMA]
+    
+    def form_valid(self, form):
+        messages.success(self.request, 'Tipo de documento actualizado exitosamente.')
+        return super().form_valid(form)
+
+
+class TipoDocumentoDeleteView(LoginRequiredMixin, RolRequiredMixin, DeleteView):
+    """Vista para eliminar un tipo de documento"""
+    model = TipoDocumento
+    template_name = 'empleados/tipo_documento_confirm_delete.html'
+    success_url = reverse_lazy('empleados:tipo_documento_list')
+    roles_permitidos = [Usuario.ROL_ADMIN_SISTEMA]
+    
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, 'Tipo de documento eliminado exitosamente.')
+        return super().delete(request, *args, **kwargs)
