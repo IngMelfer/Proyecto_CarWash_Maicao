@@ -464,7 +464,7 @@
                 </h1>
             </div>
             <div class="col-md-4 text-end">
-                <button type="button" class="btn btn-secondary btn-lg" id="volverListaBtn" style="background-color: #6c757d; border-color: #6c757d; color: white; transition: all 0.3s ease; cursor: pointer;">
+                <button type="button" class="btn btn-secondary btn-lg" id="volverListaBtn" style="background-color: #6c757d; border-color: #6c757d; color: white; transition: all 0.3s ease; cursor: pointer;" onclick="window.location.href='{% url 'empleados:empleado_list' %}'">
                     <i class="fas fa-arrow-left me-2"></i> Volver a la Lista
                 </button>
             </div>
@@ -996,33 +996,140 @@
                 });
             }
 
-            // Asegurar funcionalidad del botón "Volver a la Lista"
-            const volverBtn = document.getElementById('volverListaBtn');
-            if (volverBtn) {
-                console.log('Botón encontrado:', volverBtn);
+            // Asegurar funcionalidad del botón "Volver a la Lista" - VERSIÓN MEJORADA
+            function inicializarBotonVolver() {
+                console.log('🔍 Iniciando búsqueda del botón volverListaBtn...');
                 
-                // Función para navegar
-                function navegarALista() {
-                    console.log('Navegando a la lista de empleados...');
+                // Buscar el botón por ID
+                const volverBtn = document.getElementById('volverListaBtn');
+                console.log('🔍 Resultado búsqueda por ID:', volverBtn);
+                
+                if (volverBtn) {
+                    console.log('✅ Botón encontrado por ID:', volverBtn);
+                    console.log('📍 Elemento padre:', volverBtn.parentElement);
+                    console.log('🎨 Estilos computados:', window.getComputedStyle(volverBtn));
+                    
+                    // Limpiar cualquier event listener previo
+                    const nuevoBoton = volverBtn.cloneNode(true);
+                    volverBtn.parentNode.replaceChild(nuevoBoton, volverBtn);
+                    console.log('🔄 Botón clonado y reemplazado');
+                    
+                    // URL de destino
                     const url = "{% url 'empleados:empleado_list' %}";
-                    window.location.href = url;
+                    console.log('🔗 URL destino configurada:', url);
+                    
+                    // Función para navegar
+                    function navegarALista(evento) {
+                        console.log('🚀 EJECUTANDO NAVEGACIÓN...');
+                        console.log('📍 Evento recibido:', evento);
+                        
+                        if (evento) {
+                            evento.preventDefault();
+                            evento.stopPropagation();
+                            console.log('⛔ Evento cancelado');
+                        }
+                        
+                        console.log('🔄 Navegando a:', url);
+                        
+                        // Múltiples métodos de navegación como respaldo
+                        try {
+                            window.location.href = url;
+                            console.log('✅ Navegación con window.location.href');
+                        } catch (error) {
+                            console.error('❌ Error con window.location.href:', error);
+                            try {
+                                window.location.assign(url);
+                                console.log('✅ Navegación con window.location.assign');
+                            } catch (error2) {
+                                console.error('❌ Error con window.location.assign:', error2);
+                                window.location = url;
+                                console.log('✅ Navegación con window.location');
+                            }
+                        }
+                    }
+                    
+                    // Agregar múltiples event listeners como respaldo
+                    console.log('🔧 Agregando event listeners...');
+                    
+                    // Event listener principal
+                    nuevoBoton.addEventListener('click', navegarALista);
+                    console.log('✅ addEventListener agregado');
+                    
+                    // Onclick como respaldo
+                    nuevoBoton.onclick = navegarALista;
+                    console.log('✅ onclick agregado');
+                    
+                    // Respaldo adicional con mousedown
+                    nuevoBoton.addEventListener('mousedown', function(e) {
+                        console.log('🖱️ Mousedown detectado');
+                        setTimeout(() => navegarALista(e), 10);
+                    });
+                    
+                    // Asegurar que el botón sea clickeable
+                    nuevoBoton.style.cursor = 'pointer';
+                    nuevoBoton.style.pointerEvents = 'auto';
+                    nuevoBoton.disabled = false;
+                    nuevoBoton.style.zIndex = '9999';
+                    nuevoBoton.style.position = 'relative';
+                    
+                    console.log('🎨 Estilos de funcionalidad aplicados');
+                    
+                    // Prueba inmediata del botón
+                    console.log('🧪 Realizando prueba del botón...');
+                    setTimeout(() => {
+                        const rect = nuevoBoton.getBoundingClientRect();
+                        console.log('📐 Posición del botón:', rect);
+                        console.log('👁️ Botón visible:', rect.width > 0 && rect.height > 0);
+                        console.log('🖱️ Pointer events:', window.getComputedStyle(nuevoBoton).pointerEvents);
+                    }, 50);
+                    
+                } else {
+                    console.error('❌ No se encontró el botón volverListaBtn');
+                    
+                    // Búsqueda alternativa
+                    console.log('🔍 Buscando botones alternativos...');
+                    const todosLosBotones = document.querySelectorAll('button');
+                    console.log('🔍 Total botones encontrados:', todosLosBotones.length);
+                    
+                    todosLosBotones.forEach((btn, index) => {
+                        console.log(`🔍 Botón ${index}:`, btn.textContent.trim(), btn.id, btn.className);
+                    });
+                    
+                    // Buscar por texto
+                    const botonPorTexto = Array.from(todosLosBotones).find(btn => 
+                        btn.textContent.includes('VOLVER A LA LISTA') || 
+                        btn.textContent.includes('Volver a la Lista')
+                    );
+                    
+                    if (botonPorTexto) {
+                        console.log('🔄 Encontrado botón por texto:', botonPorTexto);
+                        botonPorTexto.onclick = () => {
+                            console.log('🚀 Navegando desde botón alternativo...');
+                            window.location.href = "{% url 'empleados:empleado_list' %}";
+                        };
+                    }
                 }
-                
-                // Agregar event listener
-                volverBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    navegarALista();
-                });
-                
-                // Asegurar estilos
-                volverBtn.style.cursor = 'pointer';
-                volverBtn.style.pointerEvents = 'auto';
-                
-                console.log('Event listener agregado al botón');
-            } else {
-                console.error('No se encontró el botón volverListaBtn');
             }
+            
+            // Ejecutar la función múltiples veces para asegurar que funcione
+            console.log('🚀 INICIANDO CONFIGURACIÓN DEL BOTÓN VOLVER...');
+            
+            // Ejecutar inmediatamente
+            inicializarBotonVolver();
+            
+            // Ejecutar después de 100ms
+            setTimeout(inicializarBotonVolver, 100);
+            
+            // Ejecutar después de 500ms
+            setTimeout(inicializarBotonVolver, 500);
+            
+            // Ejecutar cuando el DOM esté completamente cargado
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', inicializarBotonVolver);
+            }
+            
+            // Ejecutar cuando la ventana esté completamente cargada
+            window.addEventListener('load', inicializarBotonVolver);
 
             // Código anterior del botón (mantener como respaldo)
             const backButton = document.querySelector('.back-button');
