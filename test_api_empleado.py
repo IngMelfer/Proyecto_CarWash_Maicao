@@ -27,7 +27,7 @@ def test_api_empleado():
         print("No se encontró empleado con notificaciones no leídas")
         return
     
-    print(f"Empleado encontrado: {empleado.usuario.username}")
+    print(f"Empleado encontrado: {empleado.usuario.email}")
     print(f"Email: {empleado.usuario.email}")
     
     # Crear cliente de prueba
@@ -35,7 +35,7 @@ def test_api_empleado():
     
     # Hacer login
     login_success = client.login(
-        username=empleado.usuario.username, 
+        email=empleado.usuario.email, 
         password='123456'  # Asumiendo que esta es la contraseña de prueba
     )
     
@@ -44,7 +44,7 @@ def test_api_empleado():
         # Intentar con diferentes contraseñas comunes
         passwords = ['password', 'admin', '12345', 'empleado123']
         for pwd in passwords:
-            if client.login(username=empleado.usuario.username, password=pwd):
+            if client.login(email=empleado.usuario.email, password=pwd):
                 print(f"Login exitoso con contraseña: {pwd}")
                 login_success = True
                 break

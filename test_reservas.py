@@ -211,7 +211,7 @@ def test_reservas_system():
             notas='Prueba reserva completa - confirmada'
         )
         
-        print(f"✅ Reservas creadas exitosamente:")
+        print("✅ Reservas creadas exitosamente:")
         print(f"   📅 Reserva 1: {reserva1.fecha_hora} - {reserva1.servicio.nombre}")
         print(f"   📅 Reserva 2: {reserva2.fecha_hora} - {reserva2.servicio.nombre}")
         

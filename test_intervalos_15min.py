@@ -108,7 +108,7 @@ def test_intervalos_15_minutos():
                 print(f"    📊 Reservas: {reservas_count}, Bahías disponibles: {bahias_disponibles}")
                 
                 if bahias_disponibles > 0:
-                    print(f"    ✅ DISPONIBLE")
+                    print("    ✅ DISPONIBLE")
                     horarios_generados.append({
                         'hora_inicio': hora_actual_intervalo.strftime('%H:%M'),
                         'hora_fin': hora_fin_servicio.strftime('%H:%M'),
@@ -117,7 +117,7 @@ def test_intervalos_15_minutos():
                         'bahias_totales': horario_bd.capacidad
                     })
                 else:
-                    print(f"    ❌ SIN BAHÍAS")
+                    print("    ❌ SIN BAHÍAS")
                 
                 contador_intervalos += 1
             else:
@@ -129,7 +129,7 @@ def test_intervalos_15_minutos():
         
         print(f"Total intervalos generados para este horario: {contador_intervalos}")
     
-    print(f"\n=== RESULTADO FINAL ===")
+    print("\n=== RESULTADO FINAL ===")
     print(f"Horarios específicos generados: {len(horarios_generados)}")
     
     if horarios_generados:

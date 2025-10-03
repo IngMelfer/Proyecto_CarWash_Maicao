@@ -50,12 +50,12 @@ def test_empleado_notifications():
             print("No hay notificaciones no leídas")
     
     # Verificar constantes del modelo
-    print(f"\n=== CONSTANTES DEL MODELO ===")
-    print(f"CALIFICACION_RECIBIDA: '{Notificacion.CALIFICACION_RECIBIDA}'")
-    print(f"SERVICIO_ASIGNADO: '{Notificacion.SERVICIO_ASIGNADO}'")
+    print("\n=== CONSTANTES DEL MODELO ===")
+    print("CALIFICACION_RECIBIDA: '{}'".format(Notificacion.CALIFICACION_RECIBIDA))
+    print("SERVICIO_ASIGNADO: '{}'".format(Notificacion.SERVICIO_ASIGNADO))
     
     # Verificar todas las notificaciones de empleados
-    print(f"\n=== TODAS LAS NOTIFICACIONES DE EMPLEADOS ===")
+    print("\n=== TODAS LAS NOTIFICACIONES DE EMPLEADOS ===")
     notifs_empleados = Notificacion.objects.filter(empleado__isnull=False)
     print(f"Total notificaciones de empleados: {notifs_empleados.count()}")
     

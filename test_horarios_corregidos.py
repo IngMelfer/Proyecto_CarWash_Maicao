@@ -81,9 +81,9 @@ def test_logica_corregida():
         }
         
         horarios.append(horario_info)
-        print(f"Resultado: {'✅ DISPONIBLE' if horario_info['disponible'] else '❌ NO DISPONIBLE'}")
+        print("Resultado: {}".format('✅ DISPONIBLE' if horario_info['disponible'] else '❌ NO DISPONIBLE'))
     
-    print(f"\n=== RESULTADO FINAL ===")
+    print("\n=== RESULTADO FINAL ===")
     print(f"Total horarios procesados: {len(horarios)}")
     
     if not horarios:

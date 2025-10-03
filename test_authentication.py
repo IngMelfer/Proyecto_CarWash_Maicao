@@ -87,14 +87,14 @@ def test_authentication_system():
     print("\n3. Probando autenticación...")
     try:
         # Probar autenticación con credenciales correctas
-        user = authenticate(username='test_auth_cliente@example.com', password='password123')
+        user = authenticate(email='test_auth_cliente@example.com', password='password123')
         if user:
             print(f"✅ Autenticación exitosa para: {user.email}")
         else:
             print("❌ Fallo en autenticación con credenciales correctas")
             
         # Probar autenticación con credenciales incorrectas
-        user = authenticate(username='test_auth_cliente@example.com', password='wrong_password')
+        user = authenticate(email='test_auth_cliente@example.com', password='wrong_password')
         if not user:
             print("✅ Autenticación rechazada correctamente con credenciales incorrectas")
         else:

@@ -1,0 +1,448 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard Público - CarWash Maicao{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #0a0a0a;
+        color: #fff;
+        font-family: 'Arial', sans-serif;
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+    }
+    .dashboard-header {
+        background-color: #003366;
+        color: white;
+        padding: 10px 0;
+        margin-bottom: 10px;
+        border-radius: 0;
+    }
+    .airport-board {
+        background-color: #000;
+        color: #fff;
+        border-radius: 5px;
+        overflow: hidden;
+        margin-bottom: 10px;
+        box-shadow: 0 0 20px rgba(0, 100, 255, 0.2);
+        height: calc(100vh - 220px);
+        display: flex;
+        flex-direction: column;
+    }
+    .board-header {
+        background-color: #003366;
+        color: white;
+        padding: 10px 15px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        display: grid;
+        grid-template-columns: 100px 1fr 120px 120px;
+        align-items: center;
+        gap: 10px;
+    }
+    .board-content {
+        padding: 0;
+        flex-grow: 1;
+        overflow-y: auto;
+        scroll-behavior: smooth;
+    }
+    .reserva-row {
+        display: grid;
+        grid-template-columns: 100px 1fr 120px 120px;
+        padding: 15px;
+        border-bottom: 1px solid #333;
+        transition: all 0.3s ease;
+        align-items: center;
+        gap: 10px;
+    }
+    .reserva-row:hover {
+        background-color: #1a1a1a;
+    }
+    .reserva-row.en-proceso {
+        background-color: rgba(23, 162, 184, 0.2);
+    }
+    .reserva-row.pendiente {
+        background-color: rgba(0, 0, 0, 0.8);
+    }
+    .reserva-row.completado {
+        background-color: rgba(40, 167, 69, 0.1);
+        color: #aaa;
+    }
+    .reserva-row.confirmado {
+        background-color: rgba(255, 193, 7, 0.1);
+    }
+    .reserva-row.cancelado {
+        background-color: rgba(220, 53, 69, 0.1);
+        color: #aaa;
+    }
+    .highlight-update {
+        animation: highlight 2s ease;
+    }
+    @keyframes highlight {
+        0% { background-color: rgba(255, 255, 0, 0.3); }
+        100% { background-color: transparent; }
+    }
+    .reserva-hora {
+        font-size: 1.5rem;
+        font-weight: bold;
+        width: 100px;
+        text-align: center;
+        font-family: 'Courier New', monospace;
+        color: #ffcc00;
+    }
+    .reserva-info {
+        flex-grow: 1;
+        padding: 0 15px;
+    }
+    .reserva-servicio {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #fff;
+    }
+    .reserva-vehiculo {
+        font-size: 1rem;
+        color: #ccc;
+    }
+    .reserva-bahia {
+        width: 120px;
+        text-align: center;
+        font-size: 1.2rem;
+        font-weight: bold;
+        padding: 5px;
+        border-radius: 4px;
+        background-color: #003366;
+        margin: 0 10px;
+    }
+    .reserva-estado {
+        width: 120px;
+        text-align: center;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-weight: 500;
+        margin-left: 10px;
+    }
+    .estado-pendiente {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    .estado-en-proceso {
+        background-color: #17a2b8;
+        color: white;
+        animation: pulsate 2s infinite;
+    }
+    .estado-completado {
+        background-color: #28a745;
+        color: white;
+    }
+    .estado-confirmado {
+        background-color: #fd7e14;
+        color: white;
+    }
+    .estado-cancelado {
+        background-color: #dc3545;
+        color: white;
+    }
+    .clock {
+        font-size: 2.5rem;
+        font-weight: bold;
+        font-family: 'Courier New', monospace;
+        color: #ffcc00;
+        margin: 5px 0;
+    }
+    .refresh-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+    }
+    .toggle-scroll-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 90px;
+        z-index: 1000;
+    }
+    .sin-reservas {
+        text-align: center;
+        padding: 50px 0;
+        background-color: #1a1a1a;
+        border-radius: 5px;
+        margin-top: 30px;
+        color: #ccc;
+    }
+    .stats-container {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+    }
+    .stat-box {
+        flex: 1;
+        text-align: center;
+        padding: 10px;
+        margin: 0 3px;
+        border-radius: 5px;
+        color: white;
+        min-width: 120px;
+    }
+    .stat-box h5 {
+        margin-bottom: 5px;
+        font-size: 0.9rem;
+        font-weight: bold;
+    }
+    .stat-box .stat-value {
+        font-size: 1.8rem;
+        font-weight: bold;
+    }
+    .stat-total {
+        background-color: #003366;
+    }
+    .stat-pendientes {
+        background-color: #ffc107;
+        color: #212529;
+    }
+    .stat-proceso {
+        background-color: #17a2b8;
+    }
+    .stat-completados {
+        background-color: #28a745;
+    }
+    @keyframes pulsate {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+    }
+    .lavador-info {
+        font-style: italic;
+        color: #aaa;
+        font-size: 0.9rem;
+        margin-left: 10px;
+    }
+    .duracion-info {
+        background-color: #333;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        margin-left: 10px;
+        display: inline-block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header text-center">
+    <div class="container-fluid">
+        <h2 class="mb-2">Tablero de Turnos</h2>
+        <div class="clock" id="reloj">00:00:00</div>
+        <p class="mb-0 text-light">{{ reservas.0.fecha_hora|date:"l, j \d\e F \d\e Y"|title }}</p>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <div class="stats-container">
+        <div class="stat-box stat-total">
+            <h5>Total Servicios</h5>
+            <div class="stat-value">{{ reservas|length }}</div>
+        </div>
+        <div class="stat-box stat-pendientes">
+            <h5>Pendientes</h5>
+            <div class="stat-value">{{ pendientes }}</div>
+        </div>
+        <div class="stat-box stat-proceso">
+            <h5>En Proceso</h5>
+            <div class="stat-value">{{ en_proceso }}</div>
+        </div>
+        <div class="stat-box stat-completados">
+            <h5>Completados</h5>
+            <div class="stat-value">{{ completadas }}</div>
+        </div>
+    </div>
+
+    {% if reservas %}
+        <div class="airport-board">
+            <div class="board-header">
+                <span>HORA</span>
+                <span>SERVICIO / VEHÍCULO</span>
+                <span>BAHÍA</span>
+                <span>ESTADO</span>
+            </div>
+            <div class="board-content">
+                {% for reserva in reservas %}
+                    <div class="reserva-row {% if reserva.estado == 'pendiente' %}pendiente{% elif reserva.estado == 'en_proceso' %}en-proceso{% elif reserva.estado == 'completado' %}completado{% elif reserva.estado == 'confirmado' %}confirmado{% elif reserva.estado == 'cancelado' %}cancelado{% endif %}">
+                        <div class="reserva-hora">{{ reserva.fecha_hora|time:"H:i" }}</div>
+                        <div class="reserva-info">
+                            <div class="reserva-servicio">{{ reserva.servicio.nombre }}</div>
+                            <div class="reserva-vehiculo">
+                                {{ reserva.vehiculo.marca }} {{ reserva.vehiculo.modelo }}
+                                <span class="lavador-info">{% if reserva.lavador %}Lavador: {{ reserva.lavador.nombre_completo }}{% else %}Sin asignar{% endif %}</span>
+                                <span class="duracion-info">{{ reserva.servicio.duracion_minutos }} min</span>
+                            </div>
+                        </div>
+                        <div class="reserva-bahia">{{ reserva.bahia.nombre }}</div>
+                        <div class="reserva-estado 
+                            {% if reserva.estado == 'pendiente' %}estado-pendiente
+                            {% elif reserva.estado == 'en_proceso' %}estado-en-proceso
+                            {% elif reserva.estado == 'completado' %}estado-completado
+                            {% elif reserva.estado == 'confirmado' %}estado-confirmado
+                            {% elif reserva.estado == 'cancelado' %}estado-cancelado{% endif %}">
+                            {{ reserva.get_estado_display }}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% else %}
+        <div class="sin-reservas">
+            <h3>No hay servicios programados para hoy</h3>
+            <p>Los servicios del día aparecerán en este panel automáticamente.</p>
+        </div>
+    {% endif %}
+</div>
+
+<button class="btn btn-primary btn-lg rounded-circle refresh-btn" onclick="actualizarDashboard()">
+    <i class="fas fa-sync-alt"></i>
+</button>
+
+<button id="toggle-scroll" class="btn btn-info btn-lg rounded-circle toggle-scroll-btn" onclick="toggleAutoScroll()">
+    <i class="fas fa-pause"></i>
+</button>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Función para actualizar el reloj
+    function actualizarReloj() {
+        const ahora = new Date();
+        const horas = ahora.getHours().toString().padStart(2, '0');
+        const minutos = ahora.getMinutes().toString().padStart(2, '0');
+        const segundos = ahora.getSeconds().toString().padStart(2, '0');
+        document.getElementById('reloj').textContent = `${horas}:${minutos}:${segundos}`;
+    }
+
+    // Actualizar el reloj cada segundo
+    setInterval(actualizarReloj, 1000);
+    actualizarReloj(); // Inicializar el reloj
+
+    // Función para hacer scroll automático a las reservas en proceso
+    function scrollToEnProceso() {
+        const enProcesoElements = document.querySelectorAll('.reserva-row.en-proceso');
+        if (enProcesoElements.length > 0) {
+            enProcesoElements[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    // Función para actualizar el contenido del dashboard sin recargar la página
+    function actualizarDashboard() {
+        fetch(window.location.href)
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Actualizar estadísticas
+                const newStats = doc.querySelector('.stats-container');
+                const currentStats = document.querySelector('.stats-container');
+                if (newStats && currentStats) {
+                    currentStats.innerHTML = newStats.innerHTML;
+                }
+                
+                // Actualizar tablero de reservas
+                const newBoard = doc.querySelector('.board-content');
+                const currentBoard = document.querySelector('.board-content');
+                if (newBoard && currentBoard) {
+                    // Guardar la posición de desplazamiento actual
+                    const scrollPosition = window.scrollY;
+                    
+                    // Actualizar el contenido
+                    currentBoard.innerHTML = newBoard.innerHTML;
+                    
+                    // Restaurar la posición de desplazamiento
+                    window.scrollTo(0, scrollPosition);
+                    
+                    // Verificar si hay nuevas reservas en proceso
+                    const enProcesoElements = document.querySelectorAll('.reserva-row.en-proceso');
+                    if (enProcesoElements.length > 0) {
+                        // Destacar brevemente las reservas en proceso
+                        enProcesoElements.forEach(el => {
+                            el.classList.add('highlight-update');
+                            setTimeout(() => {
+                                el.classList.remove('highlight-update');
+                            }, 2000);
+                        });
+                    }
+                }
+                
+                // Verificar si hay mensaje de "sin reservas"
+                const newEmptyMessage = doc.querySelector('.sin-reservas');
+                const currentEmptyMessage = document.querySelector('.sin-reservas');
+                const currentAirportBoard = document.querySelector('.airport-board');
+                
+                if (newEmptyMessage && !currentEmptyMessage) {
+                    // Si ahora no hay reservas pero antes sí había
+                    if (currentAirportBoard) {
+                        currentAirportBoard.parentNode.replaceChild(newEmptyMessage.cloneNode(true), currentAirportBoard);
+                    }
+                } else if (!newEmptyMessage && currentEmptyMessage) {
+                    // Si ahora hay reservas pero antes no había
+                    const newAirportBoard = doc.querySelector('.airport-board');
+                    if (newAirportBoard) {
+                        currentEmptyMessage.parentNode.replaceChild(newAirportBoard.cloneNode(true), currentEmptyMessage);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error al actualizar el dashboard:', error);
+            });
+    }
+
+    // Ejecutar scroll inicial después de cargar la página
+    window.addEventListener('load', function() {
+        setTimeout(scrollToEnProceso, 1000);
+        
+        // Configurar actualización automática cada 30 segundos
+        setInterval(actualizarDashboard, 30000);
+    });
+
+    // Auto-scroll suave para mostrar todas las reservas
+    let autoScrollActive = true;
+    let scrollDirection = 1; // 1 para abajo, -1 para arriba
+    let scrollPosition = 0;
+    let maxScrollPosition = 0;
+
+    function toggleAutoScroll() {
+        autoScrollActive = !autoScrollActive;
+        const toggleBtn = document.getElementById('toggle-scroll');
+        if (toggleBtn) {
+            toggleBtn.innerHTML = autoScrollActive ? 
+                '<i class="fas fa-pause"></i>' : 
+                '<i class="fas fa-play"></i>';
+        }
+    }
+
+    function autoScroll() {
+        if (!autoScrollActive) return;
+        
+        const boardContent = document.querySelector('.board-content');
+        if (!boardContent) return;
+        
+        maxScrollPosition = boardContent.scrollHeight - boardContent.clientHeight;
+        
+        // Si llegamos al final, cambiar dirección
+        if (scrollPosition >= maxScrollPosition) {
+            scrollDirection = -1;
+        } else if (scrollPosition <= 0) {
+            scrollDirection = 1;
+        }
+        
+        scrollPosition += scrollDirection * 0.5; // Velocidad de desplazamiento
+        scrollPosition = Math.max(0, Math.min(scrollPosition, maxScrollPosition));
+        
+        boardContent.scrollTop = scrollPosition;
+    }
+
+    // Iniciar auto-scroll cada 50ms para un movimiento suave
+    setInterval(autoScroll, 50);
+</script>
+{% endblock %}

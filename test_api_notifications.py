@@ -24,16 +24,16 @@ if empleados.exists():
     usuario = empleado.usuario
     
     print(f"Probando con empleado: {empleado.nombre_completo}")
-    print(f"Usuario: {usuario.username}")
+    print(f"Usuario: {usuario.email}")
     
     # Hacer login
-    login_success = client.login(username=usuario.username, password='123456')  # Asumiendo password por defecto
+    login_success = client.login(email=usuario.email, password='123456')  # Asumiendo password por defecto
     
     if not login_success:
         # Intentar con otros passwords comunes
         passwords = ['password', 'admin', '12345678', 'empleado123']
         for pwd in passwords:
-            login_success = client.login(username=usuario.username, password=pwd)
+            login_success = client.login(email=usuario.email, password=pwd)
             if login_success:
                 print(f"Login exitoso con password: {pwd}")
                 break
@@ -61,9 +61,8 @@ if empleados.exists():
         
         # Crear usuario de prueba si no existe
         test_user, created = Usuario.objects.get_or_create(
-            username='test_empleado',
+            email='test@example.com',
             defaults={
-                'email': 'test@example.com',
                 'first_name': 'Test',
                 'last_name': 'Empleado',
                 'rol': Usuario.ROL_EMPLEADO
@@ -76,7 +75,7 @@ if empleados.exists():
             print("Usuario de prueba creado")
         
         # Intentar login con usuario de prueba
-        login_success = client.login(username='test_empleado', password='123456')
+        login_success = client.login(email='test@example.com', password='123456')
         if login_success:
             print("✓ Login exitoso con usuario de prueba")
             

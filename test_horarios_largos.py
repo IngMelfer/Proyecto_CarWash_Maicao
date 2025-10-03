@@ -96,7 +96,7 @@ def test_horarios_largos():
         else:
             print("❌ SIN BAHÍAS DISPONIBLES")
     
-    print(f"\n=== RESULTADO FINAL ===")
+    print("\n=== RESULTADO FINAL ===")
     print(f"Horarios que se mostrarán al usuario: {len(horarios_procesados)}")
     for h in horarios_procesados:
         print(f"  - {h['hora_inicio']} a {h['hora_fin']} ({h['bahias_disponibles']}/{h['bahias_totales']} bahías)")

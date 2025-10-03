@@ -156,7 +156,7 @@ def test_sistema_pagos():
         reservas_confirmadas = Reserva.objects.filter(estado=Reserva.CONFIRMADA)
         reservas_completadas = Reserva.objects.filter(estado=Reserva.COMPLETADA)
         
-        print(f"✅ Estados de reservas:")
+        print("✅ Estados de reservas:")
         print(f"   ⏳ Reservas pendientes: {reservas_pendientes.count()}")
         print(f"   ✅ Reservas confirmadas: {reservas_confirmadas.count()}")
         print(f"   🏁 Reservas completadas: {reservas_completadas.count()}")

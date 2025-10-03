@@ -61,7 +61,7 @@ class VerificadorDespliegue:
     def ejecutar_comando(self, comando, descripcion=""):
         """Ejecutar comando y capturar resultado"""
         try:
-            resultado = subprocess.run(comando, shell=True, check=True, 
+            resultado = subprocess.run(comando, shell=True, check=True,
                                      capture_output=True, text=True)
             return True, resultado.stdout
         except subprocess.CalledProcessError as e:
@@ -159,7 +159,7 @@ class VerificadorDespliegue:
         
         if not exito:
             self.errores.append(f"Error en configuración de Django: {salida}")
-            error(f"Error en configuración de Django")
+            error("Error en configuración de Django")
         else:
             success("Configuración de Django correcta")
             self.verificaciones_exitosas += 1
@@ -343,13 +343,13 @@ class VerificadorDespliegue:
         
         # Estadísticas generales
         porcentaje_exito = (self.verificaciones_exitosas / self.total_verificaciones * 100) if self.total_verificaciones > 0 else 0
-        
-        print(f"\n📈 ESTADÍSTICAS:")
+
+        print("\n📈 ESTADÍSTICAS:")
         print(f"   Verificaciones exitosas: {self.verificaciones_exitosas}/{self.total_verificaciones}")
         print(f"   Porcentaje de éxito: {porcentaje_exito:.1f}%")
         print(f"   Errores encontrados: {len(self.errores)}")
         print(f"   Advertencias: {len(self.advertencias)}")
-        
+
         # Estado general
         if len(self.errores) == 0 and porcentaje_exito >= 80:
             print(f"\n{Colors.GREEN}🎉 ESTADO: DESPLIEGUE EXITOSO{Colors.NC}")
@@ -360,46 +360,47 @@ class VerificadorDespliegue:
         else:
             print(f"\n{Colors.RED}❌ ESTADO: DESPLIEGUE CON ERRORES{Colors.NC}")
             print("   Hay errores críticos que deben resolverse")
-        
+
         # Errores
         if self.errores:
             print(f"\n{Colors.RED}🚨 ERRORES CRÍTICOS:{Colors.NC}")
-            for i, error in enumerate(self.errores, 1):
-                print(f"   {i}. {error}")
-        
+            for i, err_msg in enumerate(self.errores, 1):
+                print(f"   {i}. {err_msg}")
+
         # Advertencias
         if self.advertencias:
             print(f"\n{Colors.YELLOW}⚠️  ADVERTENCIAS:{Colors.NC}")
             for i, advertencia in enumerate(self.advertencias, 1):
                 print(f"   {i}. {advertencia}")
-        
+
         # Recomendaciones
-        print(f"\n💡 RECOMENDACIONES:")
+        print("\n💡 RECOMENDACIONES:")
         if self.errores:
             print("   1. Resuelve los errores críticos antes de continuar")
             print("   2. Ejecuta este script nuevamente después de las correcciones")
-        
+
         if self.advertencias:
             print("   3. Revisa las advertencias para optimizar el despliegue")
-        
+
         print("   4. Verifica manualmente tu sitio web en el navegador")
         print("   5. Prueba las funcionalidades principales de tu aplicación")
-        
+
         # Información adicional
-        print(f"\n🔗 INFORMACIÓN ÚTIL:")
+        print("\n🔗 INFORMACIÓN ÚTIL:")
         print("   Panel Web PythonAnywhere: https://www.pythonanywhere.com/user/tu_usuario/webapps/")
         print("   Logs de errores: /var/log/tu_usuario.pythonanywhere.com.error.log")
         print("   Logs del servidor: /var/log/tu_usuario.pythonanywhere.com.server.log")
-        
+
         return len(self.errores) == 0
+
 
 def main():
     """Función principal"""
-    print(f"{Colors.CYAN}")
+    print(Colors.CYAN)
     print("="*80)
     print("🚀 VERIFICACIÓN POST-DESPLIEGUE PYTHONANYWHERE")
     print("="*80)
-    print(f"{Colors.NC}")
+    print(Colors.NC)
     
     verificador = VerificadorDespliegue()
     
@@ -420,7 +421,9 @@ def main():
         try:
             verificacion()
         except Exception as e:
-            error(f"Error en verificación {verificacion.__name__}: {str(e)}")
+            error(
+                f"Error en verificación {verificacion.__name__}: {str(e)}"
+            )
             verificador.errores.append(f"Error en {verificacion.__name__}: {str(e)}")
         print()  # Línea en blanco entre verificaciones
     
@@ -439,18 +442,18 @@ def main():
         
         if verificador.errores:
             f.write("ERRORES:\n")
-            for error in verificador.errores:
-                f.write(f"- {error}\n")
+            for err_msg in verificador.errores:
+                f.write(f"- {err_msg}\n")
             f.write("\n")
         
         if verificador.advertencias:
             f.write("ADVERTENCIAS:\n")
             for advertencia in verificador.advertencias:
                 f.write(f"- {advertencia}\n")
-    
     info(f"Log guardado en: {log_file}")
-    
+
     return 0 if exito else 1
+
 
 if __name__ == "__main__":
     try:

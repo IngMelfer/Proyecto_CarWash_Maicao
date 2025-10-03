@@ -37,16 +37,16 @@ def test_horarios_sin_pasados():
         
         # Verificar si el horario ya comenzó
         if hora_actual >= horario.hora_inicio:
-            print(f"    ❌ HORARIO YA COMENZÓ - No debería mostrarse")
+            print("    ❌ HORARIO YA COMENZÓ - No debería mostrarse")
         elif hora_actual >= horario.hora_fin:
-            print(f"    ❌ HORARIO YA TERMINÓ - No debería mostrarse")
+            print("    ❌ HORARIO YA TERMINÓ - No debería mostrarse")
         else:
             # Verificar margen de 30 minutos
             hora_minima = (datetime.now() + timedelta(minutes=30)).time()
             if horario.hora_inicio < hora_minima:
-                print(f"    ⚠️  HORARIO DENTRO DE 30 MIN - No debería mostrarse")
+                print("    ⚠️  HORARIO DENTRO DE 30 MIN - No debería mostrarse")
             else:
-                print(f"    ✅ HORARIO DISPONIBLE - Debería mostrarse")
+                print("    ✅ HORARIO DISPONIBLE - Debería mostrarse")
     
     print("\n=== Fin de la prueba ===")
 
