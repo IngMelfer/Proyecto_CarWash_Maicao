@@ -1,0 +1,62 @@
+# Dependencias principales
+
+# Django Framework
+Django==4.2.11
+asgiref==3.7.2
+sqlparse==0.4.4
+tzdata==2023.3
+
+# Bases de datos
+# En Windows usamos PyMySQL para evitar compilación nativa de mysqlclient
+PyMySQL==1.1.0; sys_platform == "win32"
+# En otros sistemas (Linux/Mac) se usa mysqlclient
+mysqlclient==2.2.7; sys_platform != "win32"
+# Soporte para URLs de base de datos y PostgreSQL
+dj-database-url==2.1.0
+
+# API REST
+djangorestframework==3.14.0
+
+# CORS y seguridad
+django-cors-headers==4.3.1
+cryptography==45.0.7
+
+# Archivos estáticos y servidor de producción
+whitenoise==6.5.0
+gunicorn==21.2.0
+
+# Variables de entorno y zona horaria
+python-dotenv==1.0.0
+pytz==2025.2
+
+# HTTP
+requests==2.32.4
+urllib3==2.4.0
+certifi==2025.6.15
+
+# Manejo de imágenes
+Pillow==11.3.0
+
+# Utilidades
+packaging==23.2
+typing_extensions==4.8.0
+sentry-sdk==1.39.1
+
+# Procesamiento de datos (opcional)
+pandas==2.3.0
+numpy==2.3.1
+openpyxl==3.1.5
+xlsxwriter==3.2.9
+
+# QR Codes
+qrcode==8.2
+
+# PDF Generation
+reportlab==4.4.3
+
+# Web scraping (opcional)
+beautifulsoup4==4.13.5
+
+# AWS S3 (opcional para almacenamiento en la nube)
+boto3==1.40.26
+django-storages==1.14.6

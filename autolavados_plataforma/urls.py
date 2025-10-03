@@ -35,6 +35,7 @@ urlpatterns = [
     path('autenticacion/', include(('autenticacion.urls', 'autenticacion'), namespace='autenticacion')),
     path('clientes/', include(('clientes.urls', 'clientes'), namespace='clientes')),
     path('empleados/', include(('empleados.urls', 'empleados'), namespace='empleados')),
+    path('dashboard-publico/', include('dashboard_publico.urls')),
     # Namespace específico para el dashboard de empleados
     path('empleados/dashboard/', include(('empleados.urls_dashboard', 'empleados_dashboard'), namespace='empleados_dashboard')),
 ]

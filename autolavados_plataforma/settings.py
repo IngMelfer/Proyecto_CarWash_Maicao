@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'reservas',
     'notificaciones',
     'empleados',
+    'dashboard_publico',
 ]
 
 MIDDLEWARE = [

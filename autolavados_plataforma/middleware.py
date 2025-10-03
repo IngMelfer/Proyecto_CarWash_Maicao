@@ -90,6 +90,7 @@ class LoginRequiredMiddleware:
             r'^/reservas/obtener_horarios_disponibles/.*$',  # API para obtener horarios disponibles
             r'^/reservas/obtener_lavadores_disponibles/.*$',  # API para obtener lavadores disponibles
             r'^/reservas/obtener_bahias_disponibles/.*$',  # API para obtener bahías disponibles
+            r'^/dashboard/.*$',  # Permitir acceso al dashboard público
         ]
         self.exempt_url_patterns = [re.compile(url) for url in self.exempt_urls]
 
