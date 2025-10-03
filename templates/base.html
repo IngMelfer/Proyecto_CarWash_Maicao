@@ -108,6 +108,56 @@
             right: 0 !important;
             min-width: 200px;
         }
+
+        /* Estilos específicos para el dropdown de notificaciones del cliente */
+        .navbar-premium #notificacionesDropdown + .dropdown-menu,
+        #notificacionesDropdown + .dropdown-menu {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+            background-image: none !important;
+            border: 1px solid #e0e0e0 !important;
+            border-radius: 12px !important;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15) !important;
+        }
+
+        .navbar-premium #notificacionesDropdown + .dropdown-menu .dropdown-header,
+        #notificacionesDropdown + .dropdown-menu .dropdown-header {
+            background-color: #f8f9fa !important;
+            background: #f8f9fa !important;
+            color: #056a96 !important;
+            font-weight: bold !important;
+            border-radius: 12px 12px 0 0 !important;
+        }
+
+        .navbar-premium #notificacionesDropdown + .dropdown-menu .dropdown-item,
+        #notificacionesDropdown + .dropdown-menu .dropdown-item {
+            background-color: transparent !important;
+            background: transparent !important;
+            color: #333 !important;
+            border-bottom: 1px solid #f1f3f4 !important;
+            transition: all 0.2s ease !important;
+        }
+
+        .navbar-premium #notificacionesDropdown + .dropdown-menu .dropdown-item:hover,
+        #notificacionesDropdown + .dropdown-menu .dropdown-item:hover {
+            background-color: #f8f9fa !important;
+            background: #f8f9fa !important;
+            color: #333 !important;
+            transform: translateX(2px) !important;
+        }
+
+        .navbar-premium #notificacionesDropdown + .dropdown-menu .dropdown-item-text,
+        #notificacionesDropdown + .dropdown-menu .dropdown-item-text {
+            background-color: transparent !important;
+            background: transparent !important;
+            color: #666 !important;
+        }
+
+        .navbar-premium #notificacionesDropdown + .dropdown-menu .dropdown-divider,
+        #notificacionesDropdown + .dropdown-menu .dropdown-divider {
+            border-color: #e9ecef !important;
+            margin: 0 !important;
+        }
         
         .navbar-premium .dropdown-item {
             color: #cacaca;
@@ -500,20 +550,15 @@
                     lista.empty();
                     
                     if (data.notificaciones.length === 0) {
-                        lista.append('<li><span class="dropdown-item-text text-muted">No hay notificaciones</span></li>');
+                        lista.append('<li><span class="dropdown-item-text text-muted">No hay notificaciones pendientes</span></li>');
                     } else {
                         data.notificaciones.forEach(function(notif) {
                             const leida = notif.leida ? '' : 'fw-bold';
                             const icono = notif.tipo === 'SERVICIO_FINALIZADO' ? 'fas fa-check-circle text-success' : 'fas fa-info-circle text-primary';
                             
-                            let enlace = '#';
-                            if (notif.tipo === 'SERVICIO_FINALIZADO' && notif.reserva_id) {
-                                enlace = `/reservas/calificar-lavador/${notif.reserva_id}/`;
-                            }
-                            
                             const item = `
                                 <li>
-                                    <a class="dropdown-item ${leida}" href="${enlace}" onclick="marcarComoLeida(${notif.id})">
+                                    <a class="dropdown-item ${leida}" href="#" onclick="irATodasLasNotificaciones(event)">
                                         <div class="d-flex align-items-start">
                                             <i class="${icono} me-2 mt-1"></i>
                                             <div class="flex-grow-1">
@@ -521,6 +566,7 @@
                                                 <div class="small text-muted">${notif.mensaje}</div>
                                                 <div class="small text-muted">${notif.fecha}</div>
                                             </div>
+                                            ${!notif.leida ? '<span class="badge bg-primary ms-2">Nuevo</span>' : ''}
                                         </div>
                                     </a>
                                 </li>
@@ -531,6 +577,16 @@
                 }).fail(function() {
                     $('#notificaciones-lista').html('<li><span class="dropdown-item-text text-danger">Error al cargar notificaciones</span></li>');
                 });
+                {% endif %}
+            }
+            
+            // Función para ir a todas las notificaciones
+            function irATodasLasNotificaciones(event) {
+                event.preventDefault();
+                {% if user.cliente %}
+                    window.location.href = "{% url 'notificaciones:cliente_notificaciones' %}";
+                {% elif user.empleado %}
+                    window.location.href = "{% url 'notificaciones:lavador_notificaciones' %}";
                 {% endif %}
             }
             

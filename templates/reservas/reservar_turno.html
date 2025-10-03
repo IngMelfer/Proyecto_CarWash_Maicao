@@ -1687,7 +1687,17 @@
                                             <p><strong><i class="fas fa-calendar me-1"></i> Fecha:</strong> <span id="resumen-fecha"></span></p>
                                             <p><strong><i class="fas fa-clock me-1"></i> Hora:</strong> <span id="resumen-hora"></span></p>
                                             <p><strong><i class="fas fa-warehouse me-1"></i> Bahía:</strong> <span id="resumen-bahia"></span></p>
-                                <p><strong><i class="fas fa-user-tie me-1"></i> Lavador:</strong> <span id="resumen-lavador"></span></p>
+                                <p><strong><i class="fas fa-user-tie me-1"></i> Lavador:</strong> 
+                                    <span id="resumen-lavador" class="d-flex align-items-center">
+                                        <img id="resumen-lavador-foto" src="{% static 'img/lavador-avatar.svg' %}" 
+                                             alt="Lavador" class="rounded-circle me-2" 
+                                             width="40" height="40" style="object-fit: cover; border: 2px solid #e9ecef;">
+                                        <div>
+                                            <div id="resumen-lavador-nombre" class="fw-bold text-primary">Asignación automática</div>
+                                            <small class="text-muted">Especialista en lavado</small>
+                                        </div>
+                                    </span>
+                                </p>
                                         </div>
                                         <div class="col-md-6">
                                             <p><strong><i class="fas fa-car me-1"></i> Vehículo:</strong> <span id="resumen-vehiculo"></span></p>
@@ -1782,10 +1792,15 @@
                     </label>
                     <select class="form-select form-select-enhanced" id="recompensaSelect" name="recompensa" required>
                         <option value="" selected disabled>Selecciona una opción</option>
-                        <option value="descuento_10" data-puntos="100">Descuento 10% (100 puntos)</option>
-                        <option value="lavado_basico" data-puntos="200">Lavado Básico Gratis (200 puntos)</option>
-                        <option value="detailing_interior" data-puntos="350">Detailing Interior (350 puntos)</option>
-                        <option value="lavado_premium" data-puntos="500">Lavado Premium (500 puntos)</option>
+                        {% for recompensa in recompensas %}
+                            <option value="{{ recompensa.id }}" 
+                                    data-puntos="{{ recompensa.puntos_requeridos }}" 
+                                    data-tipo="{{ recompensa.tipo }}" 
+                                    data-valor-porcentaje="{% if recompensa.valor_porcentaje %}{{ recompensa.valor_porcentaje }}{% else %}0{% endif %}"
+                                    data-valor-monto="{% if recompensa.valor_monto %}{{ recompensa.valor_monto }}{% else %}0{% endif %}">
+                                {{ recompensa.nombre }} ({{ recompensa.puntos_requeridos }} puntos)
+                            </option>
+                        {% endfor %}
                     </select>
                 </div>
                 <div class="mb-3">
@@ -2525,6 +2540,12 @@
                     puntosARedimirInput.value = 0;
                     descuentoAplicadoInput.value = 0;
                     
+                    // Actualizar el precio en el resumen sin descuento
+                    const resumenPrecio = document.querySelector('#resumen-precio');
+                    if (resumenPrecio && selectedService) {
+                        resumenPrecio.textContent = '$' + servicePrices[selectedService].toLocaleString();
+                    }
+                    
                     // Ocultar mensaje de descuento
                     const medioPagoSeleccionadoDiv = document.querySelector('#medioPagoSeleccionado');
                     if (medioPagoSeleccionadoDiv) {
@@ -2637,16 +2658,39 @@
             
             // Añadir información del lavador seleccionado al resumen
             const lavadorId = document.querySelector('#lavadorInput').value;
+            const resumenLavadorNombre = document.querySelector('#resumen-lavador-nombre');
+            const resumenLavadorFoto = document.querySelector('#resumen-lavador-foto');
+            
             if (lavadorId) {
                 const lavadorCard = document.querySelector('.lavador-card[data-lavador-id="' + lavadorId + '"]');
                 if (lavadorCard) {
                     const nombreLavador = lavadorCard.querySelector('.card-title').textContent;
-                    document.querySelector('#resumen-lavador').textContent = nombreLavador;
+                    const fotoLavador = lavadorCard.querySelector('img');
+                    
+                    // Actualizar nombre
+                    resumenLavadorNombre.textContent = nombreLavador;
+                    
+                    // Actualizar foto
+                    if (fotoLavador) {
+                        resumenLavadorFoto.src = fotoLavador.src;
+                        resumenLavadorFoto.alt = nombreLavador;
+                        resumenLavadorFoto.style.display = 'inline-block';
+                    } else {
+                        resumenLavadorFoto.src = "{% static 'img/lavador-avatar.svg' %}";
+                        resumenLavadorFoto.alt = nombreLavador;
+                        resumenLavadorFoto.style.display = 'inline-block';
+                    }
                 } else {
-                    document.querySelector('#resumen-lavador').textContent = 'Asignación automática';
+                    resumenLavadorNombre.textContent = 'Asignación automática';
+                    resumenLavadorFoto.src = "{% static 'img/lavador-avatar.svg' %}";
+                    resumenLavadorFoto.alt = 'Lavador';
+                    resumenLavadorFoto.style.display = 'inline-block';
                 }
             } else {
-                document.querySelector('#resumen-lavador').textContent = 'Asignación automática';
+                resumenLavadorNombre.textContent = 'Asignación automática';
+                resumenLavadorFoto.src = "{% static 'img/lavador-avatar.svg' %}";
+                resumenLavadorFoto.alt = 'Lavador';
+                resumenLavadorFoto.style.display = 'inline-block';
             }
             
             // Añadir información del medio de pago al resumen
@@ -2721,11 +2765,11 @@
         }
         
         // Función para calcular el descuento por puntos según la recompensa seleccionada
-        function calcularDescuentoPorPuntos(puntosCliente, precioServicio, recompensaSeleccionada = null) {
-            console.log('Calculando descuento - Puntos cliente:', puntosCliente, 'Precio servicio:', precioServicio, 'Recompensa:', recompensaSeleccionada);
+        function calcularDescuentoPorPuntos(puntosCliente, precioServicio, recompensaId = null) {
+            console.log('Calculando descuento - Puntos cliente:', puntosCliente, 'Precio servicio:', precioServicio, 'Recompensa ID:', recompensaId);
             
             // Si no hay recompensa seleccionada, no se aplica descuento
-            if (!recompensaSeleccionada) {
+            if (!recompensaId) {
                 return {
                     descuento: 0,
                     puntosUsados: 0,
@@ -2733,36 +2777,23 @@
                 };
             }
             
-            // Obtener los puntos necesarios y el descuento según la recompensa seleccionada
-            let puntosNecesarios = 0;
-            let descuento = 0;
+            // Obtener la información de la recompensa desde el select
+            const recompensaSelect = document.getElementById('recompensaSelect');
+            const selectedOption = recompensaSelect.querySelector(`option[value="${recompensaId}"]`);
             
-            switch (recompensaSeleccionada) {
-                case 'descuento_10':
-                    puntosNecesarios = 100;
-                    descuento = precioServicio * 0.10; // 10% de descuento
-                    break;
-                case 'lavado_basico':
-                    puntosNecesarios = 200;
-                    descuento = precioServicio; // 100% de descuento para lavado básico
-                    break;
-                case 'detailing_interior':
-                    puntosNecesarios = 350;
-                    descuento = precioServicio; // 100% de descuento para detailing interior
-                    break;
-                case 'lavado_premium':
-                    puntosNecesarios = 500;
-                    descuento = precioServicio; // 100% de descuento para lavado premium
-                    break;
-                default:
-                    // Si no se reconoce la recompensa, no se aplica descuento
-                    console.log('Recompensa no reconocida');
-                    return {
-                        descuento: 0,
-                        puntosUsados: 0,
-                        precioFinal: precioServicio
-                    };
+            if (!selectedOption) {
+                console.log('Recompensa no encontrada');
+                return {
+                    descuento: 0,
+                    puntosUsados: 0,
+                    precioFinal: precioServicio
+                };
             }
+            
+            const puntosNecesarios = parseInt(selectedOption.dataset.puntos);
+            const tipoRecompensa = selectedOption.dataset.tipo;
+            const valorPorcentaje = parseFloat(selectedOption.dataset.valorPorcentaje) || 0;
+            const valorMonto = parseFloat(selectedOption.dataset.valorMonto) || 0;
             
             // Verificar si el cliente tiene suficientes puntos
             console.log('Verificando puntos - Disponibles:', puntosCliente, 'Necesarios:', puntosNecesarios);
@@ -2773,6 +2804,31 @@
                     puntosUsados: 0,
                     precioFinal: precioServicio
                 };
+            }
+            
+            // Calcular descuento según el tipo de recompensa
+            let descuento = 0;
+            
+            switch (tipoRecompensa) {
+                case 'DP': // Descuento porcentual
+                    descuento = precioServicio * (valorPorcentaje / 100);
+                    console.log('Descuento porcentual:', valorPorcentaje, '% de', precioServicio, '=', descuento);
+                    break;
+                case 'DM': // Descuento por monto fijo
+                    descuento = Math.min(valorMonto, precioServicio);
+                    console.log('Descuento monto fijo:', valorMonto, 'aplicado como', descuento);
+                    break;
+                case 'SG': // Servicio gratis
+                    descuento = precioServicio; // 100% de descuento
+                    console.log('Servicio gratis - descuento completo:', descuento);
+                    break;
+                default:
+                    console.log('Tipo de recompensa no reconocido:', tipoRecompensa);
+                    return {
+                        descuento: 0,
+                        puntosUsados: 0,
+                        precioFinal: precioServicio
+                    };
             }
             
             // El cliente tiene suficientes puntos, aplicar descuento
@@ -3074,7 +3130,7 @@
                 // La validación del medio de pago ya se hizo en el paso anterior
                 
                 // Verificar todos los campos requeridos antes de enviar
-                const camposRequeridos = ['servicio', 'fecha', 'hora', 'bahia_id'];
+                const camposRequeridos = ['servicio', 'fecha', 'hora', 'bahia_id', 'lavador_id'];
                 let faltanCampos = false;
                 
                 // Verificar el resto de campos requeridos
@@ -3322,6 +3378,20 @@
                     document.getElementById('descuentoAplicado').value = descuento;
                     document.getElementById('puntosARedimir').value = puntosUsados;
                     precioFinalConDescuento = resultado.precioFinal;
+                    
+                    // Actualizar el precio en el resumen con el descuento aplicado
+                    const resumenPrecio = document.querySelector('#resumen-precio');
+                    if (resumenPrecio) {
+                        if (descuento > 0) {
+                            resumenPrecio.innerHTML = `
+                                <span class="text-decoration-line-through text-muted">$${precioServicio.toLocaleString()}</span> 
+                                <span class="text-success">$${precioFinalConDescuento.toLocaleString()}</span> 
+                                <span class="badge bg-success">Descuento: $${descuento.toLocaleString()}</span>
+                            `;
+                        } else {
+                            resumenPrecio.textContent = '$' + precioServicio.toLocaleString();
+                        }
+                    }
                     
                     // Mostrar mensaje con el descuento aplicado
                     const medioPagoSeleccionadoDiv = document.querySelector('#medioPagoSeleccionado');

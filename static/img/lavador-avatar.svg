@@ -1,0 +1,57 @@
+<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo circular con gradiente -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4F46E5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7C3AED;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="shirtGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1D4ED8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Círculo de fondo -->
+  <circle cx="40" cy="40" r="40" fill="url(#bgGradient)"/>
+  
+  <!-- Cabeza -->
+  <circle cx="40" cy="28" r="12" fill="#FBBF24" stroke="#F59E0B" stroke-width="1"/>
+  
+  <!-- Cuerpo/Camisa -->
+  <path d="M 28 40 Q 28 38 30 38 L 50 38 Q 52 38 52 40 L 52 65 Q 52 67 50 67 L 30 67 Q 28 67 28 65 Z" fill="url(#shirtGradient)"/>
+  
+  <!-- Cuello de la camisa -->
+  <path d="M 35 38 L 35 42 L 45 42 L 45 38" fill="#1E40AF"/>
+  
+  <!-- Brazos -->
+  <ellipse cx="25" cy="48" rx="4" ry="8" fill="url(#shirtGradient)"/>
+  <ellipse cx="55" cy="48" rx="4" ry="8" fill="url(#shirtGradient)"/>
+  
+  <!-- Manos -->
+  <circle cx="25" cy="56" r="3" fill="#FBBF24"/>
+  <circle cx="55" cy="56" r="3" fill="#FBBF24"/>
+  
+  <!-- Herramientas de lavado -->
+  <!-- Esponja en mano izquierda -->
+  <ellipse cx="23" cy="58" rx="2" ry="1.5" fill="#FEF3C7"/>
+  
+  <!-- Spray en mano derecha -->
+  <rect x="53" y="55" width="4" height="6" rx="1" fill="#10B981"/>
+  <rect x="54" y="53" width="2" height="2" fill="#065F46"/>
+  
+  <!-- Detalles de la cara -->
+  <!-- Ojos -->
+  <circle cx="36" cy="26" r="1.5" fill="#1F2937"/>
+  <circle cx="44" cy="26" r="1.5" fill="#1F2937"/>
+  
+  <!-- Sonrisa -->
+  <path d="M 35 30 Q 40 33 45 30" stroke="#1F2937" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  
+  <!-- Gorra/Sombrero -->
+  <ellipse cx="40" cy="18" rx="14" ry="4" fill="#DC2626"/>
+  <rect x="26" y="16" width="28" height="4" fill="#DC2626"/>
+  
+  <!-- Logo en la gorra -->
+  <circle cx="40" cy="18" r="2" fill="#FFFFFF"/>
+  <text x="40" y="20" text-anchor="middle" font-family="Arial, sans-serif" font-size="3" fill="#DC2626" font-weight="bold">L</text>
+</svg>

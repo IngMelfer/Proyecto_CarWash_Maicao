@@ -388,7 +388,13 @@ class DashboardClienteView(LoginRequiredMixin, View):
                 estado=Reserva.COMPLETADA
             ).count()
             vehiculo.servicios_completados = servicios_vehiculo
-        
+
+        # Obtener servicios en proceso del cliente (todos)
+        servicios_en_proceso = Reserva.objects.filter(
+            cliente=cliente,
+            estado=Reserva.EN_PROCESO
+        ).select_related('bahia', 'servicio', 'vehiculo', 'lavador')
+
         return render(request, 'clientes/dashboard.html', {
             'cliente': cliente,
             'turnos_pendientes': turnos_pendientes,
@@ -397,5 +403,6 @@ class DashboardClienteView(LoginRequiredMixin, View):
             'vehiculos_registrados': vehiculos_registrados,
             'proximos_turnos': proximos_turnos,
             'vehiculos': vehiculos,
-            'historial': historial_servicios[:5]  # Pasar los últimos 5 servicios completados
+            'historial': historial_servicios[:5],  # Pasar los últimos 5 servicios completados
+            'servicios_en_proceso': servicios_en_proceso  # Información de todos los servicios en proceso
         })

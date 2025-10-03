@@ -176,16 +176,44 @@
                          id="notification-{{ notificacion.id }}">
                         <div class="card-body">
                             <div class="d-flex align-items-start">
-                                <div class="notification-icon 
-                                    {% if notificacion.tipo == 'CALIFICACION_RECIBIDA' %}calificacion-recibida
-                                    {% elif notificacion.tipo == 'SERVICIO_ASIGNADO' %}servicio-asignado
-                                    {% else %}general{% endif %}">
-                                    {% if notificacion.tipo == 'CALIFICACION_RECIBIDA' %}
-                                        <i class="fas fa-star"></i>
-                                    {% elif notificacion.tipo == 'SERVICIO_ASIGNADO' %}
-                                        <i class="fas fa-tasks"></i>
+                                <div class="position-relative">
+                                    {% if notificacion.reserva and notificacion.reserva.cliente %}
+                                        {% if notificacion.reserva.cliente.usuario.foto_perfil %}
+                                            <img src="{{ notificacion.reserva.cliente.usuario.foto_perfil.url }}" 
+                                                 alt="Foto del cliente" 
+                                                 style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #e9ecef;">
+                                        {% else %}
+                                            <div style="width: 45px; height: 45px; border-radius: 50%; background-color: #6c757d; display: flex; align-items: center; justify-content: center; border: 2px solid #e9ecef;">
+                                                <i class="fas fa-user text-white" style="font-size: 1.2rem;"></i>
+                                            </div>
+                                        {% endif %}
+                                        <!-- Ícono de tipo de notificación como badge -->
+                                        <div class="position-absolute" style="bottom: -2px; right: -2px; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white;
+                                            {% if notificacion.tipo == 'CALIFICACION_RECIBIDA' %}background-color: #ffc107; color: white;
+                                            {% elif notificacion.tipo == 'SERVICIO_ASIGNADO' %}background-color: #17a2b8; color: white;
+                                            {% else %}background-color: #056a96; color: white;{% endif %}">
+                                            {% if notificacion.tipo == 'CALIFICACION_RECIBIDA' %}
+                                                <i class="fas fa-star" style="font-size: 0.7rem;"></i>
+                                            {% elif notificacion.tipo == 'SERVICIO_ASIGNADO' %}
+                                                <i class="fas fa-tasks" style="font-size: 0.7rem;"></i>
+                                            {% else %}
+                                                <i class="fas fa-info-circle" style="font-size: 0.7rem;"></i>
+                                            {% endif %}
+                                        </div>
                                     {% else %}
-                                        <i class="fas fa-info-circle"></i>
+                                        <!-- Fallback al ícono original si no hay reserva/cliente -->
+                                        <div class="notification-icon 
+                                            {% if notificacion.tipo == 'CALIFICACION_RECIBIDA' %}calificacion-recibida
+                                            {% elif notificacion.tipo == 'SERVICIO_ASIGNADO' %}servicio-asignado
+                                            {% else %}general{% endif %}">
+                                            {% if notificacion.tipo == 'CALIFICACION_RECIBIDA' %}
+                                                <i class="fas fa-star"></i>
+                                            {% elif notificacion.tipo == 'SERVICIO_ASIGNADO' %}
+                                                <i class="fas fa-tasks"></i>
+                                            {% else %}
+                                                <i class="fas fa-info-circle"></i>
+                                            {% endif %}
+                                        </div>
                                     {% endif %}
                                 </div>
                                 

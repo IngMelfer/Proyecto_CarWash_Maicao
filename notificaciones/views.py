@@ -270,22 +270,34 @@ def marcar_notificacion_leida(request, notificacion_id):
 
 @login_required
 def notificaciones_dropdown_api(request):
-    """API para obtener las últimas notificaciones para el dropdown"""
+    """API para obtener solo las notificaciones no leídas para el dropdown"""
     notificaciones_data = []
     
     if hasattr(request.user, 'cliente'):
+        # Solo mostrar notificaciones no leídas del cliente
         notificaciones = Notificacion.objects.filter(
-            cliente=request.user.cliente
+            cliente=request.user.cliente,
+            leida=False
         ).order_by('-fecha_creacion')[:5]
     elif hasattr(request.user, 'empleado'):
+        # Solo mostrar notificaciones no leídas del empleado
         notificaciones = Notificacion.objects.filter(
             empleado=request.user.empleado,
-            tipo__in=[Notificacion.CALIFICACION_RECIBIDA, Notificacion.SERVICIO_ASIGNADO]
+            tipo__in=[Notificacion.CALIFICACION_RECIBIDA, Notificacion.SERVICIO_ASIGNADO],
+            leida=False
         ).order_by('-fecha_creacion')[:5]
     else:
         notificaciones = []
     
     for notif in notificaciones:
+        # Obtener información del empleado si existe
+        empleado_info = None
+        if notif.empleado:
+            empleado_info = {
+                'nombre': notif.empleado.nombre_completo(),
+                'fotografia_url': notif.empleado.fotografia.url if notif.empleado.fotografia else None
+            }
+        
         notificaciones_data.append({
             'id': notif.id,
             'titulo': notif.titulo,
@@ -293,7 +305,8 @@ def notificaciones_dropdown_api(request):
             'fecha': notif.fecha_creacion.strftime('%d/%m/%Y %H:%M'),
             'leida': notif.leida,
             'tipo': notif.tipo,
-            'reserva_id': notif.reserva.id if notif.reserva else None
+            'reserva_id': notif.reserva.id if notif.reserva else None,
+            'empleado': empleado_info
         })
     
     return JsonResponse({'notificaciones': notificaciones_data})

@@ -1,3 +1,4 @@
+{% load static %}
 {% for info in bahias_info %}
      <div class="bahia-card bahia-{{ info.estado }}">
          <div class="bahia-status status-{{ info.estado }}"></div>
@@ -9,6 +10,34 @@
                 <p><strong>Vehículo:</strong> {{ info.vehiculo.marca }} {{ info.vehiculo.modelo }} ({{ info.vehiculo.placa }})</p>
                 <p><strong>Servicio:</strong> {{ info.servicio.nombre }}</p>
                 <p><strong>Estado:</strong> {{ info.reserva.get_estado_display }}</p>
+                {% if info.reserva.lavador %}
+                    <p><strong><i class="fas fa-user-tie me-1"></i> Lavador:</strong> 
+                        <span class="d-flex align-items-center mt-1">
+                            {% if info.reserva.lavador.fotografia %}
+                                <img src="{{ info.reserva.lavador.fotografia.url }}" alt="{{ info.reserva.lavador.nombre_completo }}" 
+                                     class="rounded-circle me-2" width="30" height="30" style="object-fit: cover; border: 2px solid #e9ecef;">
+                            {% else %}
+                                <img src="{% static 'img/lavador-avatar.svg' %}" alt="{{ info.reserva.lavador.nombre_completo }}" 
+                                     class="rounded-circle me-2" width="30" height="30" style="object-fit: cover; border: 2px solid #e9ecef;">
+                            {% endif %}
+                            <div>
+                                <div class="fw-bold text-primary">{{ info.reserva.lavador.nombre_completo }}</div>
+                                <small class="text-muted">Especialista en lavado</small>
+                            </div>
+                        </span>
+                    </p>
+                {% else %}
+                    <p><strong><i class="fas fa-user-tie me-1"></i> Lavador:</strong> 
+                        <span class="d-flex align-items-center mt-1">
+                            <img src="{% static 'img/lavador-avatar.svg' %}" alt="Lavador" 
+                                 class="rounded-circle me-2" width="30" height="30" style="object-fit: cover; border: 2px solid #e9ecef;">
+                            <div>
+                                <div class="fw-bold text-primary">Asignación automática</div>
+                                <small class="text-muted">Especialista en lavado</small>
+                            </div>
+                        </span>
+                    </p>
+                {% endif %}
                 
                 {% if info.estado == 'en_proceso' and info.reserva.fecha_inicio_servicio %}
                     <div class="cronometro" 

@@ -362,8 +362,18 @@ class Reserva(models.Model):
     def iniciar_servicio(self):
         """
         Inicia el servicio si la reserva está confirmada.
+        Si no hay lavador asignado, intenta asignar uno automáticamente.
         """
         if self.estado == self.CONFIRMADA:
+            # Si no hay lavador asignado, intentar asignar uno automáticamente
+            if not self.lavador:
+                try:
+                    self.asignar_lavador()
+                except ValueError:
+                    # Si no hay lavadores disponibles, continuar sin asignar
+                    # El servicio puede iniciarse sin lavador asignado
+                    pass
+            
             self.estado = self.EN_PROCESO
             self.fecha_inicio_servicio = timezone.now()
             self.save(update_fields=['estado', 'fecha_inicio_servicio'])
@@ -713,6 +723,14 @@ class Bahia(models.Model):
     
     def save(self, *args, **kwargs):
         """Sobrescribir el método save para generar el código QR si tiene cámara y una IP asignada"""
+        from django.core.exceptions import ValidationError
+        
+        # Validar que si tiene_camara es True, debe tener ip_camara
+        if self.tiene_camara and not self.ip_camara:
+            raise ValidationError({
+                'ip_camara': 'Debe especificar la URL/IP de la cámara cuando "Tiene Cámara" está marcado.'
+            })
+        
         # Primero guardamos el objeto para asegurar que tenga un ID
         super().save(*args, **kwargs)
         

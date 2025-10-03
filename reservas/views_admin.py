@@ -62,6 +62,15 @@ class DashboardAdminView(LoginRequiredMixin, AdminRequiredMixin, View):
             print(f"DEBUG - Estado final de bahía {bahia.nombre}: {estado}")
 
             
+            # Si hay una reserva activa y la bahía tiene cámara, verificar que tenga stream_token
+            if reserva_activa and bahia.tiene_camara and bahia.ip_camara:
+                if not reserva_activa.stream_token:
+                    # Generar stream_token faltante
+                    import uuid
+                    reserva_activa.stream_token = f"{reserva_activa.id}-{uuid.uuid4()}"
+                    reserva_activa.save()
+                    print(f"DEBUG - Stream token generado para reserva {reserva_activa.id}: {reserva_activa.stream_token}")
+            
             # Agregar información de la bahía al listado
             bahias_info.append({
                 'bahia': bahia,

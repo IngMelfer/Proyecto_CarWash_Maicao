@@ -1,4 +1,5 @@
 from django import forms
+from django.core.exceptions import ValidationError
 from .models import Bahia, Servicio, MedioPago, DisponibilidadHoraria, Reserva, HorarioDisponible, Recompensa
 from clientes.models import Cliente
 
@@ -21,6 +22,18 @@ class BahiaForm(forms.ModelForm):
             'usar_ssl': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'activa_produccion': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        tiene_camara = cleaned_data.get('tiene_camara')
+        ip_camara = cleaned_data.get('ip_camara')
+        
+        if tiene_camara and not ip_camara:
+            raise ValidationError({
+                'ip_camara': 'Debe especificar la URL/IP de la cámara cuando "Tiene Cámara" está marcado.'
+            })
+        
+        return cleaned_data
         
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

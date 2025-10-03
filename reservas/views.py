@@ -85,12 +85,14 @@ class ProcesarPagoView(LoginRequiredMixin, View):
             return self._procesar_pago_con_puntos(request, reserva, puntos_a_redimir)
         
         # Si se están usando puntos para un descuento parcial
+        from decimal import Decimal
         monto_original = reserva.servicio.precio
         monto = monto_original
         
         if usar_puntos and puntos_a_redimir > 0 and descuento_aplicado > 0:
-            # Aplicar descuento al monto
-            monto = monto_original - descuento_aplicado
+            # Aplicar descuento al monto - asegurar que ambos sean Decimal
+            descuento_decimal = Decimal(str(descuento_aplicado))
+            monto = monto_original - descuento_decimal
             if monto <= 0:
                 # Si el descuento cubre todo el monto, procesar como pago con puntos
                 return self._procesar_pago_con_puntos(request, reserva, puntos_a_redimir)
@@ -359,6 +361,41 @@ class ProcesarPagoView(LoginRequiredMixin, View):
         Procesa el pago con PSE (a través de PayU).
         """
         return self._procesar_payu(request, reserva, medio_pago, monto, referencia, descripcion)
+
+    def post(self, request, reserva_id, *args, **kwargs):
+        """
+        Maneja las solicitudes POST para procesar pagos con puntos.
+        """
+        # Obtener la reserva
+        reserva = get_object_or_404(Reserva, id=reserva_id, cliente=request.user.cliente)
+        
+        # Verificar que la reserva esté pendiente
+        if reserva.estado != Reserva.PENDIENTE:
+            messages.error(request, 'Solo se pueden procesar pagos de reservas pendientes.')
+            return redirect('clientes:dashboard')
+        
+        # Verificar si se está solicitando pago con puntos
+        usar_puntos = request.POST.get('usar_puntos') == 'true'
+        
+        if usar_puntos:
+            puntos_a_redimir = int(request.POST.get('puntos_a_redimir', 0))
+            
+            # Verificar que el cliente tenga suficientes puntos
+            cliente = request.user.cliente
+            if cliente.puntos_recompensa < puntos_a_redimir:
+                messages.error(request, 'No tienes suficientes puntos para realizar esta operación.')
+                return redirect('clientes:dashboard')
+            
+            # Configurar la sesión para el pago con puntos
+            request.session['usar_puntos'] = True
+            request.session['puntos_a_redimir'] = puntos_a_redimir
+            request.session['descuento_aplicado'] = float(puntos_a_redimir)  # Asumiendo 1 punto = 1 peso
+            
+            # Procesar el pago con puntos
+            return self._procesar_pago_con_puntos(request, reserva, puntos_a_redimir)
+        
+        # Si no es pago con puntos, redirigir al método GET
+        return self.get(request, reserva_id, *args, **kwargs)
 
 
 class ConfirmarPagoView(LoginRequiredMixin, View):
@@ -798,13 +835,13 @@ class VerCamaraView(View):
         duracion_minutos = reserva.servicio.duracion_minutos
         fin_servicio = reserva.fecha_hora + timedelta(minutes=duracion_minutos)
         
-        # Permitir ver la cámara 15 minutos antes y 15 minutos después del servicio
-        inicio_permitido = reserva.fecha_hora - timedelta(minutes=15)
-        fin_permitido = fin_servicio + timedelta(minutes=15)
+        # Permitir ver la cámara 1 minuto antes y 1 minuto después del servicio
+        inicio_permitido = reserva.fecha_hora - timedelta(minutes=1)
+        fin_permitido = fin_servicio + timedelta(minutes=1)
         
         # Los administradores pueden ver la cámara en cualquier momento
         if not request.user.is_staff and (ahora < inicio_permitido or ahora > fin_permitido):
-            messages.error(request, 'La cámara solo está disponible 15 minutos antes, durante y hasta 15 minutos después de tu reserva.')
+            messages.error(request, 'La cámara solo está disponible 1 minuto antes, durante y hasta 1 minuto después de tu reserva.')
             return redirect(redirect_url)
         
         # Obtener el vehículo asociado a la reserva si existe
@@ -848,6 +885,9 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
         # Añadir información sobre el tiempo límite para pago
         context['tiempo_limite_pago'] = 5  # minutos
         
+        # Cargar recompensas activas para el modal de redención de puntos
+        context['recompensas'] = Recompensa.objects.filter(activo=True).order_by('puntos_requeridos')
+        
         # No mostrar lavadores inicialmente - se cargarán dinámicamente
         # cuando el usuario seleccione fecha, hora y servicio
         context['lavadores_disponibles'] = []
@@ -873,10 +913,23 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
             medio_pago_id = request.POST.get('medio_pago')
             notas = request.POST.get('notas', '')
             
-            # Obtener datos de redención de puntos
+            # Obtener datos de redención de puntos con manejo seguro de conversiones
             usar_puntos = request.POST.get('usar_puntos') == 'true'
-            puntos_a_redimir = int(request.POST.get('puntos_a_redimir', 0) or 0)
-            descuento_aplicado = float(request.POST.get('descuento_aplicado', 0) or 0)
+            
+            # Manejo seguro de conversión de puntos_a_redimir
+            try:
+                puntos_a_redimir_str = request.POST.get('puntos_a_redimir', '0')
+                puntos_a_redimir = int(puntos_a_redimir_str) if puntos_a_redimir_str and puntos_a_redimir_str.strip() else 0
+            except (ValueError, TypeError):
+                puntos_a_redimir = 0
+            
+            # Manejo seguro de conversión de descuento_aplicado
+            try:
+                descuento_aplicado_str = request.POST.get('descuento_aplicado', '0')
+                descuento_aplicado = float(descuento_aplicado_str) if descuento_aplicado_str and descuento_aplicado_str.strip() else 0.0
+            except (ValueError, TypeError):
+                descuento_aplicado = 0.0
+                
             recompensa_seleccionada = request.POST.get('recompensa_seleccionada', '')
             
             # Guardar en la sesión para usar en el proceso de pago
@@ -892,8 +945,11 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
             print(f"Headers de la solicitud: {request.headers}")
             print(f"Es AJAX: {is_ajax}")
             
-            # Validar datos
-            if not all([servicio_id, fecha_str, hora_str, vehiculo_id, bahia_id, medio_pago_id]):
+            # Obtener lavador_id para validación
+            lavador_id = request.POST.get('lavador_id')
+            
+            # Validar datos (incluyendo lavador_id como requerido)
+            if not all([servicio_id, fecha_str, hora_str, vehiculo_id, bahia_id, medio_pago_id, lavador_id]):
                 if is_ajax:
                     return JsonResponse({'success': False, 'error': 'Por favor complete todos los campos requeridos.'}, status=200)
                 messages.error(request, 'Por favor complete todos los campos requeridos.')
@@ -1012,8 +1068,10 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
                 if cliente.saldo_puntos >= puntos_a_redimir:
                     # Redimir los puntos
                     if cliente.redimir_puntos(puntos_a_redimir):
-                        # Aplicar el descuento al precio
-                        precio_final = max(0, servicio.precio - descuento_aplicado)
+                        # Aplicar el descuento al precio - convertir descuento_aplicado a Decimal
+                        from decimal import Decimal
+                        descuento_decimal = Decimal(str(descuento_aplicado))
+                        precio_final = max(Decimal('0'), servicio.precio - descuento_decimal)
                     else:
                         # Si no se pudieron redimir los puntos, mostrar error
                         if is_ajax:
@@ -1057,9 +1115,10 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
                 return redirect('reservas:reservar_turno')
             
             # Verificar si se seleccionó un lavador específico
-            lavador_id = request.POST.get('lavador_id')
+            # Ya obtuvimos lavador_id anteriormente en la validación
             
-            # VALIDACIÓN: Requerir que se seleccione un lavador
+            # VALIDACIÓN: Requerir que se seleccione un lavador (ya validado arriba)
+            # Esta validación es redundante ahora, pero la mantenemos por seguridad
             if not lavador_id:
                 if is_ajax:
                     response = JsonResponse({'success': False, 'error': 'Debe seleccionar un lavador para continuar con la reserva.'}, status=400)
@@ -1346,6 +1405,17 @@ class MisTurnosView(LoginRequiredMixin, TemplateView):
             cliente=cliente,
             estado__in=[Reserva.CANCELADA, Reserva.INCUMPLIDA]
         ).order_by('-fecha_hora')
+        
+        # Generar stream_token para reservas que lo necesiten
+        import uuid
+        for reserva in list(proximas) + list(en_proceso) + list(pasadas):
+            if (reserva.bahia and 
+                reserva.bahia.tiene_camara and 
+                reserva.bahia.ip_camara and 
+                not reserva.stream_token):
+                # Generar un token único
+                reserva.stream_token = f"{reserva.id}-{uuid.uuid4()}"
+                reserva.save()
         
         context['proximas'] = proximas
         context['en_proceso'] = en_proceso

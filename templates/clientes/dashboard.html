@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Mi Dashboard - Premium Car Detailing{% endblock %}
 
@@ -398,6 +399,127 @@
     .summary-icon {
         font-size: 3rem;
         color: #28a745;
+    }
+    
+    /* Estilos para la tarjeta de bahía en el dashboard del cliente */
+    .bahia-card {
+        background: linear-gradient(135deg, #ffffff, #f8f9fa);
+        border-radius: 20px;
+        padding: 1.5rem;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        border: 2px solid transparent;
+    }
+    
+    .bahia-card.bahia-en-proceso {
+        border-color: #ffc107;
+        background: linear-gradient(135deg, #fff8e1, #fffbf0);
+        animation: pulse-warning 2s infinite;
+    }
+    
+    @keyframes pulse-warning {
+        0% { box-shadow: 0 8px 30px rgba(255, 193, 7, 0.2); }
+        50% { box-shadow: 0 12px 40px rgba(255, 193, 7, 0.4); }
+        100% { box-shadow: 0 8px 30px rgba(255, 193, 7, 0.2); }
+    }
+    
+    .camera-indicator {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: rgba(108, 117, 125, 0.9);
+        color: white;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        z-index: 10;
+    }
+    
+    .camera-indicator.active {
+        background: rgba(40, 167, 69, 0.9);
+    }
+    
+    .bahia-status {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        border-radius: 20px 20px 0 0;
+    }
+    
+    .status-en_proceso {
+        background: linear-gradient(90deg, #ffc107, #ffb300);
+    }
+    
+    .bahia-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #056a96;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .bahia-info {
+        margin-top: 1rem;
+    }
+    
+    .bahia-info p {
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.95rem;
+    }
+    
+    .bahia-info p:last-child {
+        margin-bottom: 0;
+    }
+    
+    .cronometro {
+        background: linear-gradient(135deg, #17a2b8, #138496);
+        color: white;
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        margin: 1rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+    }
+    
+    .tiempo-restante {
+        font-size: 1.1rem;
+        font-weight: 700;
+    }
+    
+    .bahia-actions {
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .bahia-actions .btn {
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .bahia-actions .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
         opacity: 0.7;
     }
     
@@ -848,6 +970,98 @@
         {% endif %}
     </div>
 
+    <!-- Tarjetas de Servicios en Proceso -->
+    {% if servicios_en_proceso %}
+    <div class="section-header-enhanced mb-4">
+        <div class="d-flex align-items-center">
+            <div class="section-icon-enhanced me-3">
+                <i class="fas fa-cogs"></i>
+            </div>
+            <div>
+                <h2 class="section-title-enhanced mb-0">Tus Servicios en Proceso</h2>
+                <p class="section-subtitle-enhanced mb-0">Información en tiempo real de tus servicios actuales</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-5">
+        {% for servicio_en_proceso in servicios_en_proceso %}
+        <div class="col-lg-6 col-12 mb-4">
+            <div class="bahia-card bahia-en-proceso">
+                <!-- Indicador de cámara -->
+                {% if servicio_en_proceso.bahia.tiene_camara %}
+                    <div class="camera-indicator active">
+                        <i class="fas fa-video"></i>
+                        <span>CÁMARA</span>
+                    </div>
+                {% else %}
+                    <div class="camera-indicator">
+                        <i class="fas fa-video-slash"></i>
+                        <span>SIN CÁMARA</span>
+                    </div>
+                {% endif %}
+
+                <div class="bahia-status status-en_proceso"></div>
+                <!-- Título de la bahía con iconos mejorados -->
+                <div class="bahia-title">
+                    <i class="fas fa-car-wash" style="color: #17a2b8;"></i>
+                    <i class="fas fa-tint" style="color: #007bff;"></i>
+                    {{ servicio_en_proceso.bahia.nombre }}
+                </div>
+                
+                <div class="bahia-info">
+                    <p><i class="fas fa-user" style="color: #17a2b8;"></i> <strong>Cliente:</strong> {{ servicio_en_proceso.cliente.nombre }} {{ servicio_en_proceso.cliente.apellido }}</p>
+                    <p><i class="fas fa-car" style="color: #6c757d;"></i> <strong>Vehículo:</strong> {{ servicio_en_proceso.vehiculo.marca }} {{ servicio_en_proceso.vehiculo.modelo }} ({{ servicio_en_proceso.vehiculo.placa }})</p>
+                    <p><i class="fas fa-tools" style="color: #fd7e14;"></i> <strong>Servicio:</strong> {{ servicio_en_proceso.servicio.nombre }}</p>
+                    <p><i class="fas fa-info-circle" style="color: #6f42c1;"></i> <strong>Estado:</strong> {{ servicio_en_proceso.get_estado_display }}</p>
+                    {% if servicio_en_proceso.lavador %}
+                        <p><strong><i class="fas fa-user-tie me-1" style="color: #28a745;"></i> Lavador:</strong> 
+                            <span class="d-flex align-items-center mt-1">
+                                {% if servicio_en_proceso.lavador.fotografia %}
+                                    <img src="{{ servicio_en_proceso.lavador.fotografia.url }}" alt="{{ servicio_en_proceso.lavador.nombre_completo }}" 
+                                         class="rounded-circle me-2" width="60" height="60" style="object-fit: cover; border: 2px solid #e9ecef;">
+                                {% else %}
+                                    <img src="{% static 'img/lavador-avatar.svg' %}" alt="{{ servicio_en_proceso.lavador.nombre_completo }}" 
+                                         class="rounded-circle me-2" width="60" height="60" style="object-fit: cover; border: 2px solid #e9ecef;">
+                                {% endif %}
+                                <div>
+                                    <div class="fw-bold text-primary">{{ servicio_en_proceso.lavador.nombre_completo }}</div>
+                                </div>
+                            </span>
+                        </p>
+                    {% else %}
+                        <p><strong><i class="fas fa-user-tie me-1" style="color: #28a745;"></i> Lavador:</strong> 
+                            <span class="d-flex align-items-center mt-1">
+                                <img src="{% static 'img/lavador-avatar.svg' %}" alt="Lavador" 
+                                     class="rounded-circle me-2" width="60" height="60" style="object-fit: cover; border: 2px solid #e9ecef;">
+                                <div>
+                                    <div class="fw-bold text-primary">Asignación automática</div>
+                                </div>
+                            </span>
+                        </p>
+                    {% endif %}
+                    
+                    <div class="cronometro" id="cronometro-{{ servicio_en_proceso.id }}" 
+                         data-inicio="{{ servicio_en_proceso.fecha_inicio_servicio|date:'c' }}" 
+                         data-duracion="{{ servicio_en_proceso.servicio.duracion_minutos }}">
+                        <i class="fas fa-clock"></i>
+                        <span class="tiempo-restante">Calculando...</span>
+                    </div>
+                    
+                    {% if servicio_en_proceso.bahia.tiene_camara %}
+                        <div class="bahia-actions">
+                            <a href="{% url 'reservas:ver_camara' servicio_en_proceso.stream_token %}" class="btn btn-sm btn-info">
+                                <i class="fas fa-eye"></i> Ver Cámara
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <!-- Accesos rápidos -->
     <div class="section-header-enhanced mb-4">
         <div class="d-flex align-items-center">
@@ -969,9 +1183,21 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <button type="button" class="btn btn-sm btn-outline-primary btn-enhanced" data-bs-toggle="modal" data-bs-target="#detalleModal{{ turno.id }}">
-                                            <i class="fas fa-eye me-1"></i>Ver detalles
-                                        </button>
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-sm btn-outline-primary btn-enhanced" data-bs-toggle="modal" data-bs-target="#detalleModal{{ turno.id }}">
+                                                <i class="fas fa-eye me-1"></i>Ver detalles
+                                            </button>
+                                            {% if turno.estado == 'PE' %}
+                                                <button type="button" class="btn btn-sm btn-outline-success btn-enhanced" data-bs-toggle="modal" data-bs-target="#pagoModal{{ turno.id }}">
+                                                    <i class="fas fa-credit-card me-1"></i>Pagar
+                                                </button>
+                                            {% endif %}
+                                            {% if turno.estado in 'PE,CO' %}
+                                                <button type="button" class="btn btn-sm btn-outline-danger btn-enhanced" data-bs-toggle="modal" data-bs-target="#cancelarModal{{ turno.id }}">
+                                                    <i class="fas fa-times me-1"></i>Cancelar
+                                                </button>
+                                            {% endif %}
+                                        </div>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -1323,8 +1549,152 @@
         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl)
         })
+        
+        // Función para inicializar cronómetros
+        function inicializarCronometros() {
+            // Limpiar intervalos existentes para evitar múltiples cronómetros
+            if (window.cronometroIntervalos) {
+                window.cronometroIntervalos.forEach(intervalo => clearInterval(intervalo));
+            }
+            window.cronometroIntervalos = [];
+            
+            const cronometros = document.querySelectorAll('.cronometro');
+            
+            cronometros.forEach(cronometro => {
+                const fechaInicio = cronometro.dataset.inicio;
+                const duracionMinutos = parseInt(cronometro.dataset.duracion);
+                const tiempoDisplay = cronometro.querySelector('.tiempo-restante');
+                
+                if (fechaInicio && duracionMinutos && tiempoDisplay) {
+                    // Convertir fecha de inicio a timestamp
+                    const inicioTimestamp = new Date(fechaInicio).getTime();
+                    const duracionMs = duracionMinutos * 60 * 1000; // Convertir minutos a milisegundos
+                    
+                    // Función para actualizar el cronómetro
+                    function actualizarCronometro() {
+                        const ahora = new Date().getTime();
+                        const tiempoTranscurrido = ahora - inicioTimestamp;
+                        const tiempoRestante = duracionMs - tiempoTranscurrido;
+                        
+                        // Obtener la tarjeta de bahía para aplicar/quitar clases de alerta
+                        const bahiaCard = cronometro.closest('.bahia-card');
+                        
+                        if (tiempoRestante > 0) {
+                            // Tiempo restante - quitar clase de alerta si existe
+                            if (bahiaCard && bahiaCard.classList.contains('bahia-tiempo-excedido')) {
+                                bahiaCard.classList.remove('bahia-tiempo-excedido');
+                            }
+                            
+                            const minutosRestantes = Math.floor(tiempoRestante / (1000 * 60));
+                            const segundosRestantes = Math.floor((tiempoRestante % (1000 * 60)) / 1000);
+                            
+                            tiempoDisplay.innerHTML = `Tiempo Restante: ${minutosRestantes}:${segundosRestantes.toString().padStart(2, '0')}`;
+                        } else {
+                            // Tiempo excedido - agregar clase de alerta para parpadeo y bordes rojos
+                            if (bahiaCard && !bahiaCard.classList.contains('bahia-tiempo-excedido')) {
+                                bahiaCard.classList.add('bahia-tiempo-excedido');
+                            }
+                            
+                            const tiempoExcedido = Math.abs(tiempoRestante);
+                            const minutosExcedidos = Math.floor(tiempoExcedido / (1000 * 60));
+                            const segundosExcedidos = Math.floor((tiempoExcedido % (1000 * 60)) / 1000);
+                            
+                            tiempoDisplay.innerHTML = `Tiempo Excedido: +${minutosExcedidos}:${segundosExcedidos.toString().padStart(2, '0')}`;
+                        }
+                    }
+                    
+                    // Actualizar inmediatamente
+                    actualizarCronometro();
+                    
+                    // Actualizar cada segundo y guardar el intervalo
+                    const intervalo = setInterval(actualizarCronometro, 1000);
+                    window.cronometroIntervalos.push(intervalo);
+                }
+            });
+        }
+        
+        // Inicializar cronómetros al cargar la página
+        inicializarCronometros();
     });
 </script>
+
+<!-- Modales de Pago y Cancelación -->
+{% for turno in proximos_turnos %}
+    <!-- Modal de Pago -->
+    <div class="modal fade" id="pagoModal{{ turno.id }}" tabindex="-1" aria-labelledby="pagoModalLabel{{ turno.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="pagoModalLabel{{ turno.id }}">
+                        <i class="fas fa-credit-card me-2"></i>Gestionar Pago
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Servicio:</strong> {{ turno.servicio.nombre }}<br>
+                        <strong>Fecha:</strong> {{ turno.fecha_hora|date:"d/m/Y H:i" }}<br>
+                        <strong>Precio:</strong> ${{ turno.precio_final|floatformat:0 }}
+                    </div>
+                    <p>Selecciona el método de pago para completar tu reserva:</p>
+                    <div class="d-grid gap-2">
+                         <a href="{% url 'reservas:procesar_pago' turno.id %}" class="btn btn-success">
+                             <i class="fas fa-credit-card me-2"></i>Pagar con Tarjeta
+                         </a>
+                         {% if turno.cliente.puntos_recompensa >= turno.precio_final %}
+                             <form method="post" action="{% url 'reservas:procesar_pago' turno.id %}" style="display: inline;">
+                                 {% csrf_token %}
+                                 <input type="hidden" name="usar_puntos" value="true">
+                                 <input type="hidden" name="puntos_a_redimir" value="{{ turno.precio_final }}">
+                                 <button type="submit" class="btn btn-warning w-100">
+                                     <i class="fas fa-star me-2"></i>Pagar con Puntos ({{ turno.cliente.puntos_recompensa }} disponibles)
+                                 </button>
+                             </form>
+                         {% endif %}
+                     </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Cancelación -->
+    <div class="modal fade" id="cancelarModal{{ turno.id }}" tabindex="-1" aria-labelledby="cancelarModalLabel{{ turno.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cancelarModalLabel{{ turno.id }}">
+                        <i class="fas fa-exclamation-triangle me-2 text-warning"></i>Cancelar Reserva
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Servicio:</strong> {{ turno.servicio.nombre }}<br>
+                        <strong>Fecha:</strong> {{ turno.fecha_hora|date:"d/m/Y H:i" }}<br>
+                        <strong>Precio:</strong> ${{ turno.precio_final|floatformat:0 }}
+                    </div>
+                    <p><strong>¿Estás seguro de que deseas cancelar esta reserva?</strong></p>
+                    <p class="text-muted">Esta acción no se puede deshacer. Si cancelas, podrás hacer una nueva reserva cuando lo desees.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, mantener reserva</button>
+                    <form method="post" action="{% url 'reservas:cancelar_turno' turno.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-times me-2"></i>Sí, cancelar reserva
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endfor %}
+
 {% endblock %}
 
 {% endblock %}
