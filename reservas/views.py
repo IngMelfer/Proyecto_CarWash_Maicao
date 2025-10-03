@@ -15,7 +15,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.views import APIView
-from .models import Servicio, Reserva, Vehiculo, HorarioDisponible, Bahia, DisponibilidadHoraria, MedioPago
+from .models import Servicio, Reserva, Vehiculo, HorarioDisponible, Bahia, DisponibilidadHoraria, MedioPago, Recompensa
 from .serializers import ServicioSerializer, ReservaSerializer, ReservaUpdateSerializer, BahiaSerializer
 from .nequi_views import NequiCallbackView, NequiStatusView, NequiReturnView
 from notificaciones.models import Notificacion
@@ -51,6 +51,33 @@ class ProcesarPagoView(LoginRequiredMixin, View):
         usar_puntos = request.session.get('usar_puntos', False)
         puntos_a_redimir = request.session.get('puntos_a_redimir', 0)
         descuento_aplicado = request.session.get('descuento_aplicado', 0)
+
+        # Integrar recompensa seleccionada (si existe) para calcular puntos y descuento
+        recompensa_id = request.session.get('recompensa_id')
+        if recompensa_id:
+            try:
+                recompensa = Recompensa.objects.get(id=recompensa_id, activo=True)
+                # Validar que la recompensa aplique al servicio de la reserva
+                if recompensa.servicio_id != reserva.servicio_id:
+                    # No aplicar si no corresponde al servicio
+                    usar_puntos = False
+                    puntos_a_redimir = 0
+                    descuento_aplicado = 0
+                    messages.info(request, 'La recompensa seleccionada no aplica al servicio de esta reserva.')
+                else:
+                    # Usar puntos según recompensa
+                    usar_puntos = True
+                    puntos_a_redimir = recompensa.puntos_requeridos
+                    descuento_aplicado = recompensa.calcular_descuento(reserva.servicio.precio)
+                # Persistir en sesión para uso en confirmación y pasarelas
+                request.session['usar_puntos'] = usar_puntos
+                request.session['puntos_a_redimir'] = puntos_a_redimir
+                request.session['descuento_aplicado'] = descuento_aplicado
+                request.session['recompensa_seleccionada'] = recompensa.nombre
+            except Recompensa.DoesNotExist:
+                # Limpiar recompensa inválida en sesión
+                if 'recompensa_id' in request.session:
+                    del request.session['recompensa_id']
         
         # Si el medio de pago es PUNTOS o se están usando puntos para un descuento completo
         if medio_pago.es_puntos() or (usar_puntos and puntos_a_redimir > 0 and descuento_aplicado >= reserva.servicio.precio):

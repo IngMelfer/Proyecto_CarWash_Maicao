@@ -271,8 +271,10 @@ class HistorialVehiculoView(LoginRequiredMixin, View):
             return redirect('clientes:dashboard')
 
 
+from reservas.models import Recompensa
+
 class PuntosRecompensasView(LoginRequiredMixin, View):
-    """Vista para mostrar los puntos y recompensas del cliente"""
+    """Vista para mostrar los puntos y recompensas del cliente y permitir seleccionar una recompensa"""
     login_url = '/autenticacion/login/'
     
     def get(self, request):
@@ -282,11 +284,39 @@ class PuntosRecompensasView(LoginRequiredMixin, View):
         # Obtener el cliente y su historial de servicios
         cliente = request.user.cliente
         historial = HistorialServicio.objects.filter(cliente=cliente).order_by('-fecha_servicio')
+        # Recompensas disponibles (activas)
+        recompensas = Recompensa.objects.filter(activo=True).order_by('servicio__nombre', 'puntos_requeridos')
         
         return render(request, 'clientes/puntos_recompensas.html', {
             'cliente': cliente,
-            'historial': historial
+            'historial': historial,
+            'recompensas': recompensas
         })
+    
+    def post(self, request):
+        if not hasattr(request.user, 'cliente'):
+            return redirect('home')
+        cliente = request.user.cliente
+        recompensa_id = request.POST.get('recompensa_id')
+        if not recompensa_id:
+            messages.error(request, 'Debe seleccionar una recompensa válida.')
+            return redirect('clientes:puntos_recompensas')
+        try:
+            recompensa = Recompensa.objects.get(id=recompensa_id, activo=True)
+        except Recompensa.DoesNotExist:
+            messages.error(request, 'La recompensa seleccionada no existe o no está activa.')
+            return redirect('clientes:puntos_recompensas')
+        
+        # Validar puntos del cliente
+        if cliente.saldo_puntos < recompensa.puntos_requeridos:
+            messages.error(request, 'No tiene puntos suficientes para aplicar esta recompensa.')
+            return redirect('clientes:puntos_recompensas')
+        
+        # Guardar recompensa en sesión
+        request.session['recompensa_id'] = recompensa.id
+        request.session['recompensa_seleccionada'] = recompensa.nombre
+        messages.success(request, f'Recompensa "{recompensa.nombre}" seleccionada. Se aplicará en el próximo pago de una reserva del servicio correspondiente.')
+        return redirect('clientes:puntos_recompensas')
 
 
 class DashboardClienteView(LoginRequiredMixin, View):

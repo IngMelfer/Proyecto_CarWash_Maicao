@@ -1,0 +1,119 @@
+{% extends 'reservas/dashboard_admin.html' %}
+{% load static %}
+
+{% block dashboard_content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Gestión de Recompensas</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'reservas:dashboard_admin' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active">Recompensas</li>
+    </ol>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-gift me-1"></i>
+            Recompensas
+            <div class="float-end">
+                <a href="{% url 'reservas:dashboard_admin' %}" class="btn btn-secondary btn-sm me-2">
+                    <i class="fas fa-arrow-left"></i> Volver al Dashboard
+                </a>
+                <a href="{% url 'reservas:recompensa_create' %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus"></i> Nueva Recompensa
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Servicio</th>
+                            <th>Tipo</th>
+                            <th>Puntos requeridos</th>
+                            <th>Valor</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for recompensa in recompensas %}
+                            <tr>
+                                <td>{{ recompensa.nombre }}</td>
+                                <td>{{ recompensa.servicio.nombre }}</td>
+                                <td>{{ recompensa.get_tipo_display }}</td>
+                                <td>{{ recompensa.puntos_requeridos }}</td>
+                                <td>
+                                    {% if recompensa.tipo == 'DP' %}
+                                        {{ recompensa.valor_porcentaje }}%
+                                    {% elif recompensa.tipo == 'DM' %}
+                                        ${{ recompensa.valor_monto|floatformat:0 }}
+                                    {% else %}
+                                        Gratis
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if recompensa.activo %}
+                                        <span class="badge bg-success">Activo</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inactivo</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'reservas:recompensa_update' recompensa.id %}" class="btn btn-warning btn-sm">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </a>
+                                    <a href="{% url 'reservas:recompensa_delete' recompensa.id %}" class="btn btn-danger btn-sm">
+                                        <i class="fas fa-trash"></i> Eliminar
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function initDataTableWhenReady(){
+  function ready(){
+    try {
+      if (!$.fn.DataTable.isDataTable('#dataTable')) {
+        $('#dataTable').DataTable({
+          language: { url: '/static/js/datatables-spanish.json' }
+        });
+      }
+    } catch(e) {
+      console.error('Error inicializando DataTable:', e);
+    }
+  }
+  // Esperar jQuery y DataTables si todavía no cargaron
+  if (typeof jQuery === 'undefined' || typeof $.fn === 'undefined' || typeof $.fn.DataTable === 'undefined') {
+    console.warn('Esperando jQuery/DataTables para inicializar la tabla de recompensas...');
+    var interval = setInterval(function(){
+      if (typeof jQuery !== 'undefined' && typeof $.fn !== 'undefined' && typeof $.fn.DataTable !== 'undefined') {
+        clearInterval(interval);
+        $(ready);
+      }
+    }, 100);
+    // Abortar espera después de 10 segundos para evitar loops infinitos
+    setTimeout(function(){ clearInterval(interval); }, 10000);
+  } else {
+    $(ready);
+  }
+})();
+</script>
+{% endblock %}

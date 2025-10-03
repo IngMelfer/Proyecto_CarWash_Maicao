@@ -422,9 +422,33 @@
 
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+      // Fallback: si jQuery no carga desde code.jquery.com, intentar cargarlo desde cdnjs
+      if (typeof jQuery === 'undefined') {
+        console.warn('CDN principal de jQuery no cargó. Cargando fallback desde cdnjs...');
+        var s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js';
+        s.onload = function(){ console.log('Fallback de jQuery cargado correctamente'); };
+        document.head.appendChild(s);
+      }
+    </script>
     <!-- DataTables -->
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+      // Fallback: si DataTables no carga, intentar cargarlo desde cdnjs
+      (function(){
+        function loadScript(src, cb){ var s=document.createElement('script'); s.src=src; s.onload=cb; document.head.appendChild(s); }
+        if (typeof jQuery !== 'undefined' && (typeof jQuery.fn.DataTable === 'undefined')) {
+          console.warn('CDN principal de DataTables no cargó. Cargando fallback desde cdnjs...');
+          loadScript('https://cdnjs.cloudflare.com/ajax/libs/datatables/1.11.5/jquery.dataTables.min.js', function(){
+            loadScript('https://cdnjs.cloudflare.com/ajax/libs/datatables/1.11.5/js/dataTables.bootstrap5.min.js', function(){
+              console.log('Fallback de DataTables cargado correctamente');
+            });
+          });
+        }
+      })();
+    </script>
     <!-- Bootstrap JS Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
@@ -441,10 +465,21 @@
     <!-- Sistema de Notificaciones -->
     <script>
         $(document).ready(function() {
+            // Helper para construir URLs absolutas evitando HTTPS en localhost/127.0.0.1 (previene net::ERR_SSL_PROTOCOL_ERROR)
+            function getAbsoluteUrl(path) {
+                // Si ya es absoluta, devolver tal cual
+                if (/^https?:\/\//.test(path)) return path;
+                let origin = window.location.origin;
+                const isLocal = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost');
+                if (isLocal && window.location.protocol === 'https:') {
+                    origin = 'http://' + window.location.host; // forzar http en dev local
+                }
+                return origin + path;
+            }
             // Función para cargar el contador de notificaciones
             function cargarContadorNotificaciones() {
                 {% if user.is_authenticated %}
-                $.get('{% url "notificaciones:contador_api" %}', function(data) {
+                $.get(getAbsoluteUrl('{% url "notificaciones:contador_api" %}'), function(data) {
                     const badge = $('#notificaciones-badge');
                     if (data.count > 0) {
                         badge.text(data.count).show();
@@ -460,7 +495,7 @@
             // Función para cargar notificaciones del dropdown
             function cargarNotificacionesDropdown() {
                 {% if user.is_authenticated %}
-                $.get('{% url "notificaciones:dropdown_api" %}', function(data) {
+                $.get(getAbsoluteUrl('{% url "notificaciones:dropdown_api" %}'), function(data) {
                     const lista = $('#notificaciones-lista');
                     lista.empty();
                     
@@ -501,7 +536,7 @@
             
             // Función para marcar notificación como leída
             window.marcarComoLeida = function(notificacionId) {
-                $.post(`/notificaciones/api/marcar-leida/${notificacionId}/`, {
+                $.post(getAbsoluteUrl(`/notificaciones/api/marcar-leida/${notificacionId}/`), {
                     'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
                 }, function(data) {
                     if (data.success) {

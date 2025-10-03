@@ -1,0 +1,217 @@
+{% extends 'reservas/dashboard_admin.html' %}
+{% load static %}
+
+{% block dashboard_content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4">{{ titulo }}</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="{% url 'reservas:dashboard_admin' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'reservas:recompensa_list' %}">Recompensas</a></li>
+        <li class="breadcrumb-item active">{{ titulo }}</li>
+    </ol>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-lg border-0 rounded-lg mt-2 mb-4">
+                <div class="card-header">
+                    <h3 class="text-center font-weight-light my-2">
+                        <i class="fas fa-star me-2"></i>{{ titulo }}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <!-- Información básica -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    {{ form.nombre }}
+                                    <label for="{{ form.nombre.id_for_label }}">Nombre</label>
+                                    {% if form.nombre.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.nombre.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    {{ form.servicio }}
+                                    <label for="{{ form.servicio.id_for_label }}">Servicio</label>
+                                    {% if form.servicio.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.servicio.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="form-floating mb-3">
+                                    {{ form.descripcion }}
+                                    <label for="{{ form.descripcion.id_for_label }}">Descripción</label>
+                                    {% if form.descripcion.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.descripcion.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Configuración de tipo y puntos -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    {{ form.tipo }}
+                                    <label for="{{ form.tipo.id_for_label }}">Tipo de Recompensa</label>
+                                    {% if form.tipo.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.tipo.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    {{ form.puntos_requeridos }}
+                                    <label for="{{ form.puntos_requeridos.id_for_label }}">Puntos requeridos</label>
+                                    {% if form.puntos_requeridos.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.puntos_requeridos.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Valores según tipo -->
+                        <div class="row mb-3">
+                            <div class="col-md-6" id="group_valor_porcentaje" style="display:none;">
+                                <div class="form-floating mb-3">
+                                    {{ form.valor_porcentaje }}
+                                    <label for="{{ form.valor_porcentaje.id_for_label }}">Porcentaje de descuento (%)</label>
+                                    {% if form.valor_porcentaje.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.valor_porcentaje.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6" id="group_valor_monto" style="display:none;">
+                                <div class="form-floating mb-3">
+                                    {{ form.valor_monto }}
+                                    <label for="{{ form.valor_monto.id_for_label }}">Monto de descuento ($)</label>
+                                    {% if form.valor_monto.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.valor_monto.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Estado -->
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="form-check form-switch">
+                                    {{ form.activo }}
+                                    <label class="form-check-label" for="{{ form.activo.id_for_label }}">Activo</label>
+                                    {% if form.activo.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.activo.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 mb-0">
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-block">
+                                    <i class="fas fa-save me-2"></i>Guardar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center py-3">
+                    <div class="small">
+                        <a href="{% url 'reservas:recompensa_list' %}">
+                            <i class="fas fa-arrow-left me-2"></i>Volver a la lista
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    function updateCamposSegunTipo() {
+        const tipoSelect = document.getElementById('id_tipo');
+        if (!tipoSelect) return;
+        const tipo = tipoSelect.value;
+        const groupPorcentaje = document.getElementById('group_valor_porcentaje');
+        const groupMonto = document.getElementById('group_valor_monto');
+        const inputPorcentaje = document.getElementById('id_valor_porcentaje');
+        const inputMonto = document.getElementById('id_valor_monto');
+
+        if (tipo === 'DP') { // Descuento porcentual
+            if (groupPorcentaje) groupPorcentaje.style.display = 'block';
+            if (groupMonto) groupMonto.style.display = 'none';
+            if (inputPorcentaje) { inputPorcentaje.required = true; }
+            if (inputMonto) { inputMonto.required = false; inputMonto.value = ''; }
+        } else if (tipo === 'DM') { // Descuento por monto
+            if (groupPorcentaje) groupPorcentaje.style.display = 'none';
+            if (groupMonto) groupMonto.style.display = 'block';
+            if (inputPorcentaje) { inputPorcentaje.required = false; inputPorcentaje.value = ''; }
+            if (inputMonto) { inputMonto.required = true; }
+        } else { // Servicio gratis (SG) u otro
+            if (groupPorcentaje) groupPorcentaje.style.display = 'none';
+            if (groupMonto) groupMonto.style.display = 'none';
+            if (inputPorcentaje) { inputPorcentaje.required = false; inputPorcentaje.value = ''; }
+            if (inputMonto) { inputMonto.required = false; inputMonto.value = ''; }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        updateCamposSegunTipo();
+        const tipoSelect = document.getElementById('id_tipo');
+        if (tipoSelect) {
+            tipoSelect.addEventListener('change', updateCamposSegunTipo);
+        }
+    });
+})();
+</script>
+{% endblock %}

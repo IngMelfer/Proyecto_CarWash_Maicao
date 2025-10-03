@@ -791,3 +791,66 @@ class HorarioDisponible(models.Model):
             self.save(update_fields=['reservas_actuales'])
             return True
         return False
+
+
+class Recompensa(models.Model):
+    """
+    Modelo de recompensas vinculadas a un Servicio.
+    Tipos:
+    - DP: Descuento porcentual
+    - DM: Descuento por monto fijo
+    - SG: Servicio gratis
+    """
+    TIPO_DESCUENTO_PORCENTAJE = 'DP'
+    TIPO_DESCUENTO_MONTO = 'DM'
+    TIPO_SERVICIO_GRATIS = 'SG'
+
+    TIPOS = [
+        (TIPO_DESCUENTO_PORCENTAJE, _('Descuento porcentual')),
+        (TIPO_DESCUENTO_MONTO, _('Descuento por monto')),
+        (TIPO_SERVICIO_GRATIS, _('Servicio gratis')),
+    ]
+
+    nombre = models.CharField(max_length=100, verbose_name=_('Nombre'))
+    descripcion = models.TextField(blank=True, verbose_name=_('Descripción'))
+    servicio = models.ForeignKey(Servicio, on_delete=models.CASCADE, related_name='recompensas', verbose_name=_('Servicio'))
+    tipo = models.CharField(max_length=2, choices=TIPOS, verbose_name=_('Tipo'))
+    puntos_requeridos = models.PositiveIntegerField(default=0, verbose_name=_('Puntos requeridos'))
+    valor_porcentaje = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, verbose_name=_('Valor porcentaje'))
+    valor_monto = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name=_('Valor monto'))
+    activo = models.BooleanField(default=True, verbose_name=_('Activo'))
+
+    class Meta:
+        verbose_name = _('Recompensa')
+        verbose_name_plural = _('Recompensas')
+        ordering = ['servicio', 'puntos_requeridos', 'nombre']
+
+    def __str__(self):
+        return f"{self.nombre} - {self.get_tipo_display()} ({self.servicio.nombre})"
+
+    def calcular_descuento(self, precio_servicio):
+        """Calcular el valor del descuento aplicable según el tipo de recompensa."""
+        from decimal import Decimal
+        if precio_servicio is None:
+            return Decimal('0.00')
+        precio = Decimal(precio_servicio)
+
+        if self.tipo == self.TIPO_DESCUENTO_PORCENTAJE and self.valor_porcentaje:
+            porcentaje = Decimal(self.valor_porcentaje)
+            if porcentaje <= 0:
+                return Decimal('0.00')
+            descuento = (precio * porcentaje) / Decimal('100')
+            return descuento.quantize(Decimal('0.01'))
+
+        if self.tipo == self.TIPO_DESCUENTO_MONTO and self.valor_monto:
+            monto = Decimal(self.valor_monto)
+            if monto <= 0:
+                return Decimal('0.00')
+            # No permitir que el descuento supere el precio
+            descuento = monto if monto <= precio else precio
+            return descuento.quantize(Decimal('0.01'))
+
+        if self.tipo == self.TIPO_SERVICIO_GRATIS:
+            return precio.quantize(Decimal('0.01'))
+
+        return Decimal('0.00')

@@ -1,5 +1,5 @@
 from django import forms
-from .models import Bahia, Servicio, MedioPago, DisponibilidadHoraria, Reserva, HorarioDisponible
+from .models import Bahia, Servicio, MedioPago, DisponibilidadHoraria, Reserva, HorarioDisponible, Recompensa
 from clientes.models import Cliente
 
 class BahiaForm(forms.ModelForm):
@@ -195,3 +195,70 @@ class HorarioDisponibleForm(forms.ModelForm):
             'capacidad': 'Número máximo de vehículos que pueden ser atendidos simultáneamente en este horario.',
             'disponible': 'Marque esta casilla para activar este horario y permitir reservas durante este período.',
         }
+
+class RecompensaForm(forms.ModelForm):
+    class Meta:
+        model = Recompensa
+        fields = ['nombre', 'descripcion', 'servicio', 'tipo', 'puntos_requeridos', 'valor_porcentaje', 'valor_monto', 'activo']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
+            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'servicio': forms.Select(attrs={'class': 'form-select'}),
+            'tipo': forms.Select(attrs={'class': 'form-select'}),
+            'puntos_requeridos': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
+            'valor_porcentaje': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.01'}),
+            'valor_monto': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.01'}),
+            'activo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+        help_texts = {
+            'tipo': 'Seleccione el tipo de recompensa: Descuento porcentual, monto fijo, o servicio gratis.',
+            'puntos_requeridos': 'Cantidad de puntos que el cliente debe redimir para aplicar esta recompensa.',
+            'valor_porcentaje': 'Requerido si el tipo es "Descuento porcentual". Valor entre 0 y 100.',
+            'valor_monto': 'Requerido si el tipo es "Descuento por monto". Valor mayor a 0.',
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        tipo = cleaned_data.get('tipo')
+        valor_porcentaje = cleaned_data.get('valor_porcentaje')
+        valor_monto = cleaned_data.get('valor_monto')
+        puntos_requeridos = cleaned_data.get('puntos_requeridos')
+
+        # Validación de puntos requeridos
+        if puntos_requeridos is None or puntos_requeridos < 0:
+            self.add_error('puntos_requeridos', 'Los puntos requeridos deben ser 0 o mayores.')
+
+        # Validación según el tipo de recompensa
+        if tipo == Recompensa.TIPO_DESCUENTO_PORCENTAJE:
+            if not valor_porcentaje:
+                self.add_error('valor_porcentaje', 'Debe especificar un porcentaje para el descuento.')
+            else:
+                try:
+                    if float(valor_porcentaje) <= 0 or float(valor_porcentaje) > 100:
+                        self.add_error('valor_porcentaje', 'El porcentaje debe ser mayor a 0 y no exceder 100.')
+                except (TypeError, ValueError):
+                    self.add_error('valor_porcentaje', 'El porcentaje debe ser un número válido.')
+            # Limpiar valor_monto si se ingresó por error
+            cleaned_data['valor_monto'] = None
+
+        elif tipo == Recompensa.TIPO_DESCUENTO_MONTO:
+            if not valor_monto:
+                self.add_error('valor_monto', 'Debe especificar un monto para el descuento.')
+            else:
+                try:
+                    if float(valor_monto) <= 0:
+                        self.add_error('valor_monto', 'El monto debe ser mayor a 0.')
+                except (TypeError, ValueError):
+                    self.add_error('valor_monto', 'El monto debe ser un número válido.')
+            # Limpiar valor_porcentaje si se ingresó por error
+            cleaned_data['valor_porcentaje'] = None
+
+        elif tipo == Recompensa.TIPO_SERVICIO_GRATIS:
+            # Para servicio gratis, no deben establecerse valores de porcentaje ni monto
+            cleaned_data['valor_porcentaje'] = None
+            cleaned_data['valor_monto'] = None
+
+        else:
+            self.add_error('tipo', 'Tipo de recompensa no válido.')
+
+        return cleaned_data

@@ -52,6 +52,12 @@ urlpatterns = [
     path('servicios/crear/', views_admin.ServicioCreateView.as_view(), name='servicio_create'),
     path('servicios/editar/<int:pk>/', views_admin.ServicioUpdateView.as_view(), name='servicio_update'),
     path('servicios/eliminar/<int:pk>/', views_admin.ServicioDeleteView.as_view(), name='servicio_delete'),
+
+    # CRUD de recompensas
+    path('recompensas/', views_admin.RecompensaListView.as_view(), name='recompensa_list'),
+    path('recompensas/crear/', views_admin.RecompensaCreateView.as_view(), name='recompensa_create'),
+    path('recompensas/editar/<int:pk>/', views_admin.RecompensaUpdateView.as_view(), name='recompensa_update'),
+    path('recompensas/eliminar/<int:pk>/', views_admin.RecompensaDeleteView.as_view(), name='recompensa_delete'),
     
     # CRUD de medios de pago
     path('medios-pago/', views_admin.MedioPagoListView.as_view(), name='medio_pago_list'),

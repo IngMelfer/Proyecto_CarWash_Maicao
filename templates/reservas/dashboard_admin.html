@@ -139,6 +139,15 @@
         box-shadow: 0 20px 40px rgba(95, 39, 205, 0.3);
     }
 
+    /* Nueva tarjeta: Recompensas */
+    .card-recompensas {
+        background: linear-gradient(135deg, rgba(232, 67, 147, 0.1) 0%, rgba(232, 67, 147, 0.05) 100%);
+    }
+    .card-recompensas:hover {
+        background: linear-gradient(135deg, rgba(232, 67, 147, 0.15) 0%, rgba(232, 67, 147, 0.08) 100%);
+        box-shadow: 0 20px 40px rgba(232, 67, 147, 0.3);
+    }
+
     .dashboard-card .card-body {
         background: transparent;
         color: var(--dark-color);
@@ -375,6 +384,7 @@
     .icon-horarios { color: #ff9ff3; } /* Rosa magenta para horarios */
     .icon-empleados { color: #54a0ff; } /* Azul brillante para empleados */
     .icon-cargos { color: #5f27cd; } /* Púrpura para cargos */
+    .icon-recompensas { color: #e84393; } /* Rosa para recompensas */
 
     /* Efectos hover para iconos */
     .dashboard-card:hover .dashboard-icon {
@@ -1112,6 +1122,19 @@
                     <h5 class="card-title">Gestionar Servicios</h5>
                     <p class="card-text">Administra los servicios ofrecidos</p>
                     <a href="{% url 'reservas:servicio_list' %}" class="btn btn-primary">Ir a Servicios</a>
+                </div>
+            </div>
+        </div>
+        <!-- Tarjeta de Gestionar Recompensas -->
+        <div class="col-md-3">
+            <div class="card text-center dashboard-card card-recompensas">
+                <div class="card-body">
+                    <div class="dashboard-icon icon-recompensas">
+                        <i class="fas fa-gift"></i>
+                    </div>
+                    <h5 class="card-title">Gestionar Recompensas</h5>
+                    <p class="card-text">Crea, edita y elimina recompensas</p>
+                    <a href="{% url 'reservas:recompensa_list' %}" class="btn btn-primary">Ir a Recompensas</a>
                 </div>
             </div>
         </div>
