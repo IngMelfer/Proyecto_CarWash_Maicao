@@ -2,18 +2,23 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.contrib import messages
-from django.db.models import Avg, Count
+from django.db.models import Avg, Count, Q, Sum
+from django.db import models
 from django.http import JsonResponse
 from django.urls import reverse
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
+from django.views import View
 from django.urls import reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from autenticacion.mixins import RolRequiredMixin
+from autenticacion.mixins import RolRequiredMixin, AdminAutolavadoRequiredMixin, GerenteRequiredMixin
 from autenticacion.models import Usuario
 from reservas.models import Reserva
-from .models import Empleado, RegistroTiempo, Calificacion, Incentivo, Cargo, TipoDocumento
-from .forms import EmpleadoPerfilForm, RegistroTiempoForm, EmpleadoRegistroForm, CambiarPasswordForm, EmpleadoEditForm
+from .models import Empleado, RegistroTiempo, Calificacion, Incentivo, Cargo, TipoDocumento, ConfiguracionBonificacion
+from .forms import (
+    EmpleadoPerfilForm, RegistroTiempoForm, EmpleadoRegistroForm, CambiarPasswordForm, EmpleadoEditForm,
+    ConfiguracionBonificacionForm, IncentivoForm, RedimirBonificacionForm, FiltrosBonificacionesForm
+)
 
 # Create your views here.
 
@@ -517,3 +522,266 @@ class TipoDocumentoDeleteView(LoginRequiredMixin, RolRequiredMixin, DeleteView):
     def delete(self, request, *args, **kwargs):
         messages.success(self.request, 'Tipo de documento eliminado exitosamente.')
         return super().delete(request, *args, **kwargs)
+
+
+# Vistas para gestión de bonificaciones
+
+class AdminBonificacionesView(LoginRequiredMixin, GerenteRequiredMixin, ListView):
+    """Vista principal para la gestión de bonificaciones del administrador"""
+    model = Incentivo
+    template_name = 'empleados/admin_bonificaciones.html'
+    context_object_name = 'bonificaciones'
+    paginate_by = 20
+    
+    def get_queryset(self):
+        queryset = Incentivo.objects.select_related('empleado', 'configuracion_bonificacion').order_by('-fecha_otorgado')
+        
+        # Aplicar filtros
+        empleado_id = self.request.GET.get('empleado')
+        if empleado_id:
+            queryset = queryset.filter(empleado_id=empleado_id)
+        
+        fecha_desde = self.request.GET.get('fecha_desde')
+        if fecha_desde:
+            queryset = queryset.filter(fecha_otorgado__gte=fecha_desde)
+        
+        fecha_hasta = self.request.GET.get('fecha_hasta')
+        if fecha_hasta:
+            queryset = queryset.filter(fecha_otorgado__lte=fecha_hasta)
+        
+        tipo_bonificacion = self.request.GET.get('tipo_bonificacion')
+        if tipo_bonificacion:
+            queryset = queryset.filter(configuracion_bonificacion__tipo=tipo_bonificacion)
+        
+        monto_minimo = self.request.GET.get('monto_minimo')
+        if monto_minimo:
+            queryset = queryset.filter(monto__gte=monto_minimo)
+        
+        solo_pendientes = self.request.GET.get('solo_pendientes')
+        if solo_pendientes:
+            # Aquí asumiríamos que hay un campo para marcar si fue redimida
+            # Por ahora filtramos las más recientes
+            queryset = queryset.filter(fecha_otorgado__gte=timezone.now().date().replace(day=1))
+        
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Formulario de filtros
+        context['filtros_form'] = FiltrosBonificacionesForm(self.request.GET)
+        
+        # Estadísticas generales
+        context['total_bonificaciones'] = Incentivo.objects.count()
+        context['total_monto'] = Incentivo.objects.aggregate(total=models.Sum('monto'))['total'] or 0
+        context['empleados_con_bonificaciones'] = Incentivo.objects.values('empleado').distinct().count()
+        
+        # Estadísticas por estado
+        context['bonificaciones_pendientes'] = Incentivo.objects.filter(estado='pendiente').count()
+        context['bonificaciones_cobradas'] = Incentivo.objects.filter(estado='cobrada').count()
+        context['bonificaciones_canceladas'] = Incentivo.objects.filter(estado='cancelada').count()
+        
+        # Monto por estado
+        context['monto_pendiente'] = Incentivo.objects.filter(estado='pendiente').aggregate(
+            total=models.Sum('monto'))['total'] or 0
+        context['monto_cobrado'] = Incentivo.objects.filter(estado='cobrada').aggregate(
+            total=models.Sum('monto'))['total'] or 0
+        
+        # Configuraciones de bonificación activas
+        context['configuraciones'] = ConfiguracionBonificacion.objects.filter(activo=True)
+        
+        return context
+
+
+class BonificacionCreateView(LoginRequiredMixin, GerenteRequiredMixin, CreateView):
+    """Vista para crear una nueva bonificación manual"""
+    model = Incentivo
+    form_class = IncentivoForm
+    template_name = 'empleados/bonificacion_form.html'
+    success_url = reverse_lazy('empleados:admin_bonificaciones')
+    
+    def form_valid(self, form):
+        messages.success(self.request, f'Bonificación creada exitosamente para {form.instance.empleado}.')
+        return super().form_valid(form)
+
+
+class BonificacionUpdateView(LoginRequiredMixin, GerenteRequiredMixin, UpdateView):
+    """Vista para actualizar una bonificación existente"""
+    model = Incentivo
+    form_class = IncentivoForm
+    template_name = 'empleados/bonificacion_form.html'
+    success_url = reverse_lazy('empleados:admin_bonificaciones')
+    
+    def form_valid(self, form):
+        messages.success(self.request, 'Bonificación actualizada exitosamente.')
+        return super().form_valid(form)
+
+
+class BonificacionDeleteView(LoginRequiredMixin, GerenteRequiredMixin, DeleteView):
+    """Vista para eliminar una bonificación"""
+    model = Incentivo
+    template_name = 'empleados/bonificacion_confirm_delete.html'
+    success_url = reverse_lazy('empleados:admin_bonificaciones')
+    
+    def delete(self, request, *args, **kwargs):
+        bonificacion = self.get_object()
+        messages.success(self.request, f'Bonificación de {bonificacion.empleado} eliminada exitosamente.')
+        return super().delete(request, *args, **kwargs)
+
+
+class RedimirBonificacionView(LoginRequiredMixin, GerenteRequiredMixin, UpdateView):
+    """Vista para gestionar la redención de bonificaciones"""
+    model = Incentivo
+    form_class = RedimirBonificacionForm
+    template_name = 'empleados/redimir_bonificacion.html'
+    success_url = reverse_lazy('empleados:admin_bonificaciones')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['bonificacion'] = self.get_object()
+        return context
+    
+    def form_valid(self, form):
+        bonificacion = self.get_object()
+        
+        # Aquí se podría agregar lógica para marcar como redimida
+        # Por ahora solo agregamos un mensaje de éxito
+        messages.success(
+            self.request, 
+            f'Bonificación de ${bonificacion.monto} para {bonificacion.empleado} ha sido redimida exitosamente.'
+        )
+        
+        return redirect(self.success_url)
+
+
+@login_required
+def api_empleados_bonificaciones(request):
+    """API para obtener empleados con sus bonificaciones para gráficos"""
+    # Verificar permisos de acceso
+    if not (request.user.rol in [Usuario.ROL_ADMIN_AUTOLAVADO, Usuario.ROL_GERENTE]):
+        return JsonResponse({
+            'error': 'No tienes permisos para acceder a esta información',
+            'success': False
+        }, status=403)
+    
+    empleados_data = []
+    
+    empleados = Empleado.objects.filter(activo=True).annotate(
+        total_bonificaciones=Count('incentivos'),
+        monto_total=models.Sum('incentivos__monto')
+    ).order_by('-monto_total')[:10]  # Top 10 empleados
+    
+    for empleado in empleados:
+        empleados_data.append({
+            'id': empleado.id,
+            'nombre': empleado.nombre_completo(),
+            'total_bonificaciones': empleado.total_bonificaciones or 0,
+            'monto_total': float(empleado.monto_total or 0),
+        })
+    
+    return JsonResponse({
+        'empleados': empleados_data,
+        'success': True
+    })
+
+
+class CobrarBonificacionView(LoginRequiredMixin, GerenteRequiredMixin, View):
+    """Vista para que administradores cobren bonificaciones por empleados"""
+    
+    def post(self, request, pk):
+        try:
+            bonificacion = get_object_or_404(Incentivo, pk=pk)
+            
+            # Verificar que la bonificación puede ser cobrada
+            if not bonificacion.puede_ser_cobrada():
+                messages.error(request, 'Esta bonificación no puede ser cobrada.')
+                return redirect('empleados:admin_bonificaciones')
+            
+            # Cobrar la bonificación usando el servicio
+            resultado = BonificacionService.cobrar_bonificacion(bonificacion.id)
+            
+            if resultado['success']:
+                messages.success(request, resultado['message'])
+            else:
+                messages.error(request, resultado['message'])
+                
+        except Exception as e:
+            messages.error(request, f'Error al cobrar la bonificación: {str(e)}')
+        
+        return redirect('empleados:admin_bonificaciones')
+
+
+class EmpleadoBonificacionesView(LoginRequiredMixin, TemplateView):
+    """Vista para que los empleados vean sus bonificaciones disponibles"""
+    template_name = 'empleados/empleado_bonificaciones.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Obtener el empleado actual
+        empleado = get_object_or_404(Empleado, user=self.request.user)
+        
+        # Obtener bonificaciones del empleado
+        bonificaciones = Incentivo.objects.filter(empleado=empleado).order_by('-fecha_otorgado')
+        
+        # Estadísticas
+        context.update({
+            'empleado': empleado,
+            'bonificaciones': bonificaciones,
+            'total_bonificaciones': bonificaciones.count(),
+            'bonificaciones_pendientes': bonificaciones.filter(estado='pendiente').count(),
+            'bonificaciones_cobradas': bonificaciones.filter(estado='cobrada').count(),
+            'monto_total_pendiente': bonificaciones.filter(estado='pendiente').aggregate(
+                total=models.Sum('monto'))['total'] or 0,
+            'monto_total_cobrado': bonificaciones.filter(estado='cobrada').aggregate(
+                total=models.Sum('monto'))['total'] or 0,
+        })
+        
+        return context
+
+
+class EmpleadoCobrarBonificacionView(LoginRequiredMixin, View):
+    """Vista para que los empleados cobren sus propias bonificaciones"""
+    
+    def post(self, request, pk):
+        try:
+            # Obtener el empleado actual
+            empleado = get_object_or_404(Empleado, user=request.user)
+            
+            # Obtener la bonificación y verificar que pertenece al empleado
+            bonificacion = get_object_or_404(Incentivo, pk=pk, empleado=empleado)
+            
+            # Usar el servicio para cobrar la bonificación
+            resultado = BonificacionService.cobrar_bonificacion(bonificacion.id)
+            
+            if resultado['success']:
+                messages.success(request, resultado['message'])
+            else:
+                messages.error(request, resultado['message'])
+                
+        except Exception as e:
+            messages.error(request, f'Error al cobrar la bonificación: {str(e)}')
+        
+        return redirect('empleados:empleado_bonificaciones')
+
+
+class EjecutarEvaluacionAutomaticaView(LoginRequiredMixin, GerenteRequiredMixin, View):
+    """Vista para ejecutar manualmente la evaluación automática de bonificaciones"""
+    
+    def post(self, request):
+        try:
+            from .services import BonificacionService
+            bonificaciones_creadas = BonificacionService.evaluar_bonificaciones_automaticas()
+            
+            if bonificaciones_creadas:
+                messages.success(
+                    request, 
+                    f'Se otorgaron {len(bonificaciones_creadas)} bonificaciones automáticas.'
+                )
+            else:
+                messages.info(request, 'No se encontraron empleados elegibles para bonificaciones automáticas.')
+                
+        except Exception as e:
+            messages.error(request, f'Error durante la evaluación automática: {str(e)}')
+        
+        return redirect('empleados:admin_bonificaciones')

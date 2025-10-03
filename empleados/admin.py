@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.models import Group
-from .models import Empleado, RegistroTiempo, Calificacion, Incentivo, TipoDocumento, Cargo
+from .models import Empleado, RegistroTiempo, Calificacion, Incentivo, TipoDocumento, Cargo, ConfiguracionBonificacion
 from autenticacion.models import Usuario
 
 # Register your models here.
@@ -86,14 +86,42 @@ class CalificacionAdmin(admin.ModelAdmin):
     readonly_fields = ('fecha_calificacion',)
 
 
+@admin.register(ConfiguracionBonificacion)
+class ConfiguracionBonificacionAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'tipo', 'servicios_requeridos', 'calificacion_minima', 'monto_bonificacion', 'activo')
+    list_filter = ('tipo', 'activo', 'fecha_creacion')
+    search_fields = ('nombre', 'descripcion')
+    fieldsets = (
+        ('Información General', {
+            'fields': ('nombre', 'descripcion', 'tipo', 'activo')
+        }),
+        ('Criterios', {
+            'fields': ('servicios_requeridos', 'calificacion_minima', 'monto_bonificacion')
+        }),
+    )
+    readonly_fields = ('fecha_creacion', 'fecha_actualizacion')
+    
+    def has_add_permission(self, request):
+        # Solo administradores pueden crear configuraciones de bonificación
+        return request.user.is_superuser or (hasattr(request.user, 'rol') and request.user.rol in [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_LAVADERO])
+    
+    def has_change_permission(self, request, obj=None):
+        # Solo administradores pueden modificar configuraciones de bonificación
+        return request.user.is_superuser or (hasattr(request.user, 'rol') and request.user.rol in [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_LAVADERO])
+    
+    def has_delete_permission(self, request, obj=None):
+        # Solo administradores pueden eliminar configuraciones de bonificación
+        return request.user.is_superuser or (hasattr(request.user, 'rol') and request.user.rol in [Usuario.ROL_ADMIN_SISTEMA, Usuario.ROL_ADMIN_LAVADERO])
+
+
 @admin.register(Incentivo)
 class IncentivoAdmin(admin.ModelAdmin):
-    list_display = ('empleado', 'nombre', 'monto', 'fecha_otorgado', 'promedio_calificacion')
-    list_filter = ('fecha_otorgado', 'periodo_inicio', 'periodo_fin')
+    list_display = ('empleado', 'nombre', 'monto', 'fecha_otorgado', 'promedio_calificacion', 'otorgado_automaticamente')
+    list_filter = ('fecha_otorgado', 'periodo_inicio', 'periodo_fin', 'otorgado_automaticamente', 'configuracion_bonificacion')
     search_fields = ('empleado__nombre', 'empleado__apellido', 'nombre')
     fieldsets = (
         ('Información del Incentivo', {
-            'fields': ('empleado', 'nombre', 'descripcion', 'monto', 'fecha_otorgado')
+            'fields': ('empleado', 'configuracion_bonificacion', 'nombre', 'descripcion', 'monto', 'fecha_otorgado', 'otorgado_automaticamente')
         }),
         ('Período', {
             'fields': ('periodo_inicio', 'periodo_fin')
@@ -102,3 +130,11 @@ class IncentivoAdmin(admin.ModelAdmin):
             'fields': ('promedio_calificacion', 'servicios_completados')
         }),
     )
+    readonly_fields = ('fecha_otorgado', 'otorgado_automaticamente')
+    
+    def get_readonly_fields(self, request, obj=None):
+        # Si el incentivo fue otorgado automáticamente, hacer más campos de solo lectura
+        readonly_fields = list(self.readonly_fields)
+        if obj and obj.otorgado_automaticamente:
+            readonly_fields.extend(['configuracion_bonificacion', 'nombre', 'descripcion', 'monto', 'promedio_calificacion', 'servicios_completados'])
+        return readonly_fields

@@ -1,0 +1,390 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Bonificaciones - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        color: white;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .stats-card .stats-icon {
+        font-size: 2.5rem;
+        opacity: 0.8;
+    }
+    
+    .bonificacion-card {
+        border-left: 4px solid #28a745;
+        transition: all 0.3s ease;
+    }
+    
+    .bonificacion-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .badge-monto {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        color: white;
+        font-size: 1.1rem;
+        padding: 8px 12px;
+        border-radius: 20px;
+    }
+    
+    .filtros-panel {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .btn-bonificacion {
+        background: linear-gradient(45deg, #007bff, #0056b3);
+        border: none;
+        border-radius: 25px;
+        padding: 10px 20px;
+        color: white;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-bonificacion:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+        color: white;
+    }
+    
+    .action-buttons .btn {
+        margin: 2px;
+        border-radius: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="fas fa-gift text-success"></i> Gestión de Bonificaciones</h2>
+                    <p class="text-muted">Administra las bonificaciones de los empleados</p>
+                </div>
+                <div>
+                    <a href="{% url 'empleados:bonificacion_create' %}" class="btn btn-bonificacion me-2">
+                        <i class="fas fa-plus"></i> Nueva Bonificación
+                    </a>
+                    <form method="post" action="{% url 'empleados:evaluar_automaticas' %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success" onclick="return confirm('¿Ejecutar evaluación automática de bonificaciones?')">
+                            <i class="fas fa-magic"></i> Evaluar Automáticas
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <div class="stats-card text-center">
+                <div class="stats-icon">
+                    <i class="fas fa-gift"></i>
+                </div>
+                <h3>{{ total_bonificaciones }}</h3>
+                <p class="mb-0">Total Bonificaciones</p>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stats-card text-center">
+                <div class="stats-icon">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <h3>${{ total_monto|floatformat:0 }}</h3>
+                <p class="mb-0">Monto Total</p>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stats-card text-center">
+                <div class="stats-icon">
+                    <i class="fas fa-clock text-warning"></i>
+                </div>
+                <h3>{{ bonificaciones_pendientes }}</h3>
+                <p class="mb-0">Pendientes</p>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stats-card text-center">
+                <div class="stats-icon">
+                    <i class="fas fa-check-circle text-success"></i>
+                </div>
+                <h3>{{ bonificaciones_cobradas }}</h3>
+                <p class="mb-0">Cobradas</p>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stats-card text-center">
+                <div class="stats-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3>{{ empleados_con_bonificaciones }}</h3>
+                <p class="mb-0">Empleados</p>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stats-card text-center">
+                <div class="stats-icon">
+                    <i class="fas fa-cogs"></i>
+                </div>
+                <h3>{{ configuraciones.count }}</h3>
+                <p class="mb-0">Configuraciones</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas de Montos -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-warning">
+                        <i class="fas fa-hourglass-half"></i> Monto Pendiente
+                    </h5>
+                    <h3 class="text-warning">${{ monto_pendiente|floatformat:0 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-success">
+                        <i class="fas fa-money-bill-wave"></i> Monto Cobrado
+                    </h5>
+                    <h3 class="text-success">${{ monto_cobrado|floatformat:0 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de Filtros -->
+    <div class="filtros-panel">
+        <h5><i class="fas fa-filter"></i> Filtros de Búsqueda</h5>
+        <form method="get" class="row">
+            <div class="col-md-3">
+                {{ filtros_form.empleado.label_tag }}
+                {{ filtros_form.empleado }}
+            </div>
+            <div class="col-md-2">
+                {{ filtros_form.fecha_desde.label_tag }}
+                {{ filtros_form.fecha_desde }}
+            </div>
+            <div class="col-md-2">
+                {{ filtros_form.fecha_hasta.label_tag }}
+                {{ filtros_form.fecha_hasta }}
+            </div>
+            <div class="col-md-2">
+                {{ filtros_form.tipo_bonificacion.label_tag }}
+                {{ filtros_form.tipo_bonificacion }}
+            </div>
+            <div class="col-md-2">
+                {{ filtros_form.monto_minimo.label_tag }}
+                {{ filtros_form.monto_minimo }}
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="fas fa-search"></i>
+                </button>
+                <a href="{% url 'empleados:admin_bonificaciones' %}" class="btn btn-secondary btn-sm ml-1">
+                    <i class="fas fa-times"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Lista de Bonificaciones -->
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="fas fa-list"></i> Lista de Bonificaciones</h5>
+        </div>
+        <div class="card-body">
+            {% if bonificaciones %}
+                <div class="table-responsive">
+                    <table class="table table-hover" id="bonificacionesTable">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Empleado</th>
+                                <th>Tipo</th>
+                                <th>Monto</th>
+                                <th>Estado</th>
+                                <th>Fecha Otorgado</th>
+                                <th>Descripción</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for bonificacion in bonificaciones %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center text-white mr-2">
+                                            {{ bonificacion.empleado.nombres|first }}{{ bonificacion.empleado.apellidos|first }}
+                                        </div>
+                                        <div>
+                                            <strong>{{ bonificacion.empleado.nombre_completo }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ bonificacion.empleado.cargo.nombre }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if bonificacion.configuracion_bonificacion %}
+                                        <span class="badge badge-info">{{ bonificacion.configuracion_bonificacion.get_tipo_display }}</span>
+                                    {% else %}
+                                        <span class="badge badge-secondary">Manual</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge-monto">${{ bonificacion.monto|floatformat:0 }}</span>
+                                </td>
+                                <td>
+                                    {% if bonificacion.estado == 'pendiente' %}
+                                        <span class="badge badge-warning">
+                                            <i class="fas fa-clock"></i> Pendiente
+                                        </span>
+                                    {% elif bonificacion.estado == 'cobrada' %}
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-check-circle"></i> Cobrada
+                                        </span>
+                                    {% elif bonificacion.estado == 'cancelada' %}
+                                        <span class="badge badge-danger">
+                                            <i class="fas fa-times-circle"></i> Cancelada
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <i class="fas fa-calendar text-muted"></i>
+                                    {{ bonificacion.fecha_otorgado|date:"d/m/Y" }}
+                                </td>
+                                <td>
+                                    <small>{{ bonificacion.descripcion|truncatechars:50 }}</small>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="{% url 'empleados:bonificacion_update' bonificacion.pk %}" 
+                                           class="btn btn-sm btn-warning" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        
+                                        {% if bonificacion.estado == 'pendiente' %}
+                                            <form method="post" action="{% url 'empleados:cobrar_bonificacion' bonificacion.pk %}" style="display: inline;">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-success" title="Cobrar Bonificación" 
+                                                        onclick="return confirm('¿Confirmar cobro de esta bonificación?')">
+                                                    <i class="fas fa-money-bill-wave"></i>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                        
+                                        <a href="{% url 'empleados:redimir_bonificacion' bonificacion.pk %}" 
+                                           class="btn btn-sm btn-info" title="Redimir">
+                                            <i class="fas fa-hand-holding-usd"></i>
+                                        </a>
+                                        <a href="{% url 'empleados:bonificacion_delete' bonificacion.pk %}" 
+                                           class="btn btn-sm btn-danger" title="Eliminar">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginación -->
+                {% if is_paginated %}
+                <nav aria-label="Paginación de bonificaciones">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if request.GET.empleado %}&empleado={{ request.GET.empleado }}{% endif %}{% if request.GET.fecha_desde %}&fecha_desde={{ request.GET.fecha_desde }}{% endif %}{% if request.GET.fecha_hasta %}&fecha_hasta={{ request.GET.fecha_hasta }}{% endif %}">Primera</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.empleado %}&empleado={{ request.GET.empleado }}{% endif %}{% if request.GET.fecha_desde %}&fecha_desde={{ request.GET.fecha_desde }}{% endif %}{% if request.GET.fecha_hasta %}&fecha_hasta={{ request.GET.fecha_hasta }}{% endif %}">Anterior</a>
+                            </li>
+                        {% endif %}
+
+                        <li class="page-item active">
+                            <span class="page-link">
+                                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                            </span>
+                        </li>
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.empleado %}&empleado={{ request.GET.empleado }}{% endif %}{% if request.GET.fecha_desde %}&fecha_desde={{ request.GET.fecha_desde }}{% endif %}{% if request.GET.fecha_hasta %}&fecha_hasta={{ request.GET.fecha_hasta }}{% endif %}">Siguiente</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.empleado %}&empleado={{ request.GET.empleado }}{% endif %}{% if request.GET.fecha_desde %}&fecha_desde={{ request.GET.fecha_desde }}{% endif %}{% if request.GET.fecha_hasta %}&fecha_hasta={{ request.GET.fecha_hasta }}{% endif %}">Última</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-gift fa-3x text-muted mb-3"></i>
+                    <h5>No hay bonificaciones registradas</h5>
+                    <p class="text-muted">Comienza creando la primera bonificación para tus empleados.</p>
+                    <a href="{% url 'empleados:bonificacion_create' %}" class="btn btn-bonificacion">
+                        <i class="fas fa-plus"></i> Crear Primera Bonificación
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap4.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Inicializar DataTable si hay datos
+    if ($('#bonificacionesTable tbody tr').length > 0) {
+        $('#bonificacionesTable').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.11.5/i18n/es-ES.json"
+            },
+            "pageLength": 10,
+            "order": [[ 3, "desc" ]], // Ordenar por fecha descendente
+            "columnDefs": [
+                { "orderable": false, "targets": 5 } // Desactivar ordenamiento en columna de acciones
+            ]
+        });
+    }
+
+    // Inicializar datepickers
+    $('input[type="date"]').each(function() {
+        $(this).addClass('form-control');
+    });
+
+    // Confirmar eliminación
+    $('.btn-danger').click(function(e) {
+        if (!confirm('¿Estás seguro de que deseas eliminar esta bonificación?')) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

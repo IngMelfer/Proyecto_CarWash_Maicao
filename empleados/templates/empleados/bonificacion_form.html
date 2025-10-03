@@ -1,0 +1,352 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if object %}Editar Bonificación{% else %}Nueva Bonificación{% endif %} - {{ block.super }}
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    .form-card {
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border: none;
+    }
+    
+    .form-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px 15px 0 0;
+        padding: 20px;
+    }
+    
+    .form-body {
+        padding: 30px;
+    }
+    
+    .form-group label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 8px;
+    }
+    
+    .form-control {
+        border-radius: 10px;
+        border: 2px solid #e9ecef;
+        padding: 12px 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+    
+    .btn-save {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        border: none;
+        border-radius: 25px;
+        padding: 12px 30px;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        color: white;
+    }
+    
+    .btn-cancel {
+        background: #6c757d;
+        border: none;
+        border-radius: 25px;
+        padding: 12px 30px;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-cancel:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+        color: white;
+    }
+    
+    .help-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+    }
+    
+    .preview-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-top: 20px;
+    }
+    
+    .preview-amount {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #28a745;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card form-card">
+                <div class="form-header">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-gift fa-2x mr-3"></i>
+                        <div>
+                            <h3 class="mb-0">
+                                {% if object %}
+                                    <i class="fas fa-edit"></i> Editar Bonificación
+                                {% else %}
+                                    <i class="fas fa-plus"></i> Nueva Bonificación
+                                {% endif %}
+                            </h3>
+                            <p class="mb-0 opacity-75">
+                                {% if object %}
+                                    Modifica los datos de la bonificación
+                                {% else %}
+                                    Crea una nueva bonificación para un empleado
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-body">
+                    <form method="post" id="bonificacionForm">
+                        {% csrf_token %}
+                        
+                        <!-- Información del Empleado -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.empleado.id_for_label }}" class="required-field">
+                                        <i class="fas fa-user text-primary"></i> {{ form.empleado.label }}
+                                    </label>
+                                    {{ form.empleado }}
+                                    {% if form.empleado.help_text %}
+                                        <small class="help-text">{{ form.empleado.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.empleado.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.empleado.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.configuracion_bonificacion.id_for_label }}">
+                                        <i class="fas fa-cog text-info"></i> {{ form.configuracion_bonificacion.label }}
+                                    </label>
+                                    {{ form.configuracion_bonificacion }}
+                                    {% if form.configuracion_bonificacion.help_text %}
+                                        <small class="help-text">{{ form.configuracion_bonificacion.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.configuracion_bonificacion.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.configuracion_bonificacion.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Monto y Fecha -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.monto.id_for_label }}" class="required-field">
+                                        <i class="fas fa-dollar-sign text-success"></i> {{ form.monto.label }}
+                                    </label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text">$</span>
+                                        </div>
+                                        {{ form.monto }}
+                                    </div>
+                                    {% if form.monto.help_text %}
+                                        <small class="help-text">{{ form.monto.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.monto.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.monto.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.fecha_otorgado.id_for_label }}" class="required-field">
+                                        <i class="fas fa-calendar text-warning"></i> {{ form.fecha_otorgado.label }}
+                                    </label>
+                                    {{ form.fecha_otorgado }}
+                                    {% if form.fecha_otorgado.help_text %}
+                                        <small class="help-text">{{ form.fecha_otorgado.help_text }}</small>
+                                    {% endif %}
+                                    {% if form.fecha_otorgado.errors %}
+                                        <div class="text-danger mt-1">
+                                            {% for error in form.fecha_otorgado.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Descripción -->
+                        <div class="form-group">
+                            <label for="{{ form.descripcion.id_for_label }}">
+                                <i class="fas fa-comment text-secondary"></i> {{ form.descripcion.label }}
+                            </label>
+                            {{ form.descripcion }}
+                            {% if form.descripcion.help_text %}
+                                <small class="help-text">{{ form.descripcion.help_text }}</small>
+                            {% endif %}
+                            {% if form.descripcion.errors %}
+                                <div class="text-danger mt-1">
+                                    {% for error in form.descripcion.errors %}
+                                        <small>{{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Vista previa del monto -->
+                        <div class="preview-card" id="previewCard" style="display: none;">
+                            <div class="text-center">
+                                <h5><i class="fas fa-eye text-info"></i> Vista Previa</h5>
+                                <div class="preview-amount" id="previewAmount">$0</div>
+                                <p class="text-muted mb-0">Monto de la bonificación</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Botones de acción -->
+                        <div class="form-group mt-4">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'empleados:admin_bonificaciones' %}" class="btn btn-cancel">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-save">
+                                    <i class="fas fa-save"></i> 
+                                    {% if object %}Actualizar{% else %}Crear{% endif %} Bonificación
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Mejorar el estilo de los campos de formulario
+    $('.form-control, .form-select').addClass('form-control');
+    
+    // Vista previa del monto
+    function updatePreview() {
+        const monto = $('#id_monto').val();
+        if (monto && monto > 0) {
+            $('#previewAmount').text('$' + parseFloat(monto).toLocaleString());
+            $('#previewCard').slideDown();
+        } else {
+            $('#previewCard').slideUp();
+        }
+    }
+    
+    // Actualizar vista previa cuando cambie el monto
+    $('#id_monto').on('input', updatePreview);
+    
+    // Inicializar vista previa si hay valor
+    updatePreview();
+    
+    // Validación del formulario
+    $('#bonificacionForm').on('submit', function(e) {
+        let isValid = true;
+        
+        // Validar empleado
+        if (!$('#id_empleado').val()) {
+            isValid = false;
+            $('#id_empleado').addClass('is-invalid');
+        } else {
+            $('#id_empleado').removeClass('is-invalid');
+        }
+        
+        // Validar monto
+        const monto = parseFloat($('#id_monto').val());
+        if (!monto || monto <= 0) {
+            isValid = false;
+            $('#id_monto').addClass('is-invalid');
+        } else {
+            $('#id_monto').removeClass('is-invalid');
+        }
+        
+        // Validar fecha
+        if (!$('#id_fecha_otorgado').val()) {
+            isValid = false;
+            $('#id_fecha_otorgado').addClass('is-invalid');
+        } else {
+            $('#id_fecha_otorgado').removeClass('is-invalid');
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('Por favor, completa todos los campos requeridos correctamente.');
+        }
+    });
+    
+    // Formatear monto mientras se escribe
+    $('#id_monto').on('input', function() {
+        let value = $(this).val().replace(/[^\d.]/g, '');
+        if (value) {
+            // Limitar a 2 decimales
+            const parts = value.split('.');
+            if (parts.length > 2) {
+                value = parts[0] + '.' + parts[1];
+            }
+            if (parts[1] && parts[1].length > 2) {
+                value = parts[0] + '.' + parts[1].substring(0, 2);
+            }
+            $(this).val(value);
+        }
+    });
+    
+    // Establecer fecha actual por defecto si es nueva bonificación
+    {% if not object %}
+    if (!$('#id_fecha_otorgado').val()) {
+        const today = new Date().toISOString().split('T')[0];
+        $('#id_fecha_otorgado').val(today);
+    }
+    {% endif %}
+});
+</script>
+{% endblock %}

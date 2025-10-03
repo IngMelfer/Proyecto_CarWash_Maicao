@@ -606,59 +606,75 @@ def bonificaciones_empleado(request):
     """Vista para mostrar las bonificaciones del empleado"""
     empleado = get_object_or_404(Empleado, usuario=request.user)
     
+    # Importar el servicio de bonificaciones
+    from .services import BonificacionService
+    
     # Obtener bonificaciones del empleado
     bonificaciones = Incentivo.objects.filter(empleado=empleado).select_related(
-        'servicio_relacionado__servicio'
-    ).order_by('-fecha_otorgada')
+        'empleado', 'configuracion_bonificacion'
+    ).order_by('-fecha_otorgado')
     
     # Aplicar filtros
     tipo = request.GET.get('tipo')
     mes = request.GET.get('mes')
     ano = request.GET.get('ano')
     monto_min = request.GET.get('monto_min')
+    automatica = request.GET.get('automatica')
     
     if tipo:
-        bonificaciones = bonificaciones.filter(tipo_incentivo=tipo)
+        # Filtrar por nombre del incentivo ya que no existe campo tipo_incentivo
+        bonificaciones = bonificaciones.filter(nombre__icontains=tipo)
     
     if mes:
-        bonificaciones = bonificaciones.filter(fecha_otorgada__month=mes)
+        bonificaciones = bonificaciones.filter(fecha_otorgado__month=mes)
     
     if ano:
-        bonificaciones = bonificaciones.filter(fecha_otorgada__year=ano)
+        bonificaciones = bonificaciones.filter(fecha_otorgado__year=ano)
     
     if monto_min:
         bonificaciones = bonificaciones.filter(monto__gte=monto_min)
+    
+    if automatica:
+        bonificaciones = bonificaciones.filter(otorgado_automaticamente=automatica == 'true')
     
     # Resumen financiero
     ahora = timezone.now()
     resumen = {
         'total_mes': bonificaciones.filter(
-            fecha_otorgada__month=ahora.month,
-            fecha_otorgada__year=ahora.year
+            fecha_otorgado__month=ahora.month,
+            fecha_otorgado__year=ahora.year
         ).aggregate(Sum('monto'))['monto__sum'] or 0,
         'total_ano': bonificaciones.filter(
-            fecha_otorgada__year=ahora.year
+            fecha_otorgado__year=ahora.year
         ).aggregate(Sum('monto'))['monto__sum'] or 0,
         'total_historico': bonificaciones.aggregate(Sum('monto'))['monto__sum'] or 0,
+        'automaticas_mes': bonificaciones.filter(
+            fecha_otorgado__month=ahora.month,
+            fecha_otorgado__year=ahora.year,
+            otorgado_automaticamente=True
+        ).count(),
+        'manuales_mes': bonificaciones.filter(
+            fecha_otorgado__month=ahora.month,
+            fecha_otorgado__year=ahora.year,
+            otorgado_automaticamente=False
+        ).count(),
     }
     
-    # Tipos de bonificación
-    tipos_bonificacion = []
-    tipos_disponibles = [
-        ('servicios_completados', 'Servicios Completados', '#28a745'),
-        ('calificacion_excelente', 'Calificación Excelente', '#ffc107'),
-        ('puntualidad', 'Puntualidad', '#17a2b8'),
-        ('meta_mensual', 'Meta Mensual', '#6f42c1'),
-        ('cliente_frecuente', 'Cliente Frecuente', '#fd7e14'),
-    ]
+    # Obtener progreso hacia próximas bonificaciones
+    progreso_bonificaciones = BonificacionService.obtener_progreso_bonificaciones(empleado)
     
-    for tipo_key, tipo_nombre, color in tipos_disponibles:
-        total = bonificaciones.filter(tipo_incentivo=tipo_key).aggregate(Sum('monto'))['monto__sum'] or 0
+    # Tipos de bonificación basados en configuraciones activas
+    from .models import ConfiguracionBonificacion
+    configuraciones_activas = ConfiguracionBonificacion.objects.filter(activo=True)
+    tipos_bonificacion = []
+    
+    for config in configuraciones_activas:
+        total = bonificaciones.filter(configuracion_bonificacion=config).aggregate(Sum('monto'))['monto__sum'] or 0
         if total > 0:
             tipos_bonificacion.append({
-                'nombre': tipo_nombre,
+                'nombre': config.nombre,
                 'total': total,
-                'color': color
+                'color': '#28a745' if config.tipo == ConfiguracionBonificacion.TIPO_SERVICIOS else '#ffc107'
             })
     
     # Evolución mensual (últimos 6 meses)
@@ -668,49 +684,12 @@ def bonificaciones_empleado(request):
         fecha = timezone.now() - timedelta(days=30*i)
         mes_nombre = fecha.strftime('%b %Y')
         total = bonificaciones.filter(
-            fecha_otorgada__month=fecha.month,
-            fecha_otorgada__year=fecha.year
+            fecha_otorgado__month=fecha.month,
+            fecha_otorgado__year=fecha.year
         ).aggregate(Sum('monto'))['monto__sum'] or 0
         
         evolucion_labels.append(mes_nombre)
         evolucion_data.append(float(total))
-    
-    # Metas del mes (simuladas - deberían venir de un modelo de metas)
-    metas_mes = [
-        {
-            'nombre': 'Servicios Completados',
-            'descripcion': 'Completar 50 servicios este mes',
-            'progreso': 35,
-            'objetivo': 50,
-            'porcentaje': 70,
-            'bonificacion': 100000,
-            'completada': False,
-            'faltante': 15,
-            'color': '#28a745'
-        },
-        {
-            'nombre': 'Calificación Promedio',
-            'descripcion': 'Mantener promedio de 4.5 estrellas',
-            'progreso': 4.7,
-            'objetivo': 4.5,
-            'porcentaje': 100,
-            'bonificacion': 50000,
-            'completada': True,
-            'faltante': 0,
-            'color': '#ffc107'
-        },
-        {
-            'nombre': 'Puntualidad',
-            'descripción': 'Llegar a tiempo al 95% de servicios',
-            'progreso': 92,
-            'objetivo': 95,
-            'porcentaje': 97,
-            'bonificacion': 75000,
-            'completada': False,
-            'faltante': 3,
-            'color': '#17a2b8'
-        }
-    ]
     
     # Datos para gráficos
     tipos_labels = [tipo['nombre'] for tipo in tipos_bonificacion]
@@ -718,7 +697,7 @@ def bonificaciones_empleado(request):
     tipos_colors = [tipo['color'] for tipo in tipos_bonificacion]
     
     # Años y meses disponibles para filtros
-    anos_disponibles = bonificaciones.dates('fecha_otorgada', 'year', order='DESC')
+    anos_disponibles = bonificaciones.dates('fecha_otorgado', 'year', order='DESC')
     meses_disponibles = [
         {'numero': '1', 'nombre': 'Enero'}, {'numero': '2', 'nombre': 'Febrero'},
         {'numero': '3', 'nombre': 'Marzo'}, {'numero': '4', 'nombre': 'Abril'},
@@ -738,7 +717,7 @@ def bonificaciones_empleado(request):
         'bonificaciones': bonificaciones_paginadas,
         'resumen': resumen,
         'tipos_bonificacion': tipos_bonificacion,
-        'metas_mes': metas_mes,
+        'progreso_bonificaciones': progreso_bonificaciones,
         'evolucion_labels': evolucion_labels,
         'evolucion_data': evolucion_data,
         'tipos_labels': tipos_labels,
@@ -748,6 +727,7 @@ def bonificaciones_empleado(request):
         'meses_disponibles': meses_disponibles,
         'is_paginated': bonificaciones_paginadas.has_other_pages(),
         'page_obj': bonificaciones_paginadas,
+        'configuraciones_activas': configuraciones_activas,
     }
     
     return render(request, 'empleados/dashboard/bonificaciones.html', context)
@@ -972,3 +952,269 @@ def api_estadisticas(request):
         return JsonResponse({'success': False, 'error': 'Empleado no encontrado'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
+
+@login_required
+def exportar_bonificaciones(request):
+    """
+    Vista para exportar bonificaciones del empleado en formato PDF o Excel.
+    """
+    try:
+        empleado = request.user.empleado
+    except Empleado.DoesNotExist:
+        messages.error(request, 'No tienes permisos para acceder a esta página.')
+        return redirect('autenticacion:login')
+    
+    formato = request.GET.get('formato', 'pdf')
+    
+    # Obtener bonificaciones del empleado
+    bonificaciones = Incentivo.objects.filter(empleado=empleado).select_related(
+        'configuracion_bonificacion'
+    ).order_by('-fecha_otorgado')
+    
+    # Aplicar filtros si existen
+    tipo_filtro = request.GET.get('tipo')
+    if tipo_filtro == 'automatica':
+        bonificaciones = bonificaciones.filter(otorgado_automaticamente=True)
+    elif tipo_filtro == 'manual':
+        bonificaciones = bonificaciones.filter(otorgado_automaticamente=False)
+    
+    mes_filtro = request.GET.get('mes')
+    año_filtro = request.GET.get('año')
+    if mes_filtro and año_filtro:
+        bonificaciones = bonificaciones.filter(
+            fecha_otorgado__month=mes_filtro,
+            fecha_otorgado__year=año_filtro
+        )
+    
+    if formato == 'pdf':
+        return _exportar_bonificaciones_pdf(empleado, bonificaciones)
+    elif formato == 'excel':
+        return _exportar_bonificaciones_excel(empleado, bonificaciones)
+    else:
+        messages.error(request, 'Formato de exportación no válido.')
+        return redirect('empleados_dashboard:bonificaciones')
+
+
+def _exportar_bonificaciones_pdf(empleado, bonificaciones):
+    """
+    Genera un reporte PDF de bonificaciones.
+    """
+    try:
+        from reportlab.lib.pagesizes import letter, A4
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import inch
+        from reportlab.lib import colors
+        from io import BytesIO
+        
+        # Crear buffer para el PDF
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        elements = []
+        
+        # Estilos
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=18,
+            spaceAfter=30,
+            alignment=1  # Centrado
+        )
+        
+        # Título
+        title = Paragraph(f"Reporte de Bonificaciones - {empleado.nombre} {empleado.apellido}", title_style)
+        elements.append(title)
+        elements.append(Spacer(1, 20))
+        
+        # Información del empleado
+        info_empleado = [
+            ['Empleado:', f"{empleado.nombre} {empleado.apellido}"],
+            ['Documento:', empleado.numero_documento],
+            ['Cargo:', empleado.cargo.nombre],
+            ['Fecha de reporte:', timezone.now().strftime('%d/%m/%Y %H:%M')]
+        ]
+        
+        info_table = Table(info_empleado, colWidths=[2*inch, 4*inch])
+        info_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), colors.grey),
+            ('TEXTCOLOR', (0, 0), (0, -1), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+            ('BACKGROUND', (1, 0), (1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ]))
+        
+        elements.append(info_table)
+        elements.append(Spacer(1, 30))
+        
+        # Tabla de bonificaciones
+        if bonificaciones.exists():
+            # Encabezados
+            data = [['Fecha', 'Nombre', 'Tipo', 'Monto', 'Servicios', 'Calificación']]
+            
+            # Datos
+            for bonificacion in bonificaciones:
+                tipo = 'Automática' if bonificacion.otorgado_automaticamente else 'Manual'
+                data.append([
+                    bonificacion.fecha_otorgado.strftime('%d/%m/%Y'),
+                    bonificacion.nombre,
+                    tipo,
+                    f"${bonificacion.monto:,.0f}",
+                    str(bonificacion.servicios_completados or '-'),
+                    f"{bonificacion.promedio_calificacion:.1f}" if bonificacion.promedio_calificacion else '-'
+                ])
+            
+            # Crear tabla
+            table = Table(data, colWidths=[1.2*inch, 2*inch, 1*inch, 1*inch, 0.8*inch, 1*inch])
+            table.setStyle(TableStyle([
+                # Encabezado
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                
+                # Datos
+                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 1), (-1, -1), 9),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+            
+            elements.append(table)
+            
+            # Resumen
+            total_bonificaciones = bonificaciones.aggregate(total=Sum('monto'))['total'] or 0
+            elements.append(Spacer(1, 20))
+            
+            resumen_data = [
+                ['Total de bonificaciones:', len(bonificaciones)],
+                ['Monto total:', f"${total_bonificaciones:,.0f}"]
+            ]
+            
+            resumen_table = Table(resumen_data, colWidths=[3*inch, 2*inch])
+            resumen_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (0, -1), colors.grey),
+                ('TEXTCOLOR', (0, 0), (0, -1), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, -1), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+                ('BACKGROUND', (1, 0), (1, -1), colors.beige),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+            
+            elements.append(resumen_table)
+        else:
+            no_data = Paragraph("No se encontraron bonificaciones para mostrar.", styles['Normal'])
+            elements.append(no_data)
+        
+        # Generar PDF
+        doc.build(elements)
+        buffer.seek(0)
+        
+        # Respuesta HTTP
+        response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+        filename = f"bonificaciones_{empleado.numero_documento}_{timezone.now().strftime('%Y%m%d')}.pdf"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        return response
+        
+    except ImportError:
+        messages.error(request, 'No se puede generar PDF. Falta la librería reportlab.')
+        return redirect('empleados_dashboard:bonificaciones')
+    except Exception as e:
+        messages.error(request, f'Error al generar PDF: {str(e)}')
+        return redirect('empleados_dashboard:bonificaciones')
+
+
+def _exportar_bonificaciones_excel(empleado, bonificaciones):
+    """
+    Genera un reporte Excel de bonificaciones.
+    """
+    try:
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, PatternFill, Alignment
+        from io import BytesIO
+        
+        # Crear workbook
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Bonificaciones"
+        
+        # Estilos
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        center_alignment = Alignment(horizontal="center")
+        
+        # Información del empleado
+        ws['A1'] = "REPORTE DE BONIFICACIONES"
+        ws['A1'].font = Font(bold=True, size=16)
+        ws.merge_cells('A1:F1')
+        ws['A1'].alignment = center_alignment
+        
+        ws['A3'] = "Empleado:"
+        ws['B3'] = f"{empleado.nombre} {empleado.apellido}"
+        ws['A4'] = "Documento:"
+        ws['B4'] = empleado.numero_documento
+        ws['A5'] = "Cargo:"
+        ws['B5'] = empleado.cargo.nombre
+        ws['A6'] = "Fecha de reporte:"
+        ws['B6'] = timezone.now().strftime('%d/%m/%Y %H:%M')
+        
+        # Encabezados de la tabla
+        headers = ['Fecha', 'Nombre', 'Tipo', 'Monto', 'Servicios', 'Calificación']
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=8, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = center_alignment
+        
+        # Datos
+        if bonificaciones.exists():
+            for row, bonificacion in enumerate(bonificaciones, 9):
+                ws.cell(row=row, column=1, value=bonificacion.fecha_otorgado.strftime('%d/%m/%Y'))
+                ws.cell(row=row, column=2, value=bonificacion.nombre)
+                ws.cell(row=row, column=3, value='Automática' if bonificacion.otorgado_automaticamente else 'Manual')
+                ws.cell(row=row, column=4, value=bonificacion.monto)
+                ws.cell(row=row, column=5, value=bonificacion.servicios_completados or 0)
+                ws.cell(row=row, column=6, value=bonificacion.promedio_calificacion or 0)
+            
+            # Resumen
+            total_row = len(bonificaciones) + 10
+            ws.cell(row=total_row, column=1, value="TOTAL:")
+            ws.cell(row=total_row, column=1).font = Font(bold=True)
+            ws.cell(row=total_row, column=4, value=bonificaciones.aggregate(total=Sum('monto'))['total'] or 0)
+            ws.cell(row=total_row, column=4).font = Font(bold=True)
+        
+        # Ajustar ancho de columnas
+        column_widths = [12, 25, 12, 12, 10, 12]
+        for col, width in enumerate(column_widths, 1):
+            ws.column_dimensions[ws.cell(row=1, column=col).column_letter].width = width
+        
+        # Guardar en buffer
+        buffer = BytesIO()
+        wb.save(buffer)
+        buffer.seek(0)
+        
+        # Respuesta HTTP
+        response = HttpResponse(
+            buffer.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        filename = f"bonificaciones_{empleado.numero_documento}_{timezone.now().strftime('%Y%m%d')}.xlsx"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        return response
+        
+    except ImportError:
+        messages.error(request, 'No se puede generar Excel. Falta la librería openpyxl.')
+        return redirect('empleados_dashboard:bonificaciones')
+    except Exception as e:
+        messages.error(request, f'Error al generar Excel: {str(e)}')
+        return redirect('empleados_dashboard:bonificaciones')

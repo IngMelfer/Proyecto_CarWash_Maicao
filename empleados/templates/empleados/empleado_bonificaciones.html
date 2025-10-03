@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mis Bonificaciones{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .bonificacion-card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 15px;
+        transition: transform 0.2s;
+    }
+    
+    .bonificacion-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    
+    .badge-monto {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        color: white;
+        padding: 8px 15px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 1.1em;
+    }
+    
+    .estado-pendiente {
+        background-color: #fff3cd;
+        border-left: 4px solid #ffc107;
+    }
+    
+    .estado-cobrada {
+        background-color: #d1edff;
+        border-left: 4px solid #007bff;
+    }
+    
+    .estado-cancelada {
+        background-color: #f8d7da;
+        border-left: 4px solid #dc3545;
+    }
+    
+    .btn-cobrar {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        border: none;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 20px;
+        transition: all 0.3s;
+    }
+    
+    .btn-cobrar:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-gift text-primary"></i> Mis Bonificaciones</h2>
+                <div class="text-muted">
+                    <i class="fas fa-user"></i> {{ empleado.get_full_name }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                <h3>{{ total_bonificaciones }}</h3>
+                <p class="mb-0">Total Bonificaciones</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                <h3>{{ bonificaciones_pendientes }}</h3>
+                <p class="mb-0">Pendientes</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                <h3>${{ monto_total_pendiente|floatformat:0 }}</h3>
+                <p class="mb-0">Monto Pendiente</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                <h3>${{ monto_total_cobrado|floatformat:0 }}</h3>
+                <p class="mb-0">Total Cobrado</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Bonificaciones -->
+    <div class="row">
+        <div class="col-12">
+            {% if bonificaciones %}
+                {% for bonificacion in bonificaciones %}
+                <div class="card bonificacion-card 
+                    {% if bonificacion.estado == 'pendiente' %}estado-pendiente
+                    {% elif bonificacion.estado == 'cobrada' %}estado-cobrada
+                    {% elif bonificacion.estado == 'cancelada' %}estado-cancelada{% endif %}">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-2">
+                                <div class="text-center">
+                                    {% if bonificacion.es_automatica %}
+                                        <i class="fas fa-robot fa-2x text-info mb-2"></i>
+                                        <br><small class="text-muted">Automática</small>
+                                    {% else %}
+                                        <i class="fas fa-user-cog fa-2x text-secondary mb-2"></i>
+                                        <br><small class="text-muted">Manual</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <h5 class="mb-1">{{ bonificacion.descripcion|truncatechars:40 }}</h5>
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar"></i> 
+                                    {{ bonificacion.fecha_otorgado|date:"d/m/Y" }}
+                                </small>
+                            </div>
+                            <div class="col-md-2 text-center">
+                                <span class="badge-monto">${{ bonificacion.monto|floatformat:0 }}</span>
+                            </div>
+                            <div class="col-md-2 text-center">
+                                {% if bonificacion.estado == 'pendiente' %}
+                                    <span class="badge badge-warning badge-lg">
+                                        <i class="fas fa-clock"></i> Pendiente
+                                    </span>
+                                {% elif bonificacion.estado == 'cobrada' %}
+                                    <span class="badge badge-success badge-lg">
+                                        <i class="fas fa-check-circle"></i> Cobrada
+                                    </span>
+                                    {% if bonificacion.fecha_cobrado %}
+                                        <br><small class="text-muted">{{ bonificacion.fecha_cobrado|date:"d/m/Y" }}</small>
+                                    {% endif %}
+                                {% elif bonificacion.estado == 'cancelada' %}
+                                    <span class="badge badge-danger badge-lg">
+                                        <i class="fas fa-times-circle"></i> Cancelada
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3 text-right">
+                                {% if bonificacion.estado == 'pendiente' %}
+                                    <form method="post" action="{% url 'empleados:empleado_cobrar_bonificacion' bonificacion.pk %}" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-cobrar" 
+                                                onclick="return confirm('¿Confirmar cobro de esta bonificación por ${{ bonificacion.monto|floatformat:0 }}?')">
+                                            <i class="fas fa-money-bill-wave"></i> Cobrar
+                                        </button>
+                                    </form>
+                                {% elif bonificacion.estado == 'cobrada' %}
+                                    <span class="text-success">
+                                        <i class="fas fa-check-double"></i> Ya cobrada
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if bonificacion.descripcion|length > 40 %}
+                        <div class="row mt-2">
+                            <div class="col-12">
+                                <small class="text-muted">
+                                    <strong>Descripción completa:</strong> {{ bonificacion.descripcion }}
+                                </small>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="card">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-gift fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">No tienes bonificaciones disponibles</h4>
+                        <p class="text-muted">Las bonificaciones aparecerán aquí cuando sean otorgadas.</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Animación de entrada para las tarjetas
+    $('.bonificacion-card').each(function(index) {
+        $(this).delay(index * 100).fadeIn(500);
+    });
+    
+    // Actualizar página cada 30 segundos para mostrar nuevas bonificaciones
+    setTimeout(function() {
+        location.reload();
+    }, 30000);
+});
+</script>
+{% endblock %}

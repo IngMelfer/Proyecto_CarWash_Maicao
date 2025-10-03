@@ -23,6 +23,7 @@ urlpatterns = [
     # Incentivos y bonificaciones
     path('incentivos/', views_dashboard.incentivos_empleado, name='incentivos'),
     path('bonificaciones/', views_dashboard.bonificaciones_empleado, name='bonificaciones'),
+    path('bonificaciones/exportar/', views_dashboard.exportar_bonificaciones, name='exportar_bonificaciones'),
     
     # APIs
     path('api/disponibilidad/', views_dashboard.actualizar_disponibilidad, name='api_disponibilidad'),

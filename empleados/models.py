@@ -152,11 +152,57 @@ class Calificacion(models.Model):
         return f"{self.cliente} calificó a {self.empleado} con {self.puntuacion} estrellas"
 
 
+class ConfiguracionBonificacion(models.Model):
+    """
+    Modelo para configurar las reglas de bonificaciones que puede establecer el administrador.
+    """
+    TIPO_SERVICIOS = 'servicios'
+    TIPO_MENSUAL = 'mensual'
+    
+    TIPO_CHOICES = [
+        (TIPO_SERVICIOS, _('Por cantidad de servicios')),
+        (TIPO_MENSUAL, _('Por desempeño mensual')),
+    ]
+    
+    nombre = models.CharField(max_length=100, verbose_name=_('Nombre de la Bonificación'))
+    descripcion = models.TextField(verbose_name=_('Descripción'))
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, verbose_name=_('Tipo de Bonificación'))
+    
+    # Criterios para bonificación
+    servicios_requeridos = models.PositiveIntegerField(verbose_name=_('Servicios Requeridos'))
+    calificacion_minima = models.DecimalField(max_digits=2, decimal_places=1, verbose_name=_('Calificación Mínima'))
+    monto_bonificacion = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_('Monto de Bonificación'))
+    
+    # Configuración adicional
+    activo = models.BooleanField(default=True, verbose_name=_('Activo'))
+    fecha_creacion = models.DateTimeField(auto_now_add=True, verbose_name=_('Fecha de Creación'))
+    fecha_actualizacion = models.DateTimeField(auto_now=True, verbose_name=_('Última Actualización'))
+    
+    class Meta:
+        verbose_name = _('Configuración de Bonificación')
+        verbose_name_plural = _('Configuraciones de Bonificaciones')
+        ordering = ['tipo', 'servicios_requeridos']
+    
+    def __str__(self):
+        return f"{self.nombre} - {self.servicios_requeridos} servicios - {self.calificacion_minima}★ - ${self.monto_bonificacion}"
+
+
 class Incentivo(models.Model):
     """
     Modelo para gestionar los incentivos de los empleados basados en su desempeño.
     """
+    ESTADO_PENDIENTE = 'pendiente'
+    ESTADO_COBRADA = 'cobrada'
+    ESTADO_CANCELADA = 'cancelada'
+    
+    ESTADOS_CHOICES = [
+        (ESTADO_PENDIENTE, _('Pendiente')),
+        (ESTADO_COBRADA, _('Cobrada')),
+        (ESTADO_CANCELADA, _('Cancelada')),
+    ]
+    
     empleado = models.ForeignKey('Empleado', on_delete=models.CASCADE, related_name='incentivos', verbose_name=_('Empleado'))
+    configuracion_bonificacion = models.ForeignKey('ConfiguracionBonificacion', on_delete=models.SET_NULL, null=True, blank=True, related_name='incentivos_otorgados', verbose_name=_('Configuración de Bonificación'))
     nombre = models.CharField(max_length=100, verbose_name=_('Nombre del Incentivo'))
     descripcion = models.TextField(verbose_name=_('Descripción'))
     monto = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_('Monto'))
@@ -165,6 +211,10 @@ class Incentivo(models.Model):
     periodo_fin = models.DateField(verbose_name=_('Fin del Período'))
     promedio_calificacion = models.DecimalField(max_digits=3, decimal_places=2, null=True, blank=True, verbose_name=_('Promedio de Calificación'))
     servicios_completados = models.PositiveIntegerField(default=0, verbose_name=_('Servicios Completados'))
+    otorgado_automaticamente = models.BooleanField(default=False, verbose_name=_('Otorgado Automáticamente'))
+    estado = models.CharField(max_length=20, choices=ESTADOS_CHOICES, default=ESTADO_PENDIENTE, verbose_name=_('Estado'))
+    fecha_cobro = models.DateTimeField(null=True, blank=True, verbose_name=_('Fecha de Cobro'))
+    cobrado_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='bonificaciones_tramitadas', verbose_name=_('Cobrado por'))
     
     class Meta:
         verbose_name = _('Incentivo')
@@ -172,4 +222,15 @@ class Incentivo(models.Model):
         ordering = ['-fecha_otorgado']
     
     def __str__(self):
-        return f"{self.empleado} - {self.nombre} - {self.monto}"
+        return f"{self.empleado} - {self.nombre} - {self.monto} ({self.get_estado_display()})"
+    
+    def marcar_como_cobrada(self, usuario):
+        """Marca la bonificación como cobrada"""
+        self.estado = self.ESTADO_COBRADA
+        self.fecha_cobro = timezone.now()
+        self.cobrado_por = usuario
+        self.save()
+    
+    def puede_ser_cobrada(self):
+        """Verifica si la bonificación puede ser cobrada"""
+        return self.estado == self.ESTADO_PENDIENTE

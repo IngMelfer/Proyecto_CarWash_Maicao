@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Eliminar Bonificación - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    .delete-card {
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border: none;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .delete-header {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        border-radius: 15px 15px 0 0;
+        padding: 20px;
+        text-align: center;
+    }
+    
+    .delete-body {
+        padding: 30px;
+    }
+    
+    .warning-icon {
+        font-size: 4rem;
+        color: #dc3545;
+        margin-bottom: 20px;
+    }
+    
+    .bonificacion-info {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+        border-left: 4px solid #dc3545;
+    }
+    
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .info-item:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .info-value {
+        color: #6c757d;
+    }
+    
+    .monto-destacado {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #dc3545;
+    }
+    
+    .btn-delete {
+        background: linear-gradient(45deg, #dc3545, #c82333);
+        border: none;
+        border-radius: 25px;
+        padding: 12px 30px;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-delete:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+        color: white;
+    }
+    
+    .btn-cancel {
+        background: #6c757d;
+        border: none;
+        border-radius: 25px;
+        padding: 12px 30px;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-cancel:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+        color: white;
+    }
+    
+    .alert-warning {
+        border-radius: 10px;
+        border: none;
+        background: linear-gradient(45deg, #fff3cd, #ffeaa7);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card delete-card">
+                <div class="delete-header">
+                    <i class="fas fa-exclamation-triangle warning-icon"></i>
+                    <h3 class="mb-0">Confirmar Eliminación</h3>
+                    <p class="mb-0 opacity-75">Esta acción no se puede deshacer</p>
+                </div>
+                
+                <div class="delete-body">
+                    <div class="text-center mb-4">
+                        <h5>¿Estás seguro de que deseas eliminar esta bonificación?</h5>
+                        <p class="text-muted">
+                            Una vez eliminada, no podrás recuperar esta información.
+                        </p>
+                    </div>
+                    
+                    <!-- Información de la bonificación -->
+                    <div class="bonificacion-info">
+                        <h6 class="mb-3">
+                            <i class="fas fa-info-circle text-info"></i> 
+                            Información de la Bonificación
+                        </h6>
+                        
+                        <div class="info-item">
+                            <span class="info-label">
+                                <i class="fas fa-user text-primary"></i> Empleado:
+                            </span>
+                            <span class="info-value">{{ object.empleado.nombre_completo }}</span>
+                        </div>
+                        
+                        <div class="info-item">
+                            <span class="info-label">
+                                <i class="fas fa-briefcase text-secondary"></i> Cargo:
+                            </span>
+                            <span class="info-value">{{ object.empleado.cargo.nombre }}</span>
+                        </div>
+                        
+                        <div class="info-item">
+                            <span class="info-label">
+                                <i class="fas fa-dollar-sign text-success"></i> Monto:
+                            </span>
+                            <span class="info-value monto-destacado">${{ object.monto|floatformat:0 }}</span>
+                        </div>
+                        
+                        <div class="info-item">
+                            <span class="info-label">
+                                <i class="fas fa-calendar text-warning"></i> Fecha Otorgado:
+                            </span>
+                            <span class="info-value">{{ object.fecha_otorgado|date:"d/m/Y" }}</span>
+                        </div>
+                        
+                        {% if object.configuracion_bonificacion %}
+                        <div class="info-item">
+                            <span class="info-label">
+                                <i class="fas fa-cog text-info"></i> Tipo:
+                            </span>
+                            <span class="info-value">{{ object.configuracion_bonificacion.get_tipo_display }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if object.descripcion %}
+                        <div class="info-item">
+                            <span class="info-label">
+                                <i class="fas fa-comment text-muted"></i> Descripción:
+                            </span>
+                            <span class="info-value">{{ object.descripcion|truncatechars:100 }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Advertencia -->
+                    <div class="alert alert-warning" role="alert">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>¡Atención!</strong> 
+                        Esta acción eliminará permanentemente la bonificación del sistema. 
+                        Si el empleado ya redimió esta bonificación, considera mantener el registro 
+                        para fines de auditoría.
+                    </div>
+                    
+                    <!-- Formulario de confirmación -->
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'empleados:admin_bonificaciones' %}" class="btn btn-cancel">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-delete" id="confirmDelete">
+                                <i class="fas fa-trash"></i> Sí, Eliminar Bonificación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Confirmación adicional antes de eliminar
+    $('#confirmDelete').click(function(e) {
+        e.preventDefault();
+        
+        const empleado = "{{ object.empleado.nombre_completo }}";
+        const monto = "{{ object.monto|floatformat:0 }}";
+        
+        if (confirm(`¿Estás completamente seguro de eliminar la bonificación de $${monto} para ${empleado}?\n\nEsta acción NO se puede deshacer.`)) {
+            $(this).closest('form').submit();
+        }
+    });
+    
+    // Efecto de hover en los botones
+    $('.btn').hover(
+        function() {
+            $(this).addClass('shadow');
+        },
+        function() {
+            $(this).removeClass('shadow');
+        }
+    );
+});
+</script>
+{% endblock %}

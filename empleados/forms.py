@@ -2,7 +2,8 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
-from .models import Empleado, TipoDocumento, Cargo
+from django.utils import timezone
+from .models import Empleado, TipoDocumento, Cargo, ConfiguracionBonificacion, Incentivo
 from autenticacion.models import Usuario
 
 
@@ -543,4 +544,189 @@ class CambiarPasswordForm(forms.Form):
         password_nueva = self.cleaned_data['password_nueva']
         self.user.set_password(password_nueva)
         self.user.save()
-        return self.user
+
+
+# Formularios para gestión de bonificaciones
+
+class ConfiguracionBonificacionForm(forms.ModelForm):
+    """Formulario para crear/editar configuraciones de bonificación"""
+    class Meta:
+        model = ConfiguracionBonificacion
+        fields = [
+            'nombre', 'descripcion', 'tipo', 'servicios_requeridos', 
+            'calificacion_minima', 'monto_bonificacion', 'activo'
+        ]
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
+            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'tipo': forms.Select(attrs={'class': 'form-select'}),
+            'servicios_requeridos': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
+            'calificacion_minima': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'max': '5', 'step': '0.1'}),
+            'monto_bonificacion': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.01'}),
+            'activo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+        help_texts = {
+            'tipo': 'Seleccione el tipo de bonificación: por servicios o mensual.',
+            'servicios_requeridos': 'Cantidad mínima de servicios para obtener la bonificación.',
+            'calificacion_minima': 'Calificación promedio mínima requerida (1-5 estrellas).',
+            'monto_bonificacion': 'Monto en pesos que se otorgará como bonificación.',
+        }
+
+    def clean_servicios_requeridos(self):
+        servicios = self.cleaned_data.get('servicios_requeridos')
+        if servicios is not None:
+            if servicios <= 0:
+                raise ValidationError('El número de servicios requeridos debe ser mayor a cero.')
+            if servicios > 1000:  # Límite razonable
+                raise ValidationError('El número de servicios requeridos no puede exceder 1000.')
+        return servicios
+
+    def clean_calificacion_minima(self):
+        calificacion = self.cleaned_data.get('calificacion_minima')
+        if calificacion is not None:
+            if calificacion < 1 or calificacion > 5:
+                raise ValidationError('La calificación mínima debe estar entre 1 y 5.')
+        return calificacion
+
+    def clean_monto_bonificacion(self):
+        monto = self.cleaned_data.get('monto_bonificacion')
+        if monto is not None:
+            if monto <= 0:
+                raise ValidationError('El monto de bonificación debe ser mayor a cero.')
+            if monto > 1000000:  # Límite máximo de 1 millón
+                raise ValidationError('El monto de bonificación no puede exceder $1,000,000.')
+        return monto
+
+
+class IncentivoForm(forms.ModelForm):
+    """Formulario para crear/editar incentivos manualmente"""
+    class Meta:
+        model = Incentivo
+        fields = [
+            'empleado', 'nombre', 'descripcion', 'monto', 'fecha_otorgado',
+            'periodo_inicio', 'periodo_fin', 'promedio_calificacion', 'servicios_completados'
+        ]
+        widgets = {
+            'empleado': forms.Select(attrs={'class': 'form-select'}),
+            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
+            'descripcion': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'monto': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.01'}),
+            'fecha_otorgado': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'periodo_inicio': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'periodo_fin': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'promedio_calificacion': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'max': '5', 'step': '0.01'}),
+            'servicios_completados': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Solo mostrar empleados activos
+        self.fields['empleado'].queryset = Empleado.objects.filter(activo=True).order_by('nombre', 'apellido')
+        
+        # Establecer valores por defecto para fechas
+        if not self.instance.pk:
+            today = timezone.now().date()
+            first_day_month = today.replace(day=1)
+            self.fields['fecha_otorgado'].initial = today
+            self.fields['periodo_inicio'].initial = first_day_month
+            self.fields['periodo_fin'].initial = today
+
+    def clean_monto(self):
+        monto = self.cleaned_data.get('monto')
+        if monto is not None:
+            if monto <= 0:
+                raise ValidationError('El monto debe ser mayor a cero.')
+            if monto > 1000000:  # Límite máximo de 1 millón
+                raise ValidationError('El monto no puede exceder $1,000,000.')
+        return monto
+
+    def clean_promedio_calificacion(self):
+        calificacion = self.cleaned_data.get('promedio_calificacion')
+        if calificacion is not None:
+            if calificacion < 1 or calificacion > 5:
+                raise ValidationError('La calificación debe estar entre 1 y 5.')
+        return calificacion
+
+    def clean_servicios_completados(self):
+        servicios = self.cleaned_data.get('servicios_completados')
+        if servicios is not None and servicios < 0:
+            raise ValidationError('El número de servicios no puede ser negativo.')
+        return servicios
+
+    def clean(self):
+        cleaned_data = super().clean()
+        periodo_inicio = cleaned_data.get('periodo_inicio')
+        periodo_fin = cleaned_data.get('periodo_fin')
+        fecha_otorgado = cleaned_data.get('fecha_otorgado')
+
+        if periodo_inicio and periodo_fin:
+            if periodo_inicio > periodo_fin:
+                raise ValidationError('La fecha de inicio del período no puede ser posterior a la fecha de fin.')
+        
+        if fecha_otorgado and periodo_fin:
+            if fecha_otorgado < periodo_fin:
+                raise ValidationError('La fecha de otorgamiento no puede ser anterior al fin del período evaluado.')
+
+        # Validar que la fecha de otorgamiento no sea futura
+        if fecha_otorgado and fecha_otorgado > timezone.now().date():
+            raise ValidationError('La fecha de otorgamiento no puede ser futura.')
+
+        return cleaned_data
+
+
+class RedimirBonificacionForm(forms.Form):
+    """Formulario para redimir una bonificación"""
+    motivo_redencion = forms.CharField(
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        label='Motivo de redención',
+        help_text='Describa el motivo por el cual se está redimiendo esta bonificación.',
+        required=True
+    )
+    
+    confirmar_redencion = forms.BooleanField(
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        label='Confirmo que deseo redimir esta bonificación',
+        required=True
+    )
+
+
+class FiltrosBonificacionesForm(forms.Form):
+    """Formulario para filtrar bonificaciones en la vista de administración"""
+    empleado = forms.ModelChoiceField(
+        queryset=Empleado.objects.filter(activo=True).order_by('nombre', 'apellido'),
+        required=False,
+        empty_label="Todos los empleados",
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    
+    fecha_desde = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        label='Desde'
+    )
+    
+    fecha_hasta = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        label='Hasta'
+    )
+    
+    tipo_bonificacion = forms.ChoiceField(
+        choices=[('', 'Todos los tipos')] + ConfiguracionBonificacion.TIPO_CHOICES,
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        label='Tipo'
+    )
+    
+    monto_minimo = forms.DecimalField(
+        required=False,
+        min_value=0,
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+        label='Monto mínimo'
+    )
+    
+    solo_pendientes = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        label='Solo bonificaciones pendientes de redimir'
+    )

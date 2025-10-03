@@ -1,0 +1,371 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Redimir Bonificación - {{ block.super }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    .redimir-card {
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        border: none;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+    
+    .redimir-header {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border-radius: 15px 15px 0 0;
+        padding: 25px;
+        text-align: center;
+    }
+    
+    .redimir-body {
+        padding: 30px;
+    }
+    
+    .success-icon {
+        font-size: 4rem;
+        color: #28a745;
+        margin-bottom: 20px;
+    }
+    
+    .bonificacion-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 15px;
+        padding: 25px;
+        margin: 20px 0;
+        border-left: 5px solid #28a745;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .empleado-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .empleado-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(45deg, #007bff, #0056b3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-right: 15px;
+    }
+    
+    .monto-principal {
+        font-size: 3rem;
+        font-weight: bold;
+        color: #28a745;
+        text-align: center;
+        margin: 20px 0;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin: 20px 0;
+    }
+    
+    .info-item {
+        background: white;
+        padding: 15px;
+        border-radius: 10px;
+        border-left: 3px solid #28a745;
+    }
+    
+    .info-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-bottom: 5px;
+        font-weight: 600;
+    }
+    
+    .info-value {
+        font-size: 1.1rem;
+        color: #495057;
+        font-weight: 500;
+    }
+    
+    .redimir-form {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        border: 2px solid #28a745;
+        margin-top: 20px;
+    }
+    
+    .btn-redimir {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        border: none;
+        border-radius: 25px;
+        padding: 15px 40px;
+        color: white;
+        font-weight: 600;
+        font-size: 1.1rem;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+    
+    .btn-redimir:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
+        color: white;
+    }
+    
+    .btn-cancel {
+        background: #6c757d;
+        border: none;
+        border-radius: 25px;
+        padding: 12px 30px;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-cancel:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+        color: white;
+    }
+    
+    .alert-info {
+        border-radius: 10px;
+        border: none;
+        background: linear-gradient(45deg, #d1ecf1, #bee5eb);
+    }
+    
+    .proceso-steps {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    
+    .step {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .step-number {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #28a745;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-right: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card redimir-card">
+                <div class="redimir-header">
+                    <i class="fas fa-hand-holding-usd success-icon"></i>
+                    <h3 class="mb-0">Redimir Bonificación</h3>
+                    <p class="mb-0 opacity-75">Procesar el pago de bonificación al empleado</p>
+                </div>
+                
+                <div class="redimir-body">
+                    <!-- Información del empleado -->
+                    <div class="empleado-info">
+                        <div class="empleado-avatar">
+                            {{ bonificacion.empleado.nombres|first }}{{ bonificacion.empleado.apellidos|first }}
+                        </div>
+                        <div>
+                            <h4 class="mb-1">{{ bonificacion.empleado.nombre_completo }}</h4>
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-briefcase"></i> {{ bonificacion.empleado.cargo.nombre }}
+                            </p>
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-envelope"></i> {{ bonificacion.empleado.email }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Información de la bonificación -->
+                    <div class="bonificacion-card">
+                        <div class="text-center">
+                            <h5><i class="fas fa-gift text-success"></i> Detalles de la Bonificación</h5>
+                            <div class="monto-principal">${{ bonificacion.monto|floatformat:0 }}</div>
+                        </div>
+                        
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-label">
+                                    <i class="fas fa-calendar"></i> Fecha Otorgado
+                                </div>
+                                <div class="info-value">{{ bonificacion.fecha_otorgado|date:"d/m/Y" }}</div>
+                            </div>
+                            
+                            <div class="info-item">
+                                <div class="info-label">
+                                    <i class="fas fa-cog"></i> Tipo de Bonificación
+                                </div>
+                                <div class="info-value">
+                                    {% if bonificacion.configuracion_bonificacion %}
+                                        {{ bonificacion.configuracion_bonificacion.get_tipo_display }}
+                                    {% else %}
+                                        Manual
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            {% if bonificacion.descripcion %}
+                            <div class="info-item" style="grid-column: 1 / -1;">
+                                <div class="info-label">
+                                    <i class="fas fa-comment"></i> Descripción
+                                </div>
+                                <div class="info-value">{{ bonificacion.descripcion }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Proceso de redención -->
+                    <div class="proceso-steps">
+                        <h6><i class="fas fa-list-ol text-info"></i> Proceso de Redención</h6>
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <span>Verificar la identidad del empleado</span>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <span>Confirmar el monto a pagar: <strong>${{ bonificacion.monto|floatformat:0 }}</strong></span>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <span>Procesar el pago (efectivo, transferencia, etc.)</span>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">4</div>
+                            <span>Registrar la redención en el sistema</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Información importante -->
+                    <div class="alert alert-info" role="alert">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Información importante:</strong> 
+                        Una vez confirmada la redención, se registrará en el sistema que esta bonificación 
+                        ha sido pagada al empleado. Asegúrate de haber completado el pago antes de confirmar.
+                    </div>
+                    
+                    <!-- Formulario de redención -->
+                    <div class="redimir-form">
+                        <h6 class="mb-3">
+                            <i class="fas fa-check-circle text-success"></i> 
+                            Confirmar Redención
+                        </h6>
+                        
+                        <form method="post" id="redimirForm">
+                            {% csrf_token %}
+                            
+                            <!-- Campos del formulario si los hay -->
+                            {% for field in form %}
+                                <div class="form-group">
+                                    {{ field.label_tag }}
+                                    {{ field }}
+                                    {% if field.help_text %}
+                                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                                    {% endif %}
+                                    {% if field.errors %}
+                                        <div class="text-danger">
+                                            {% for error in field.errors %}
+                                                <small>{{ error }}</small>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                            
+                            <!-- Confirmación -->
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="confirmPago" required>
+                                <label class="form-check-label" for="confirmPago">
+                                    <strong>Confirmo que he realizado el pago de ${{ bonificacion.monto|floatformat:0 }} 
+                                    al empleado {{ bonificacion.empleado.nombre_completo }}</strong>
+                                </label>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'empleados:admin_bonificaciones' %}" class="btn btn-cancel">
+                                    <i class="fas fa-arrow-left"></i> Volver
+                                </a>
+                                <button type="submit" class="btn btn-redimir" id="btnRedimir" disabled>
+                                    <i class="fas fa-hand-holding-usd"></i> 
+                                    Confirmar Redención
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Habilitar/deshabilitar botón según checkbox
+    $('#confirmPago').change(function() {
+        $('#btnRedimir').prop('disabled', !this.checked);
+        
+        if (this.checked) {
+            $('#btnRedimir').removeClass('btn-secondary').addClass('btn-redimir');
+        } else {
+            $('#btnRedimir').removeClass('btn-redimir').addClass('btn-secondary');
+        }
+    });
+    
+    // Confirmación final antes de enviar
+    $('#redimirForm').submit(function(e) {
+        e.preventDefault();
+        
+        const empleado = "{{ bonificacion.empleado.nombre_completo }}";
+        const monto = "{{ bonificacion.monto|floatformat:0 }}";
+        
+        if (confirm(`¿Confirmas que has pagado $${monto} a ${empleado}?\n\nEsta acción registrará la bonificación como redimida.`)) {
+            // Mostrar loading
+            $('#btnRedimir').html('<i class="fas fa-spinner fa-spin"></i> Procesando...');
+            $('#btnRedimir').prop('disabled', true);
+            
+            // Enviar formulario
+            this.submit();
+        }
+    });
+    
+    // Animación de entrada
+    $('.redimir-card').hide().fadeIn(500);
+    
+    // Efecto de pulso en el monto
+    setInterval(function() {
+        $('.monto-principal').animate({
+            'font-size': '3.1rem'
+        }, 1000).animate({
+            'font-size': '3rem'
+        }, 1000);
+    }, 3000);
+});
+</script>
+{% endblock %}

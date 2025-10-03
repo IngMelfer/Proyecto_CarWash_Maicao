@@ -7,7 +7,6 @@ urlpatterns = [
     # Vistas para administradores y gerentes
     path('', views.EmpleadoListView.as_view(), name='empleado_list'),
     path('<int:pk>/', views.EmpleadoDetailView.as_view(), name='empleado_detail'),
-    path('crear/', views.EmpleadoCreateView.as_view(), name='empleado_create'),
     path('<int:pk>/editar/', views.EmpleadoUpdateView.as_view(), name='empleado_update'),
     path('<int:pk>/eliminar/', views.EmpleadoDeleteView.as_view(), name='empleado_delete'),
     
@@ -35,6 +34,20 @@ urlpatterns = [
     path('tipos-documento/crear/', views.TipoDocumentoCreateView.as_view(), name='tipo_documento_create'),
     path('tipos-documento/<int:pk>/editar/', views.TipoDocumentoUpdateView.as_view(), name='tipo_documento_update'),
     path('tipos-documento/<int:pk>/eliminar/', views.TipoDocumentoDeleteView.as_view(), name='tipo_documento_delete'),
+    
+    # Bonificaciones - Empleados
+    path('mis-bonificaciones/', views.EmpleadoBonificacionesView.as_view(), name='empleado_bonificaciones'),
+    path('cobrar-bonificacion/<int:pk>/', views.EmpleadoCobrarBonificacionView.as_view(), name='empleado_cobrar_bonificacion'),
+    
+    # Gestión de bonificaciones para administradores
+    path('admin-bonificaciones/', views.AdminBonificacionesView.as_view(), name='admin_bonificaciones'),
+    path('admin-bonificaciones/crear/', views.BonificacionCreateView.as_view(), name='bonificacion_create'),
+    path('admin-bonificaciones/<int:pk>/editar/', views.BonificacionUpdateView.as_view(), name='bonificacion_update'),
+    path('admin-bonificaciones/<int:pk>/eliminar/', views.BonificacionDeleteView.as_view(), name='bonificacion_delete'),
+    path('admin-bonificaciones/<int:pk>/redimir/', views.RedimirBonificacionView.as_view(), name='redimir_bonificacion'),
+    path('admin-bonificaciones/<int:pk>/cobrar/', views.CobrarBonificacionView.as_view(), name='cobrar_bonificacion'),
+    path('admin-bonificaciones/evaluar-automaticas/', views.EjecutarEvaluacionAutomaticaView.as_view(), name='evaluar_automaticas'),
+    path('admin-bonificaciones/api/empleados/', views.api_empleados_bonificaciones, name='api_empleados_bonificaciones'),
     
     # Dashboard de empleados - ruta directa y sistema específico
     path('dashboard-empleado/', views.dashboard_empleado_view, name='dashboard'),
