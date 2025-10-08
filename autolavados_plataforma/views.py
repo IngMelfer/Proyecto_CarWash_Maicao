@@ -20,6 +20,10 @@ def home_view(request):
     if request.user.rol == 'lavador':
         return redirect('empleados_dashboard:dashboard')
     
+    # Si el usuario tiene rol de Gerente, redirigir al dashboard del gerente
+    if request.user.rol == 'gerente':
+        return redirect('dashboard_gerente:dashboard')
+    
     # Si es un empleado con registro de empleado, redirigir al dashboard de empleados
     if hasattr(request.user, 'empleado'):
         return redirect('empleados_dashboard:dashboard')

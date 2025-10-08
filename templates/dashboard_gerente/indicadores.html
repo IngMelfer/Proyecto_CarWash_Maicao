@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% load reservas_filters %}
+
+{% block title %}Indicadores - CarWash Maicao{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="mb-0">Indicadores</h2>
+    <div class="btn-group">
+      <a class="btn btn-outline-secondary" href="{% url 'dashboard_gerente:dashboard' %}">
+        <i class="fas fa-arrow-left me-1"></i> Volver al Dashboard
+      </a>
+      <a class="btn btn-primary" href="{% url 'dashboard_gerente:kpis' %}">
+        <i class="fas fa-sliders-h me-1"></i> Configurar KPIs
+      </a>
+    </div>
+  </div>
+
+  {% if kpis %}
+    <p class="text-muted">Mostrando {{ kpis|length }} KPI(s) activos configurados por ti.</p>
+  {% else %}
+    <div class="alert alert-info">
+      No tienes KPIs activos configurados. Usa el botón "Configurar KPIs" para crear indicadores.
+    </div>
+  {% endif %}
+
+  <!-- Filtros avanzados -->
+  <form class="card mb-4" method="get">
+    <div class="card-body row g-3">
+      <div class="col-12 col-md-3">
+        <label class="form-label">Fecha inicio</label>
+        <input type="date" class="form-control" name="fecha_inicio" value="{{ applied_filters.fecha_inicio }}">
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="form-label">Fecha fin</label>
+        <input type="date" class="form-control" name="fecha_fin" value="{{ applied_filters.fecha_fin }}">
+      </div>
+      <div class="col-12 col-md-2">
+        <select class="form-select" name="group_by" aria-label="Agrupar por">
+          <option value="day" {% if applied_filters.group_by == 'day' %}selected{% endif %}>Día</option>
+          <option value="week" {% if applied_filters.group_by == 'week' %}selected{% endif %}>Semana</option>
+          <option value="month" {% if applied_filters.group_by == 'month' %}selected{% endif %}>Mes</option>
+        </select>
+      </div>
+      <div class="col-12 col-md-2">
+        <label class="form-label">Estado</label>
+        <select class="form-select" name="estado">
+          <option value="">Todos</option>
+          {% for e in estado_choices %}
+            <option value="{{ e.value }}" {% if applied_filters.estado == e.value %}selected{% endif %}>{{ e.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-md-2">
+        <label class="form-label">Servicio</label>
+        <select class="form-select" name="servicio">
+          <option value="">Todos</option>
+          {% for s in servicios %}
+            <option value="{{ s.id }}" {% if applied_filters.servicio|default:'' == s.id|stringformat:'s' %}selected{% endif %}>{{ s.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="compararCheck" name="comparar" {% if applied_filters.comparar %}checked{% endif %}>
+          <label class="form-check-label" for="compararCheck">Comparar con periodo anterior</label>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer d-flex justify-content-end">
+      <button class="btn btn-primary" type="submit"><i class="fas fa-filter me-1"></i> Aplicar filtros</button>
+    </div>
+  </form>
+
+  <div class="row g-4">
+    {% for chart in charts %}
+      <div class="col-12 col-lg-6">
+        <div class="card h-100">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+              <strong>{{ chart.nombre }}</strong>
+              <div class="small text-muted">{{ chart.entidad }} · {{ chart.metrica }} · Últimos {{ chart.periodo }} días</div>
+            </div>
+            <span class="badge bg-light text-dark">KPI #{{ forloop.counter }}</span>
+          </div>
+          <div class="card-body">
+            <canvas id="{{ chart.id }}" height="120"></canvas>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="col-12">
+        <div class="alert alert-warning">No hay datos para mostrar en los indicadores seleccionados.</div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Formateadores reutilizables
+  function formatMiles(n, decimals = 0) {
+    const sign = n < 0 ? '-' : '';
+    const abs = Math.abs(Number(n) || 0);
+    const fixed = abs.toFixed(decimals);
+    const parts = fixed.split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return sign + parts.join(decimals ? ',' : '');
+  }
+  const fmtPeso = (v) => '$' + formatMiles(v);
+
+  document.addEventListener('DOMContentLoaded', function () {
+    {% for chart in charts %}
+      const labels_{{ chart.id }} = {{ chart.labels|safe }};
+      const data_{{ chart.id }} = {{ chart.data|safe }};
+      const cmpLabels_{{ chart.id }} = {{ chart.cmp_labels|safe }};
+      const cmpData_{{ chart.id }} = {{ chart.cmp_data|safe }};
+      const ctx_{{ chart.id }} = document.getElementById('{{ chart.id }}').getContext('2d');
+      const datasets_{{ chart.id }} = [{
+        label: '{{ chart.nombre|escapejs }}',
+        data: data_{{ chart.id }},
+        borderColor: '#4e73df',
+        backgroundColor: 'rgba(78,115,223,0.12)',
+        tension: 0.3,
+        fill: true
+      }];
+      if (cmpLabels_{{ chart.id }} && cmpLabels_{{ chart.id }}.length > 0) {
+        datasets_{{ chart.id }}.push({
+          label: 'Periodo anterior',
+          data: cmpData_{{ chart.id }},
+          borderColor: '#e74a3b',
+          backgroundColor: 'rgba(231,74,59,0.10)',
+          tension: 0.3,
+          fill: false
+        });
+      }
+      new Chart(ctx_{{ chart.id }}, {
+        type: 'line',
+        data: { labels: labels_{{ chart.id }}, datasets: datasets_{{ chart.id }} },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: true },
+            tooltip: { enabled: true, callbacks: {
+              label: (ctx) => {
+                const v = ctx.parsed.y;
+                const label = ctx.dataset.label || 'Valor';
+                return `${label}: ${fmtPeso(v)}`;
+              }
+            } }
+          },
+          scales: {
+            x: { display: true },
+            y: { display: true, beginAtZero: true, ticks: { callback: (v) => formatMiles(v) } }
+          }
+        }
+      });
+    {% endfor %}
+  });
+</script>
+{% endblock %}

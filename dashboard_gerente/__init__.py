@@ -1,0 +1,1 @@
+# Dashboard Gerente app initialization

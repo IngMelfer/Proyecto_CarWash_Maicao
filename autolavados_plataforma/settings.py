@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'notificaciones',
     'empleados',
     'dashboard_publico',
+    'dashboard_gerente',
 ]
 
 MIDDLEWARE = [

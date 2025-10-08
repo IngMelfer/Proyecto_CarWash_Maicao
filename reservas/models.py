@@ -183,6 +183,9 @@ class Reserva(models.Model):
     bahia = models.ForeignKey('Bahia', on_delete=models.SET_NULL, null=True, blank=True, related_name='reservas', verbose_name=_('Bahía'))
     vehiculo = models.ForeignKey('Vehiculo', on_delete=models.SET_NULL, null=True, blank=True, related_name='reservas', verbose_name=_('Vehículo'))
     lavador = models.ForeignKey('empleados.Empleado', on_delete=models.SET_NULL, null=True, blank=True, related_name='reservas_asignadas', verbose_name=_('Lavador'))
+    # Auditoría de acciones del servicio
+    empleado_inicio = models.ForeignKey('empleados.Empleado', on_delete=models.SET_NULL, null=True, blank=True, related_name='reservas_iniciadas', verbose_name=_('Empleado que inició'))
+    empleado_finalizacion = models.ForeignKey('empleados.Empleado', on_delete=models.SET_NULL, null=True, blank=True, related_name='reservas_finalizadas', verbose_name=_('Empleado que finalizó'))
     asignacion_automatica = models.BooleanField(default=True, verbose_name=_('Asignación Automática'), help_text=_('Indica si el lavador fue asignado automáticamente o seleccionado por el cliente'))
     estado = models.CharField(max_length=2, choices=ESTADO_CHOICES, default=PENDIENTE, verbose_name=_('Estado'))
     notas = models.TextField(blank=True, verbose_name=_('Notas'))
@@ -348,21 +351,26 @@ class Reserva(models.Model):
             return True
         return False
     
-    def completar_servicio(self):
+    def completar_servicio(self, empleado=None):
         """
         Completa el servicio y solicita calificación
         """
         if self.estado == self.EN_PROCESO:
             self.estado = self.COMPLETADA
-            self.save(update_fields=['estado'])
+            if empleado:
+                self.empleado_finalizacion = empleado
+                self.save(update_fields=['estado', 'empleado_finalizacion'])
+            else:
+                self.save(update_fields=['estado'])
             self.solicitar_calificacion()
             return True
         return False
     
-    def iniciar_servicio(self):
+    def iniciar_servicio(self, empleado=None):
         """
         Inicia el servicio si la reserva está confirmada.
         Si no hay lavador asignado, intenta asignar uno automáticamente.
+        Registra el empleado que inicia el servicio.
         """
         if self.estado == self.CONFIRMADA:
             # Si no hay lavador asignado, intentar asignar uno automáticamente
@@ -376,7 +384,11 @@ class Reserva(models.Model):
             
             self.estado = self.EN_PROCESO
             self.fecha_inicio_servicio = timezone.now()
-            self.save(update_fields=['estado', 'fecha_inicio_servicio'])
+            if empleado:
+                self.empleado_inicio = empleado
+                self.save(update_fields=['estado', 'fecha_inicio_servicio', 'empleado_inicio'])
+            else:
+                self.save(update_fields=['estado', 'fecha_inicio_servicio'])
             return True
         return False
     

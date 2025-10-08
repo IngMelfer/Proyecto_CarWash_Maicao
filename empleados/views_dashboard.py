@@ -8,6 +8,7 @@ from django.core.paginator import Paginator
 from datetime import datetime, timedelta
 from decimal import Decimal
 import json
+import uuid
 from .models import Empleado, Calificacion, Incentivo
 from .forms import EmpleadoPerfilForm
 from reservas.models import Reserva, Servicio
@@ -104,6 +105,10 @@ def dashboard_lavador(request):
         fecha_hora__gt=ahora,
         estado__in=[Reserva.PENDIENTE, Reserva.CONFIRMADA]
     ).select_related('servicio', 'vehiculo', 'bahia', 'cliente').order_by('fecha_hora')[:5]
+
+    # Servicio siguiente (el más cercano) y el resto
+    servicio_siguiente = servicios_proximos[0] if servicios_proximos else None
+    otros_servicios_proximos = servicios_proximos[1:] if len(servicios_proximos) > 1 else []
     
     # Servicios recientes (últimos 5 servicios completados o cancelados)
     servicios_recientes = empleado.reservas_asignadas.filter(
@@ -159,6 +164,10 @@ def dashboard_lavador(request):
         grafico_labels.append(fecha.strftime('%d/%m'))
         grafico_data.append(servicios_dia)
     
+    # Servicios activos para tarjetas
+    servicios_en_proceso = empleado.reservas_asignadas.filter(estado=Reserva.EN_PROCESO).select_related('servicio','vehiculo','bahia','cliente')
+    servicios_confirmados = empleado.reservas_asignadas.filter(estado=Reserva.CONFIRMADA).select_related('servicio','vehiculo','bahia','cliente')
+
     context = {
         'empleado': empleado,
         'reservas_hoy': servicios_hoy,
@@ -166,7 +175,9 @@ def dashboard_lavador(request):
         'reservas_mes': servicios_completados,
         'promedio_calificacion': promedio_calificacion,
         'total_calificaciones': total_calificaciones,
-        'proximas_reservas': servicios_proximos,
+        'servicio_siguiente': servicio_siguiente,
+'proximas_reservas': servicios_proximos,
+'otros_servicios_proximos': otros_servicios_proximos,
         'servicios_recientes': servicios_recientes,
         'calificaciones_recientes': calificaciones_recientes,
         'incentivos_recientes': incentivos_recientes,
@@ -175,6 +186,8 @@ def dashboard_lavador(request):
         'rendimiento_semanal': json.dumps(rendimiento_semanal),
         'grafico_labels': json.dumps(grafico_labels),
         'grafico_data': json.dumps(grafico_data),
+        'servicios_en_proceso': servicios_en_proceso,
+        'servicios_confirmados': servicios_confirmados,
         'estadisticas': {
             'servicios_pendientes': servicios_pendientes,
             'servicios_completados': servicios_completados,
@@ -217,6 +230,80 @@ def perfil_empleado(request):
     }
     
     return render(request, 'empleados/perfil_empleado.html', context)
+
+
+@login_required
+def iniciar_servicio_reserva(request, pk):
+    """
+    Permite al lavador iniciar un servicio confirmado. Registra el empleado que inicia
+    y genera stream_token si la bahía tiene cámara.
+    """
+    try:
+        empleado = request.user.empleado
+    except Empleado.DoesNotExist:
+        messages.error(request, 'No se encontró información de empleado para tu usuario.')
+        return redirect('home')
+    if request.user.rol != request.user.ROL_LAVADOR or not empleado.es_lavador():
+        messages.error(request, 'No tienes permisos para realizar esta acción.')
+        return redirect('home')
+
+    reserva = get_object_or_404(Reserva, pk=pk)
+
+    if reserva.estado != Reserva.CONFIRMADA:
+        messages.error(request, 'Solo se pueden iniciar servicios confirmados.')
+        return redirect('empleados_dashboard:dashboard')
+
+    if reserva.lavador and reserva.lavador != empleado:
+        messages.error(request, 'Esta reserva está asignada a otro lavador.')
+        return redirect('empleados_dashboard:dashboard')
+
+    if reserva.iniciar_servicio(empleado=empleado):
+        # Generar stream_token si hay cámara disponible y no existe
+        bahia = getattr(reserva, 'bahia', None)
+        if bahia and getattr(bahia, 'tiene_camara', False) and getattr(bahia, 'ip_camara', None) and not reserva.stream_token:
+            reserva.stream_token = f"{reserva.id}-{uuid.uuid4().hex[:8]}"
+            reserva.save(update_fields=['stream_token'])
+        messages.success(request, 'Servicio iniciado correctamente.')
+    else:
+        messages.error(request, 'No se pudo iniciar el servicio.')
+
+    return redirect('empleados_dashboard:dashboard')
+
+
+@login_required
+def finalizar_servicio_reserva(request, pk):
+    """
+    Permite al lavador finalizar un servicio en proceso y registra el empleado que finaliza.
+    """
+    try:
+        empleado = request.user.empleado
+    except Empleado.DoesNotExist:
+        messages.error(request, 'No se encontró información de empleado para tu usuario.')
+        return redirect('home')
+    if request.user.rol != request.user.ROL_LAVADOR or not empleado.es_lavador():
+        messages.error(request, 'No tienes permisos para realizar esta acción.')
+        return redirect('home')
+
+    reserva = get_object_or_404(Reserva, pk=pk)
+
+    if reserva.estado != Reserva.EN_PROCESO:
+        messages.error(request, 'Solo se pueden finalizar servicios en proceso.')
+        return redirect('empleados_dashboard:dashboard')
+
+    if reserva.lavador and reserva.lavador != empleado:
+        messages.error(request, 'Esta reserva está asignada a otro lavador.')
+        return redirect('empleados_dashboard:dashboard')
+
+    # Registrar empleado y completar servicio usando el método del modelo
+    reserva.empleado_finalizacion = empleado
+    reserva.save(update_fields=['empleado_finalizacion'])
+    try:
+        reserva.completar_servicio()
+        messages.success(request, 'Servicio finalizado correctamente.')
+    except Exception as e:
+        messages.error(request, f'Error al finalizar el servicio: {str(e)}')
+
+    return redirect('empleados_dashboard:dashboard')
 
 
 @login_required

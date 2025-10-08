@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+
+{% block title %}KPIs Configurables - Gerente{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="{% url 'dashboard_gerente:dashboard' %}" class="btn btn-outline-secondary">
+      <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+    </a>
+    <h4 class="mb-0">KPIs Configurables</h4>
+  </div>
+  <div class="row">
+    <div class="col-lg-5">
+      <div class="card">
+        <div class="card-header">Crear/Editar KPI</div>
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label class="form-label">Nombre</label>
+              {{ form.nombre }}
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Entidad</label>
+              {{ form.entidad }}
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Métrica</label>
+              {{ form.metrica }}
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Campo</label>
+              {{ form.campo }}
+              <small id="campo-help" class="text-muted">Seleccione un campo según la entidad elegida</small>
+              <details id="entity-fields-details" class="mt-2">
+                <summary>Ver campos disponibles de la entidad seleccionada</summary>
+                <ul id="entity-fields-list" class="mt-2 mb-0"></ul>
+              </details>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Estado (opcional)</label>
+              {{ form.estado_filtro }}
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Periodo (días)</label>
+              {{ form.periodo_dias }}
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Umbral (opcional)</label>
+              {{ form.umbral_alerta }}
+            </div>
+            <div class="form-check mb-3">
+              {{ form.activo }}
+              <label class="form-check-label">Activo</label>
+            </div>
+            <button type="submit" class="btn btn-primary">Guardar KPI</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-7">
+      <div class="card">
+        <div class="card-header">KPIs Configurados</div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Entidad</th>
+                  <th>Métrica</th>
+                  <th>Campo</th>
+                  <th>Periodo</th>
+                  <th>Estado</th>
+                  <th>Activo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for kpi in kpis %}
+                <tr>
+                  <td>{{ kpi.nombre }}</td>
+                  <td>{{ kpi.get_entidad_display }}</td>
+                  <td>{{ kpi.get_metrica_display }}</td>
+                  <td>{{ kpi.campo }}</td>
+                  <td>{{ kpi.periodo_dias }} días</td>
+                  <td>{{ kpi.estado_filtro|default:'-' }}</td>
+                  <td>
+                    {% if kpi.activo %}
+                      <span class="badge bg-success">Sí</span>
+                    {% else %}
+                      <span class="badge bg-secondary">No</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="7" class="text-center">Aún no has configurado KPIs</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function() {
+    // Mapa de campos por entidad (basado en los modelos del proyecto)
+    const ENTITY_FIELDS = {
+      'clientes': [
+        {value: 'id', label: 'ID'},
+        {value: 'nombre', label: 'Nombre'},
+        {value: 'apellido', label: 'Apellido'},
+        {value: 'email', label: 'Correo'},
+        {value: 'telefono', label: 'Teléfono'},
+        {value: 'ciudad', label: 'Ciudad'},
+        {value: 'saldo_puntos', label: 'Saldo de Puntos'},
+        {value: 'fecha_registro', label: 'Fecha de Registro'}
+      ],
+      'servicios': [
+        {value: 'id', label: 'ID'},
+        {value: 'nombre', label: 'Nombre'},
+        {value: 'precio', label: 'Precio'},
+        {value: 'duracion_minutos', label: 'Duración (min)'},
+        {value: 'puntos_otorgados', label: 'Puntos Otorgados'},
+        {value: 'activo', label: 'Activo'}
+      ],
+      'empleados': [
+        {value: 'id', label: 'ID'},
+        {value: 'nombre', label: 'Nombre'},
+        {value: 'apellido', label: 'Apellido'},
+        {value: 'telefono', label: 'Teléfono'},
+        {value: 'ciudad', label: 'Ciudad'},
+        {value: 'rol', label: 'Rol'},
+        {value: 'cargo', label: 'Cargo (FK)'},
+        {value: 'activo', label: 'Activo'},
+        {value: 'fecha_contratacion', label: 'Fecha de Contratación'}
+      ],
+      'ingresos': [
+        // Para ingresos usamos la entidad Reserva y campos económicos
+        {value: 'precio_final', label: 'Reserva.precio_final'},
+        {value: 'descuento_aplicado', label: 'Reserva.descuento_aplicado'},
+        {value: 'puntos_redimidos', label: 'Reserva.puntos_redimidos'}
+      ],
+      'reservas': [
+        {value: 'id', label: 'ID'},
+        {value: 'cliente', label: 'Cliente (FK)'},
+        {value: 'servicio', label: 'Servicio (FK)'},
+        {value: 'fecha_hora', label: 'Fecha y Hora'},
+        {value: 'estado', label: 'Estado'},
+        {value: 'precio_final', label: 'Precio Final'},
+        {value: 'descuento_aplicado', label: 'Descuento Aplicado'},
+        {value: 'puntos_redimidos', label: 'Puntos Redimidos'}
+      ]
+    };
+
+    function populateFields(entityValue) {
+      const campoSelect = document.getElementById('id_campo');
+      const details = document.getElementById('entity-fields-details');
+      const list = document.getElementById('entity-fields-list');
+      if (!campoSelect) return;
+
+      // Limpiar opciones actuales del select
+      while (campoSelect.options.length > 0) {
+        campoSelect.remove(0);
+      }
+      // Agregar placeholder
+      const placeholder = new Option('Seleccione un campo...', '');
+      placeholder.disabled = true;
+      placeholder.selected = true;
+      campoSelect.add(placeholder);
+
+      // Poblar opciones según entidad
+      const fields = ENTITY_FIELDS[entityValue] || [];
+      list.innerHTML = '';
+      fields.forEach(f => {
+        campoSelect.add(new Option(f.label, f.value));
+        const li = document.createElement('li');
+        li.textContent = `${f.label} (${f.value})`;
+        list.appendChild(li);
+      });
+
+      // Mostrar/ocultar detalle
+      details.open = fields.length > 0;
+    }
+
+    function getEntidadValue() {
+      // El widget de entidad es un <select>; su value coincide con el valor de choice
+      const entidadSelect = document.getElementById('id_entidad');
+      return entidadSelect ? entidadSelect.value : null;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const entidadSelect = document.getElementById('id_entidad');
+      if (!entidadSelect) return;
+      // Inicializar con el valor actual
+      populateFields(getEntidadValue());
+      // Actualizar al cambiar
+      entidadSelect.addEventListener('change', function() {
+        populateFields(this.value);
+      });
+    });
+  })();
+</script>
+{% endblock %}
