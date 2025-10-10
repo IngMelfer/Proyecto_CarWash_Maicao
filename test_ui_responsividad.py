@@ -1,6 +1,7 @@
 import os
 import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'autolavados_plataforma.settings')
+os.environ['ALLOWED_HOSTS'] = 'localhost,127.0.0.1,testserver'
 django.setup()
 
 from django.test import Client

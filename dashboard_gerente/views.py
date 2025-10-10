@@ -7,11 +7,13 @@ from django.db.models import Count, Avg, Sum, Min, Max, Q
 from django.db.models.functions import TruncDate, TruncWeek, TruncMonth
 import json
 from autenticacion.mixins import GerenteRequiredMixin
-from reservas.models import Reserva, Servicio, Bahia
+from reservas.models import Reserva, Servicio, Bahia, DisponibilidadHoraria
 from clientes.models import Cliente
 from empleados.models import Empleado, Calificacion
 from .models import KPIConfiguracion
 from .forms import KPIConfiguracionForm
+from django.urls import reverse
+from django.shortcuts import get_object_or_404
 
 
 class DashboardGerenteView(LoginRequiredMixin, GerenteRequiredMixin, View):
@@ -249,6 +251,7 @@ class DashboardGerenteView(LoginRequiredMixin, GerenteRequiredMixin, View):
             ticket_promedio_segmento = Reserva.objects.filter(
                 estado=Reserva.COMPLETADA, fecha_hora__gte=start, fecha_hora__lte=end
             ).aggregate(avg=Avg('precio_final'))['avg'] or 0
+            ingresos_netos_segmento = (ingresos_segmento or 0) - (descuentos_segmento or 0)
             reservas_segmento = Reserva.objects.filter(
                 fecha_hora__gte=start, fecha_hora__lte=end
             ).count()
@@ -257,6 +260,9 @@ class DashboardGerenteView(LoginRequiredMixin, GerenteRequiredMixin, View):
             ).count()
             completadas_segmento = Reserva.objects.filter(
                 estado=Reserva.COMPLETADA, fecha_hora__gte=start, fecha_hora__lte=end
+            ).count()
+            pendientes_segmento = Reserva.objects.filter(
+                estado=Reserva.PENDIENTE, fecha_hora__gte=start, fecha_hora__lte=end
             ).count()
 
             # Etiquetas compacta y completa para mostrar en headers con tooltip
@@ -330,11 +336,13 @@ class DashboardGerenteView(LoginRequiredMixin, GerenteRequiredMixin, View):
                 'group_by_label': group_by_label,
                 'ingresos_segmento': ingresos_segmento,
                 'descuentos_segmento': descuentos_segmento,
+                'ingresos_netos_segmento': ingresos_netos_segmento,
                 'ticket_promedio_segmento': ticket_promedio_segmento,
                 'reservas_segmento': reservas_segmento,
                 'cancelaciones_segmento': cancelaciones_segmento,
                 'completadas_segmento': completadas_segmento,
                 'tasa_cancelacion': tasa_cancelacion,
+                'pendientes_segmento': pendientes_segmento,
             }
             return render(request, 'dashboard_gerente/dashboard.html', context)
         except Exception as e:
@@ -386,7 +394,12 @@ class KPIListCreateView(LoginRequiredMixin, GerenteRequiredMixin, View):
     def get(self, request):
         kpis = KPIConfiguracion.objects.filter(usuario=request.user).order_by('-creado_en')
         form = KPIConfiguracionForm()
-        return render(request, 'dashboard_gerente/kpis.html', {'kpis': kpis, 'form': form})
+        return render(request, 'dashboard_gerente/kpis.html', {
+            'kpis': kpis,
+            'form': form,
+            'form_action_url': reverse('dashboard_gerente:kpis'),
+            'editing': False,
+        })
 
     def post(self, request):
         form = KPIConfiguracionForm(request.POST)
@@ -398,7 +411,58 @@ class KPIListCreateView(LoginRequiredMixin, GerenteRequiredMixin, View):
             return redirect('dashboard_gerente:kpis')
         kpis = KPIConfiguracion.objects.filter(usuario=request.user).order_by('-creado_en')
         messages.error(request, 'Por favor corrige los errores del formulario.')
-        return render(request, 'dashboard_gerente/kpis.html', {'kpis': kpis, 'form': form})
+        return render(request, 'dashboard_gerente/kpis.html', {
+            'kpis': kpis,
+            'form': form,
+            'form_action_url': reverse('dashboard_gerente:kpis'),
+            'editing': False,
+        })
+class KPIUpdateView(LoginRequiredMixin, GerenteRequiredMixin, View):
+    def get(self, request, pk):
+        kpi = get_object_or_404(KPIConfiguracion, pk=pk, usuario=request.user)
+        form = KPIConfiguracionForm(instance=kpi)
+        kpis = KPIConfiguracion.objects.filter(usuario=request.user).order_by('-creado_en')
+        return render(request, 'dashboard_gerente/kpis.html', {
+            'kpis': kpis,
+            'form': form,
+            'editing': True,
+            'editing_kpi': kpi,
+            'form_action_url': reverse('dashboard_gerente:kpi_editar', args=[pk]),
+        })
+
+    def post(self, request, pk):
+        kpi = get_object_or_404(KPIConfiguracion, pk=pk, usuario=request.user)
+        form = KPIConfiguracionForm(request.POST, instance=kpi)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'KPI actualizado correctamente.')
+            return redirect('dashboard_gerente:kpis')
+        kpis = KPIConfiguracion.objects.filter(usuario=request.user).order_by('-creado_en')
+        messages.error(request, 'Por favor corrige los errores del formulario.')
+        return render(request, 'dashboard_gerente/kpis.html', {
+            'kpis': kpis,
+            'form': form,
+            'editing': True,
+            'editing_kpi': kpi,
+            'form_action_url': reverse('dashboard_gerente:kpi_editar', args=[pk]),
+        })
+
+
+class KPIDeleteView(LoginRequiredMixin, GerenteRequiredMixin, View):
+    def post(self, request, pk):
+        kpi = get_object_or_404(KPIConfiguracion, pk=pk, usuario=request.user)
+        kpi.delete()
+        messages.success(request, 'KPI eliminado correctamente.')
+        return redirect('dashboard_gerente:kpis')
+
+
+class KPIToggleActivoView(LoginRequiredMixin, GerenteRequiredMixin, View):
+    def post(self, request, pk):
+        kpi = get_object_or_404(KPIConfiguracion, pk=pk, usuario=request.user)
+        kpi.activo = not kpi.activo
+        kpi.save(update_fields=['activo'])
+        messages.success(request, f'KPI marcado como {"activo" if kpi.activo else "inactivo"}.')
+        return redirect('dashboard_gerente:kpis')
 
 
 class IndicadoresView(LoginRequiredMixin, GerenteRequiredMixin, View):
@@ -444,6 +508,22 @@ class IndicadoresView(LoginRequiredMixin, GerenteRequiredMixin, View):
                     servicio_id=servicio_id,
                     comparar=comparar,
                 )
+                # Valores para medidor
+                actual = float(data[-1]) if data else 0
+                min_val = float(min(data)) if data else 0
+                max_val = float(max(data)) if data else (actual or 1)
+                # Bandera de porcentaje (utilización por duración) y preferencia baja
+                is_percent = (
+                    kpi.entidad == KPIConfiguracion.Entidad.RESERVAS and
+                    kpi.metrica == KPIConfiguracion.Metrica.SUMA and
+                    (kpi.campo or '').strip() == 'duracion_minutos'
+                )
+                prefer_low = ((kpi.estado_filtro or '').lower() in ['cancelada', 'incumplida'])
+                # Meta: si es porcentaje y no hay umbral, usar 85%
+                meta_val = (
+                    float(kpi.umbral_alerta) if getattr(kpi, 'umbral_alerta', None) is not None else (85.0 if is_percent else max_val)
+                )
+                is_currency = (kpi.entidad == KPIConfiguracion.Entidad.INGRESOS) or ('precio' in (kpi.campo or '').lower())
                 charts.append({
                     'id': f'chart_{kpi.id}',
                     'nombre': kpi.nombre,
@@ -454,6 +534,13 @@ class IndicadoresView(LoginRequiredMixin, GerenteRequiredMixin, View):
                     'entidad': kpi.get_entidad_display(),
                     'metrica': kpi.get_metrica_display(),
                     'periodo': kpi.periodo_dias,
+                    'actual': actual,
+                    'min': min_val,
+                    'max': max_val,
+                    'meta': meta_val,
+                    'is_currency': is_currency,
+                    'is_percent': is_percent,
+                    'prefer_low': prefer_low,
                 })
 
             # Opciones dinámicas de estado y servicios

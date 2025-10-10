@@ -5,6 +5,7 @@ import django
 
 # Configurar Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'autolavados_plataforma.settings')
+os.environ['ALLOWED_HOSTS'] = 'localhost,127.0.0.1,testserver'
 django.setup()
 
 from django.test import TestCase, Client
@@ -110,7 +111,9 @@ def test_reservas_system():
             nombre='Bahía Reserva 1',
             descripcion='Bahía de prueba 1',
             activo=True,
-            tiene_camara=True
+            tiene_camara=True,
+            tipo_camara='ipwebcam',
+            ip_camara='192.168.1.101'
         )
         
         bahia2 = Bahia.objects.create(
@@ -420,7 +423,7 @@ def test_reservas_system():
             
             # Probar vista de reservas del cliente
             try:
-                response = client.get('/reservas/')
+                response = client.get(reverse('reservas:mis_turnos'))
                 if response.status_code == 200:
                     print("✅ Vista de reservas accesible")
                 else:
@@ -430,7 +433,7 @@ def test_reservas_system():
             
             # Probar formulario de nueva reserva
             try:
-                response = client.get('/reservas/nueva/')
+                response = client.get(reverse('reservas:reservar_turno'))
                 if response.status_code == 200:
                     print("✅ Formulario de nueva reserva accesible")
                 elif response.status_code == 404:

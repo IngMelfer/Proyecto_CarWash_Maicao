@@ -2118,10 +2118,8 @@ class ReservaViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_400_BAD_REQUEST)
     
     def get_serializer_class(self):
-        """Seleccionar el serializer según la acción"""
-        if self.action in ['update', 'partial_update']:
-            return ReservaUpdateSerializer
-        return ReservaSerializer
+        """Seleccionar el serializer para Bahía"""
+        return BahiaSerializer
     
     def perform_create(self, serializer):
         """Crear una reserva y asignar automáticamente una bahía disponible"""
@@ -2375,10 +2373,8 @@ class BahiaViewSet(viewsets.ModelViewSet):
         serializer.save()
     
     def get_serializer_class(self):
-        """Seleccionar el serializer según la acción"""
-        if self.action in ['update', 'partial_update']:
-            return ReservaUpdateSerializer
-        return ReservaSerializer
+        """Seleccionar el serializer para Bahía"""
+        return BahiaSerializer
     
     def get_permissions(self):
         """Definir permisos según la acción"""

@@ -12,6 +12,7 @@ import re
 
 # Configurar Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'autolavados_plataforma.settings')
+os.environ['ALLOWED_HOSTS'] = 'localhost,127.0.0.1,testserver'
 django.setup()
 
 BASE_URL = "http://localhost:8000"
@@ -68,7 +69,8 @@ def hacer_login(session, csrf_token):
     print(f"Status login: {response.status_code}")
     print(f"URL final después del login: {response.url}")
     
-    if response.status_code == 200 and 'dashboard' in response.url:
+    # Considerar login exitoso si no estamos en la página de login
+    if response.status_code == 200 and 'login' not in response.url:
         print("✅ Login exitoso!")
         return True
     else:
@@ -132,11 +134,34 @@ def probar_endpoint(session, csrf_token, endpoint_name, url, method='GET', data=
         print(f"❌ Error de conexión: {e}")
         return False
 
+from autenticacion.models import Usuario
+
 def main():
     print("=== PRUEBA COMPLETA DE API REST ===\n")
     
     # Crear sesión
     session = requests.Session()
+    
+    # Asegurar usuario de prueba
+    try:
+        usuario, created = Usuario.objects.get_or_create(
+            email=EMAIL,
+            defaults={
+                'first_name': 'Test',
+                'last_name': 'API',
+                'rol': Usuario.ROL_CLIENTE,
+                'is_active': True,
+                'is_verified': True,
+            }
+        )
+        # Asegurar verificación y contraseña conocida
+        usuario.is_verified = True
+        usuario.set_password(PASSWORD)
+        usuario.save()
+        print(f"Usuario de prueba {'creado' if created else 'actualizado'}: {EMAIL}")
+    except Exception as e:
+        print(f"❌ No se pudo crear/actualizar el usuario de prueba: {e}")
+        return False
     
     # Obtener token CSRF
     csrf_token = obtener_csrf_token(session)

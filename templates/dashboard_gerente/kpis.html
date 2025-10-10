@@ -15,8 +15,11 @@
       <div class="card">
         <div class="card-header">Crear/Editar KPI</div>
         <div class="card-body">
-          <form method="post">
+          <form method="post" action="{{ form_action_url|default:'' }}">
             {% csrf_token %}
+            {% if editing %}
+              <div class="alert alert-info">Editando: {{ editing_kpi.nombre }}</div>
+            {% endif %}
             <div class="mb-3">
               <label class="form-label">Nombre</label>
               {{ form.nombre }}
@@ -74,6 +77,7 @@
                   <th>Periodo</th>
                   <th>Estado</th>
                   <th>Activo</th>
+                  <th class="text-end">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -92,7 +96,29 @@
                       <span class="badge bg-secondary">No</span>
                     {% endif %}
                   </td>
-                </tr>
+                  <td class="text-end">
+                    <a href="{% url 'dashboard_gerente:kpi_editar' kpi.id %}" class="btn btn-sm btn-outline-primary me-1">
+                      <i class="fas fa-edit"></i> Editar
+                    </a>
+                    <form method="post" action="{% url 'dashboard_gerente:kpi_eliminar' kpi.id %}" class="d-inline" onsubmit="return confirm('¿Eliminar este KPI?');">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-sm btn-outline-danger me-1">
+                        <i class="fas fa-trash"></i> Eliminar
+                      </button>
+                    </form>
+                    <form method="post" action="{% url 'dashboard_gerente:kpi_toggle_activo' kpi.id %}" class="d-inline">
+                      {% csrf_token %}
+                      {% if kpi.activo %}
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">
+                          <i class="fas fa-pause"></i> Desactivar
+                        </button>
+                      {% else %}
+                        <button type="submit" class="btn btn-sm btn-outline-success">
+                          <i class="fas fa-play"></i> Activar
+                        </button>
+                      {% endif %}
+                    </form>
+                  </td>
                 {% empty %}
                 <tr>
                   <td colspan="7" class="text-center">Aún no has configurado KPIs</td>
@@ -166,6 +192,8 @@
       const list = document.getElementById('entity-fields-list');
       if (!campoSelect) return;
 
+      const previousValue = campoSelect.value; // conservar selección actual (edición)
+
       // Limpiar opciones actuales del select
       while (campoSelect.options.length > 0) {
         campoSelect.remove(0);
@@ -185,6 +213,15 @@
         li.textContent = `${f.label} (${f.value})`;
         list.appendChild(li);
       });
+
+      // Re-seleccionar el valor anterior si existe en la entidad
+      if (previousValue) {
+        const exists = fields.some(f => f.value === previousValue);
+        if (exists) {
+          campoSelect.value = previousValue;
+          placeholder.selected = false;
+        }
+      }
 
       // Mostrar/ocultar detalle
       details.open = fields.length > 0;

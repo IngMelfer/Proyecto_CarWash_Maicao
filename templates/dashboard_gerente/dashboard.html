@@ -184,10 +184,9 @@
     <div class="col-md-3">
       <div class="card stat-card">
         <div class="card-body">
-          <h5 class="card-title">Ticket Promedio ({{ segment_label }})</h5>
-          <p class="card-text h3">${{ ticket_promedio_segmento|format_price }}</p>
-    
-        </div>
+          <h5 class="card-title">Ingresos Netos ({{ segment_label }})</h5>
+          <p class="card-text h3">${{ ingresos_netos_segmento|format_price }}</p>
+          <small class="text-muted">Periodo: {{ segment_label }}</small>
       </div>
     </div>
   </div>
@@ -225,8 +224,8 @@
     <div class="col-md-3">
       <div class="card stat-card">
         <div class="card-body">
-          <h5 class="card-title">Tasa de Cancelación</h5>
-          <p class="card-text h3">{{ tasa_cancelacion }}%</p>
+          <h5 class="card-title">Pendientes ({{ segment_label }})</h5>
+          <p class="card-text h3">{{ pendientes_segmento|format_price }}</p>
           <small class="text-muted">Periodo: {{ segment_label }}</small>
         </div>
       </div>

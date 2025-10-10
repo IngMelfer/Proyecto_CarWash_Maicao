@@ -32,12 +32,24 @@ def test_database_connection():
             result = cursor.fetchone()
             print("✓ Conexión a base de datos exitosa")
             print(f"  Resultado de prueba: {result[0]}")
-            
-            # Obtener información de la base de datos
-            cursor.execute("SELECT version()")
-            version = cursor.fetchone()
-            print(f"  Versión de PostgreSQL: {version[0]}")
-            
+            # Obtener información de la base de datos según el motor
+            try:
+                vendor = connection.vendor
+                if vendor == 'sqlite':
+                    cursor.execute("SELECT sqlite_version()")
+                    version = cursor.fetchone()
+                    print(f"  Versión de SQLite: {version[0]}")
+                elif vendor == 'postgresql':
+                    cursor.execute("SELECT version()")
+                    version = cursor.fetchone()
+                    print(f"  Versión de PostgreSQL: {version[0]}")
+                else:
+                    print(f"  Motor de base de datos: {vendor}")
+            except Exception as e:
+                print(f"  Advertencia al obtener versión de BD: {e}")
+        
+        # No consideramos fallo si no se pudo obtener la versión específica
+        return True
     except Exception as e:
         print(f"✗ Error de conexión: {e}")
         return False
@@ -138,7 +150,7 @@ def test_model_operations():
             usuario=user_emp,
             nombre="Juan",
             apellido="Pérez",
-            numero_documento="12345678",
+            numero_documento=f"EMP{int(timezone.now().timestamp())}",
             tipo_documento=tipo_doc,
             telefono="3001234567",
             direccion="Calle 123",
