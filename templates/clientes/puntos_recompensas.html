@@ -376,7 +376,7 @@
                     {% endif %}
                     
                     <div class="row align-items-center">
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <div class="d-flex align-items-center">
                                 <div class="display-4 me-3">{{ cliente.saldo_puntos }}</div>
                                 <div>
@@ -384,11 +384,6 @@
                                     <p class="text-muted mb-0">Acumulados en tus servicios</p>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-md-6 text-md-end">
-                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#redimirPuntosModal">
-                                <i class="fas fa-exchange-alt me-2"></i> Redimir Puntos
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -473,21 +468,8 @@
                                         {% endif %}
                                     </p>
                                 </div>
-                                <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
+                                <div class="card-footer bg-transparent">
                                     <span class="badge badge-enhanced bg-primary"><i class="fas fa-star me-1"></i> {{ recompensa.puntos_requeridos }} puntos</span>
-                                    <form method="post" action="{% url 'clientes:puntos_recompensas' %}">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="recompensa_id" value="{{ recompensa.id }}" />
-                                        {% if cliente.saldo_puntos >= recompensa.puntos_requeridos %}
-                                            <button type="submit" class="btn btn-sm btn-primary">
-                                                <i class="fas fa-exchange-alt me-1"></i> Redimir
-                                            </button>
-                                        {% else %}
-                                            <button type="button" class="btn btn-sm btn-secondary insufficient-btn" disabled data-bs-toggle="tooltip" data-bs-placement="top" data-required="{{ recompensa.puntos_requeridos }}" data-saldo="{{ cliente.saldo_puntos }}" title="Puntos insuficientes">
-                                                Insuficientes
-                                            </button>
-                                        {% endif %}
-                                    </form>
                                 </div>
                             </div>
                         </div>

@@ -1166,20 +1166,7 @@
             </div>
         </div>
         {% endif %}
-        {% if user_rol != 'admin_autolavado' %}
-        <div class="col-md-3">
-            <div class="card text-center dashboard-card card-pagos">
-                <div class="card-body">
-                    <div class="dashboard-icon icon-pagos">
-                        <i class="fas fa-credit-card"></i>
-                    </div>
-                    <h5 class="card-title">Medios de Pago</h5>
-                    <p class="card-text">Configura los métodos de pago</p>
-                    <a href="{% url 'reservas:medio_pago_list' %}" class="btn btn-primary">Ir a Medios de Pago</a>
-                </div>
-            </div>
-        </div>
-        {% endif %}
+
         {% if user_rol != 'admin_sistema' %}
         <div class="col-md-3">
             <div class="card text-center dashboard-card card-horarios">
