@@ -1187,11 +1187,6 @@
                                             <button type="button" class="btn btn-sm btn-outline-primary btn-enhanced" data-bs-toggle="modal" data-bs-target="#detalleModal{{ turno.id }}">
                                                 <i class="fas fa-eye me-1"></i>Ver detalles
                                             </button>
-                                            {% if turno.estado == 'PE' %}
-                                                <button type="button" class="btn btn-sm btn-outline-success btn-enhanced" data-bs-toggle="modal" data-bs-target="#pagoModal{{ turno.id }}">
-                                                    <i class="fas fa-credit-card me-1"></i>Pagar
-                                                </button>
-                                            {% endif %}
                                             {% if turno.estado in 'PE,CO' %}
                                                 <button type="button" class="btn btn-sm btn-outline-danger btn-enhanced" data-bs-toggle="modal" data-bs-target="#cancelarModal{{ turno.id }}">
                                                     <i class="fas fa-times me-1"></i>Cancelar
@@ -1618,49 +1613,8 @@
     });
 </script>
 
-<!-- Modales de Pago y Cancelación -->
+<!-- Modales de Cancelación -->
 {% for turno in proximos_turnos %}
-    <!-- Modal de Pago -->
-    <div class="modal fade" id="pagoModal{{ turno.id }}" tabindex="-1" aria-labelledby="pagoModalLabel{{ turno.id }}" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="pagoModalLabel{{ turno.id }}">
-                        <i class="fas fa-credit-card me-2"></i>Gestionar Pago
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <strong>Servicio:</strong> {{ turno.servicio.nombre }}<br>
-                        <strong>Fecha:</strong> {{ turno.fecha_hora|date:"d/m/Y H:i" }}<br>
-                        <strong>Precio:</strong> ${{ turno.precio_final|floatformat:0 }}
-                    </div>
-                    <p>Selecciona el método de pago para completar tu reserva:</p>
-                    <div class="d-grid gap-2">
-                         <a href="{% url 'reservas:procesar_pago' turno.id %}" class="btn btn-success">
-                             <i class="fas fa-credit-card me-2"></i>Pagar con Tarjeta
-                         </a>
-                         {% if turno.cliente.puntos_recompensa >= turno.precio_final %}
-                             <form method="post" action="{% url 'reservas:procesar_pago' turno.id %}" style="display: inline;">
-                                 {% csrf_token %}
-                                 <input type="hidden" name="usar_puntos" value="true">
-                                 <input type="hidden" name="puntos_a_redimir" value="{{ turno.precio_final }}">
-                                 <button type="submit" class="btn btn-warning w-100">
-                                     <i class="fas fa-star me-2"></i>Pagar con Puntos ({{ turno.cliente.puntos_recompensa }} disponibles)
-                                 </button>
-                             </form>
-                         {% endif %}
-                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Modal de Cancelación -->
     <div class="modal fade" id="cancelarModal{{ turno.id }}" tabindex="-1" aria-labelledby="cancelarModalLabel{{ turno.id }}" aria-hidden="true">
         <div class="modal-dialog">

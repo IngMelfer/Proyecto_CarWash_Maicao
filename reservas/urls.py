@@ -1,6 +1,8 @@
 from django.urls import path
 from . import views, views_admin, views_csrf, views_api, views_calificacion
 
+app_name = 'reservas'
+
 urlpatterns = [
     # Rutas para vistas basadas en plantillas
     path('reservar/', views.ReservarTurnoView.as_view(), name='reservar_turno'),
@@ -24,19 +26,14 @@ urlpatterns = [
     path('calificaciones-lavador/<int:lavador_id>/', views_calificacion.ver_calificaciones_lavador, name='calificaciones_lavador'),
     
     path('probar-conectividad-camara/', views.ProbarConectividadCamaraView.as_view(), name='probar_conectividad_camara'),
-    # Rutas para pasarelas de pago
+    # Rutas de pagos habilitadas: procesar/confirmar y callbacks
     path('procesar-pago/<int:reserva_id>/', views.ProcesarPagoView.as_view(), name='procesar_pago'),
     path('confirmar-pago/<int:reserva_id>/', views.ConfirmarPagoView.as_view(), name='confirmar_pago'),
-    # Callbacks de pasarelas de pago
-    path('callback/wompi/', views.WompiCallbackView.as_view(), name='wompi_callback'),
-    path('callback/payu/', views.PayUCallbackView.as_view(), name='payu_callback'),
-    path('callback/epayco/', views.EpaycoCallbackView.as_view(), name='epayco_callback'),
-    path('callback/nequi/', views.NequiCallbackView.as_view(), name='nequi_callback'),
-    
-    # URLs específicas de Nequi
-    path('nequi/status/', views.NequiStatusView.as_view(), name='nequi_status'),
-    path('nequi/return/', views.NequiReturnView.as_view(), name='nequi_return'),
-    
+    # Callbacks de pasarelas (opcional según configuración)
+    path('wompi/callback/', views.WompiCallbackView.as_view(), name='wompi_callback'),
+    path('payu/callback/', views.PayUCallbackView.as_view(), name='payu_callback'),
+    path('epayco/callback/', views.EpaycoCallbackView.as_view(), name='epayco_callback'),
+
     # Dashboard de administrador
     path('dashboard-admin/', views_admin.DashboardAdminView.as_view(), name='dashboard_admin'),
     path('dashboard-admin/obtener-bahias-info/', views_admin.ObtenerBahiasInfoView.as_view(), name='obtener_bahias_info'),

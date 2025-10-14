@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="800" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .title { font: bold 28px sans-serif; }
+    .subtitle { font: bold 20px sans-serif; }
+    .text { font: 16px sans-serif; }
+    .box { fill: #f6f8fa; stroke: #333; stroke-width: 2; }
+    .box-accent { fill: #e8f5e9; stroke: #2e7d32; stroke-width: 2; }
+    .box-warn { fill: #fff3e0; stroke: #ef6c00; stroke-width: 2; }
+    .arrow { stroke: #555; stroke-width: 2; marker-end: url(#arrowhead); }
+    .dashed { stroke-dasharray: 6 6; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555" />
+    </marker>
+  </defs>
+
+  <text x="20" y="40" class="title">Arquitectura del Sistema Autolavados (Producción - PythonAnywhere)</text>
+
+  <!-- Cloud / Hosting Area -->
+  <rect x="20" y="60" width="1160" height="720" rx="12" ry="12" fill="#eef2ff" stroke="#3f51b5" stroke-width="2" />
+  <text x="40" y="90" class="subtitle">PythonAnywhere (Hosting)</text>
+
+  <!-- Django App -->
+  <rect x="80" y="120" width="480" height="220" class="box" />
+  <text x="100" y="150" class="subtitle">Aplicación Django</text>
+  <text x="100" y="180" class="text">Proyecto: autolavados_plataforma</text>
+  <text x="100" y="205" class="text">Apps: autenticacion, clientes, reservas, notificaciones, empleados, dashboard_gerente, dashboard_publico</text>
+  <text x="100" y="230" class="text">WSGI: settings_production.py</text>
+  <text x="100" y="255" class="text">Estáticos: WhiteNoise</text>
+  <text x="100" y="280" class="text">Plantillas: templates/</text>
+
+  <!-- Static files / WhiteNoise -->
+  <rect x="80" y="360" width="480" height="120" class="box-accent" />
+  <text x="100" y="390" class="subtitle">WhiteNoise / Archivos estáticos</text>
+  <text x="100" y="420" class="text">STATIC_ROOT: /var/www/static (PythonAnywhere)</text>
+  <text x="100" y="445" class="text">Sirve CSS/JS/Imágenes</text>
+
+  <!-- Database -->
+  <rect x="600" y="120" width="260" height="160" class="box" />
+  <text x="620" y="150" class="subtitle">Base de Datos (MySQL)</text>
+  <text x="620" y="180" class="text">Host: ${MYSQL_HOST}</text>
+  <text x="620" y="205" class="text">DB: ${MYSQL_DATABASE}</text>
+  <text x="620" y="230" class="text">Usuario: ${MYSQL_USER}</text>
+
+  <!-- External Services -->
+  <rect x="900" y="120" width="260" height="220" class="box" />
+  <text x="920" y="150" class="subtitle">Servicios Externos</text>
+  <text x="920" y="180" class="text">Pasarelas de pago: Wompi / PayU / Nequi</text>
+  <text x="920" y="205" class="text">Correo SMTP: ${EMAIL_HOST}</text>
+  <text x="920" y="230" class="text">Almacenamiento opcional: S3</text>
+  <text x="920" y="255" class="text">Cache opcional: Redis</text>
+
+  <!-- Client Browser -->
+  <rect x="600" y="320" width="260" height="160" class="box-warn" />
+  <text x="620" y="350" class="subtitle">Cliente (Navegador)</text>
+  <text x="620" y="380" class="text">Dominio: https://${PYTHONANYWHERE_DOMAIN}</text>
+  <text x="620" y="405" class="text">ALLOWED_HOSTS: ${ALLOWED_HOSTS}</text>
+
+  <!-- Arrows -->
+  <line x1="560" y1="230" x2="600" y2="200" class="arrow" />
+  <text x="540" y="220" class="text">ORM</text>
+
+  <line x1="560" y1="250" x2="900" y2="220" class="arrow" />
+  <text x="660" y="240" class="text">APIs externas</text>
+
+  <line x1="740" y1="400" x2="560" y2="350" class="arrow" />
+  <text x="700" y="390" class="text">HTTP/HTTPS</text>
+
+  <line x1="320" y1="340" x2="320" y2="360" class="arrow" />
+  <text x="330" y="350" class="text">collectstatic</text>
+
+  <!-- Security and Config -->
+  <rect x="80" y="520" width="1080" height="240" class="box" />
+  <text x="100" y="550" class="subtitle">Seguridad y Configuración</text>
+  <text x="100" y="580" class="text">DEBUG: false</text>
+  <text x="100" y="605" class="text">SECRET_KEY: (variable de entorno)</text>
+  <text x="100" y="630" class="text">CSRF/CORS configurado para dominio</text>
+  <text x="100" y="655" class="text">LOGGING: errores y auditoría</text>
+  <text x="100" y="680" class="text">Backups de BD y archivos</text>
+  <text x="100" y="705" class="text">Monitoreo de cuotas (PythonAnywhere)</text>
+</svg>

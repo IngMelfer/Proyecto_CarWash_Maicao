@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1200" height="800" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .title { font: bold 28px sans-serif; }
+    .subtitle { font: bold 20px sans-serif; }
+    .text { font: 16px sans-serif; }
+    .box { fill: #f6f8fa; stroke: #333; stroke-width: 2; }
+    .arrow { stroke: #555; stroke-width: 2; marker-end: url(#arrowhead); }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#555" />
+    </marker>
+  </defs>
+
+  <text x="20" y="40" class="title">Flujo de Reservas</text>
+
+  <!-- Steps -->
+  <rect x="60" y="80" width="300" height="90" class="box" />
+  <text x="80" y="110" class="subtitle">1. Selección</text>
+  <text x="80" y="135" class="text">Cliente elige servicio y fecha/hora</text>
+
+  <rect x="420" y="80" width="300" height="90" class="box" />
+  <text x="440" y="110" class="subtitle">2. Disponibilidad</text>
+  <text x="440" y="135" class="text">Consulta /reservas/api/horarios-disponibles/</text>
+
+  <rect x="780" y="80" width="300" height="90" class="box" />
+  <text x="800" y="110" class="subtitle">3. Registro/Login</text>
+  <text x="800" y="135" class="text">/api/auth/api/login/ o registro</text>
+
+  <line x1="360" y1="125" x2="420" y2="125" class="arrow" />
+  <line x1="720" y1="125" x2="780" y2="125" class="arrow" />
+
+  <rect x="60" y="220" width="300" height="90" class="box" />
+  <text x="80" y="250" class="subtitle">4. Datos del vehículo</text>
+  <text x="80" y="275" class="text">Placa única: /reservas/api/verificar-placa/</text>
+
+  <rect x="420" y="220" width="300" height="90" class="box" />
+  <text x="440" y="250" class="subtitle">5. Confirmación</text>
+  <text x="440" y="275" class="text">Genera voucher y crea reserva</text>
+
+  <rect x="780" y="220" width="300" height="90" class="box" />
+  <text x="800" y="250" class="subtitle">6. Pago</text>
+  <text x="800" y="275" class="text">Redirección a Wompi/PayU/Nequi</text>
+
+  <line x1="360" y1="265" x2="420" y2="265" class="arrow" />
+  <line x1="720" y1="265" x2="780" y2="265" class="arrow" />
+
+  <rect x="60" y="360" width="300" height="90" class="box" />
+  <text x="80" y="390" class="subtitle">7. Notificaciones</text>
+  <text x="80" y="415" class="text">Email/SMS/Push según configuración</text>
+
+  <rect x="420" y="360" width="300" height="90" class="box" />
+  <text x="440" y="390" class="subtitle">8. Gestión interna</text>
+  <text x="440" y="415" class="text">Dashboard gerente/empleados</text>
+
+  <rect x="780" y="360" width="300" height="90" class="box" />
+  <text x="800" y="390" class="subtitle">9. Auditoría</text>
+  <text x="800" y="415" class="text">Logs, estados, métricas</text>
+
+  <line x1="360" y1="405" x2="420" y2="405" class="arrow" />
+  <line x1="720" y1="405" x2="780" y2="405" class="arrow" />
+
+  <!-- Legend -->
+  <text x="60" y="500" class="subtitle">Endpoints clave utilizados</text>
+  <text x="60" y="530" class="text">- /reservas/api/horarios-disponibles/ (GET)</text>
+  <text x="60" y="555" class="text">- /reservas/api/verificar-placa/ (POST)</text>
+  <text x="60" y="580" class="text">- /reservas/api/crear/ (POST)</text>
+  <text x="60" y="605" class="text">- /api/auth/api/login/ (POST)</text>
+  <text x="60" y="630" class="text">- /notificaciones/api/enviar/ (POST)</text>
+</svg>

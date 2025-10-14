@@ -174,7 +174,7 @@ class ProcesarPagoView(LoginRequiredMixin, View):
                 del request.session['descuento_aplicado']
             
             messages.success(request, f'¡Reserva confirmada! Se han redimido {puntos_a_redimir} puntos.')
-            return redirect('reservas:detalle_reserva', reserva_id=reserva.id)
+            return redirect('reservas:reserva_detail', pk=reserva.id)
         else:
             messages.error(request, 'Error al redimir los puntos. Por favor, intenta nuevamente.')
             return redirect('reservas:mis_turnos')
@@ -412,7 +412,7 @@ class ConfirmarPagoView(LoginRequiredMixin, View):
         # Si la reserva ya está confirmada y tiene puntos redimidos, mostrar mensaje de éxito
         if reserva.estado == Reserva.CONFIRMADA and reserva.puntos_redimidos > 0:
             messages.success(request, f'Reserva confirmada exitosamente con {reserva.puntos_redimidos} puntos redimidos.')
-            return redirect('reservas:detalle_reserva', reserva_id=reserva.id)
+            return redirect('reservas:reserva_detail', pk=reserva.id)
         
         if medio_pago.es_puntos():
             # Si el medio de pago es puntos, confirmar directamente
@@ -462,7 +462,7 @@ class ConfirmarPagoView(LoginRequiredMixin, View):
                 )
                 
             messages.success(request, f'Reserva confirmada exitosamente con {reserva.puntos_redimidos} puntos redimidos.')
-            return redirect('reservas:detalle_reserva', reserva_id=reserva.id)
+            return redirect('reservas:reserva_detail', pk=reserva.id)
             
         # Si no está confirmada, mostrar error
         messages.error(request, 'La reserva no ha sido confirmada correctamente con puntos.')
@@ -879,11 +879,9 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
             # Si el usuario no tiene cliente, mostrar lista vacía de vehículos
             context['vehiculos'] = []
             
-        # Filtrar solo medios de pago electrónicos
-        medios_pago = MedioPago.objects.filter(activo=True)
-        context['medios_pago'] = [mp for mp in medios_pago if mp.es_electronico()]
-        # Añadir información sobre el tiempo límite para pago
-        context['tiempo_limite_pago'] = 5  # minutos
+        # Deshabilitar medios de pago electrónicos en el contexto
+        context['medios_pago'] = []
+        # Pago deshabilitado: remover tiempo límite
         
         # Cargar recompensas activas para el modal de redención de puntos
         context['recompensas'] = Recompensa.objects.filter(activo=True).order_by('puntos_requeridos')
@@ -949,7 +947,7 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
             lavador_id = request.POST.get('lavador_id')
             
             # Validar datos (incluyendo lavador_id como requerido)
-            if not all([servicio_id, fecha_str, hora_str, vehiculo_id, bahia_id, medio_pago_id, lavador_id]):
+            if not all([servicio_id, fecha_str, hora_str, vehiculo_id, bahia_id, lavador_id]):
                 if is_ajax:
                     return JsonResponse({'success': False, 'error': 'Por favor complete todos los campos requeridos.'}, status=200)
                 messages.error(request, 'Por favor complete todos los campos requeridos.')
@@ -991,7 +989,7 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
                 vehiculo = get_object_or_404(Vehiculo, id=vehiculo_id, cliente=cliente)
                 
             bahia = get_object_or_404(Bahia, id=bahia_id, activo=True)
-            medio_pago = get_object_or_404(MedioPago, id=medio_pago_id, activo=True)
+            # Pago deshabilitado: medio_pago no se obtiene ni es requerido
             
             # Convertir fecha y hora
             fecha_hora = datetime.strptime(f'{fecha_str} {hora_str}', '%Y-%m-%d %H:%M')
@@ -1099,7 +1097,7 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
                     vehiculo=vehiculo,  # Asociar el vehículo a la reserva
                     notas=notas,
                     estado=Reserva.PENDIENTE,
-                    medio_pago=medio_pago,
+                    # Pago deshabilitado: no se asigna medio_pago
                     precio_final=precio_final,  # Guardar el precio con descuento
                     descuento_aplicado=descuento_aplicado if usar_puntos else 0,
                     puntos_redimidos=puntos_a_redimir if usar_puntos else 0,
@@ -1206,18 +1204,10 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
                     messages.error(request, str(e))
                     return redirect('reservas:reservar_turno')
             
-            # Si el medio de pago es una pasarela, redirigir al proceso de pago
-            if medio_pago.es_pasarela():
-                # Si es una solicitud AJAX, devolver una respuesta JSON con la URL de redirección
-                if is_ajax:
-                    redirect_url = reverse('reservas:procesar_pago', args=[reserva.id])
-                    return JsonResponse({
-                        'success': True,
-                        'redirect': True,
-                        'redirect_url': redirect_url
-                    }, status=200)
-                # Si no es AJAX, redirigir normalmente
-                return redirect('reservas:procesar_pago', reserva_id=reserva.id)
+            # Pago deshabilitado: redirección a pasarelas eliminada
+            
+            # Confirmar automáticamente la reserva para evitar estado pendiente
+            reserva.confirmar()
             
             # Incrementar contador de reservas en el horario
             horario.incrementar_reservas()
@@ -1225,7 +1215,6 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
             # Verificar si la bahía tiene cámara para generar QR
             tiene_camara = bahia.tiene_camara
             qr_url = None
-            qr_pago_url = None
             
             if tiene_camara and bahia.ip_camara:
                 # Generar URL única para la transmisión
@@ -1273,56 +1262,12 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
                 # URL para acceder a la imagen
                 qr_url = f"{settings.MEDIA_URL}qr_codes/{qr_filename}"
             
-            # Generar QR o enlace para el pago con Nequi si corresponde
-            if medio_pago.tipo == MedioPago.NEQUI:
-                # Generar QR para el pago con Nequi
-                import qrcode
-                import os
-                from django.conf import settings
-                
-                # Datos para el QR de pago (simulación)
-                monto = servicio.precio
-                referencia = f"RESERVA-{reserva.id}-{uuid.uuid4().hex[:8]}"
-                
-                # Guardar la referencia en la reserva para validar el callback
-                reserva.referencia_pago = referencia
-                reserva.save(update_fields=['referencia_pago'])
-                
-                # URL para el pago con Nequi (simulación)
-                pago_url = request.build_absolute_uri(reverse('reservas:procesar_pago', args=[reserva.id]))
-                
-                # Crear el código QR para el pago
-                qr_pago = qrcode.QRCode(
-                    version=1,
-                    error_correction=qrcode.constants.ERROR_CORRECT_L,
-                    box_size=10,
-                    border=4,
-                )
-                qr_pago.add_data(pago_url)
-                qr_pago.make(fit=True)
-                
-                # Crear imagen del QR de pago
-                img_pago = qr_pago.make_image(fill_color="black", back_color="white")
-                
-                # Guardar la imagen en MEDIA_ROOT
-                qr_pago_filename = f"qr_pago_{reserva.id}.png"
-                qr_pago_path = os.path.join(settings.MEDIA_ROOT, 'qr_codes', qr_pago_filename)
-                
-                # Asegurar que el directorio existe
-                os.makedirs(os.path.dirname(qr_pago_path), exist_ok=True)
-                
-                # Guardar la imagen
-                img_pago.save(qr_pago_path)
-                
-                # URL para acceder a la imagen del QR de pago
-                qr_pago_url = f"{settings.MEDIA_URL}qr_codes/{qr_pago_filename}"
-            
-            # Crear notificación
+            # Crear notificación de reserva confirmada
             Notificacion.objects.create(
                 cliente=request.user.cliente,
-                tipo=Notificacion.RESERVA_CREADA,
-                titulo='Reserva Creada',
-                mensaje=f'Tu reserva para el servicio {servicio.nombre} ha sido creada para el {fecha_hora.strftime("%d/%m/%Y a las %H:%M")}. Recibirás una confirmación pronto.',
+                tipo=Notificacion.RESERVA_CONFIRMADA,
+                titulo='Reserva Confirmada',
+                mensaje=f'Tu reserva para el servicio {servicio.nombre} ha sido confirmada para el {fecha_hora.strftime("%d/%m/%Y a las %H:%M")}. ¡Te esperamos!',
             )
             
             if is_ajax:
@@ -1330,15 +1275,13 @@ class ReservarTurnoView(LoginRequiredMixin, TemplateView):
                     'success': True, 
                     'tiene_camara': tiene_camara,
                     'qr_url': qr_url,
-                    'qr_pago_url': qr_pago_url,
-                    'tiene_qr_pago': qr_pago_url is not None,
-                    'medio_pago': medio_pago.get_tipo_display(),
-                    'reserva_id': reserva.id
+                    'reserva_id': reserva.id,
+                    'estado': reserva.estado,
                 }, status=200)
                 response['Content-Type'] = 'application/json'
                 return response
             
-            messages.success(request, 'Reserva creada exitosamente. Recibirás una confirmación pronto.')
+            messages.success(request, 'Reserva confirmada exitosamente.')
             return redirect('reservas:mis_turnos')
             
         except Exception as e:
@@ -1573,20 +1516,13 @@ class CalificarTurnoView(LoginRequiredMixin, View):
 class ObtenerMediosPagoView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         try:
-            medios_pago = MedioPago.objects.filter(activo=True)
-            data = [{
-                'id': mp.id,
-                'nombre': mp.nombre,
-                'tipo': mp.get_tipo_display(),
-                'descripcion': mp.descripcion,
-                'es_pasarela': mp.es_pasarela()
-            } for mp in medios_pago]
-            
-            response = JsonResponse({'medios_pago': data}, status=200)
+            # Pago deshabilitado: devolver lista vacía
+            response = JsonResponse({'medios_pago': []}, status=200)
             response['Content-Type'] = 'application/json'
             return response
         except Exception as e:
-            response = JsonResponse({'error': str(e)}, status=500)
+            # Pago deshabilitado: en caso de error, también devolver lista vacía
+            response = JsonResponse({'medios_pago': []}, status=200)
             response['Content-Type'] = 'application/json'
             return response
 
@@ -2151,12 +2087,15 @@ class ReservaViewSet(viewsets.ModelViewSet):
         # Guardar la reserva con la bahía asignada
         reserva = serializer.save(bahia=bahia_seleccionada)
         
-        # Crear notificación para el cliente
+        # Confirmar automáticamente la reserva para evitar estado pendiente
+        reserva.confirmar()
+        
+        # Crear notificación de reserva confirmada
         Notificacion.objects.create(
             cliente=reserva.cliente,
-            tipo=Notificacion.RESERVA_CREADA,
-            titulo='Reserva Creada',
-            mensaje=f'Tu reserva para el servicio {reserva.servicio.nombre} ha sido creada exitosamente para el {reserva.fecha_hora.strftime("%d/%m/%Y a las %H:%M")}.',
+            tipo=Notificacion.RESERVA_CONFIRMADA,
+            titulo='Reserva Confirmada',
+            mensaje=f'Tu reserva para el servicio {reserva.servicio.nombre} ha sido confirmada para el {reserva.fecha_hora.strftime("%d/%m/%Y a las %H:%M")}.',
         )
     
     def get_queryset(self):

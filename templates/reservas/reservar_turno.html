@@ -1447,9 +1447,9 @@
                             </div>
                         </div>
                         
-                        <!-- Paso 6: Medio de Pago -->
-                        <div class="reservation-step" id="step6" style="display: none;">
-                            <h5>
+                        <!-- Paso 6: Medio de Pago (DESHABILITADO) -->
+                        <div class="reservation-step" id="step6" style="display: none; visibility: hidden; height: 0; overflow: hidden;">
+                            <h5 style="display:none;">
                                 <i class="fas fa-credit-card me-2"></i>
                                 Paso 6: Seleccionar Medio de Pago
                             </h5>
@@ -1670,7 +1670,7 @@
                         <div class="reservation-step" id="step7" style="display: none;">
                             <h5>
                                 <i class="fas fa-check-circle me-2"></i>
-                                Paso 7: Confirmar Reserva
+                                Paso 6: Confirmar Reserva
                             </h5>
                             
                             <div class="card card-enhanced mb-4">
@@ -1681,6 +1681,18 @@
                                     </h5>
                                 </div>
                                 <div class="card-body">
+                                    {% if request.user.is_authenticated and request.user.cliente %}
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                            <span class="text-muted"><i class="fas fa-star me-2 text-warning"></i>Puntos disponibles:</span>
+                                            <span class="badge bg-success">{{ request.user.cliente.saldo_puntos }}</span>
+                                        </div>
+                                        <button type="button" class="btn btn-outline-primary-enhanced btn-enhanced" id="btnRedimirPuntosStep7" data-bs-toggle="modal" data-bs-target="#redimirPuntosModal">
+                                            <i class="fas fa-gift me-2"></i> Redimir puntos
+                                        </button>
+                                    </div>
+                                    <div id="medioPagoSeleccionadoStep7" class="mt-3" style="display: none;"></div>
+                                    {% endif %}
                                     <div class="row mb-3">
                                         <div class="col-md-6">
                                             <p><strong><i class="fas fa-cogs me-1"></i> Servicio:</strong> <span id="resumen-servicio"></span></p>
@@ -1797,7 +1809,9 @@
                                     data-puntos="{{ recompensa.puntos_requeridos }}" 
                                     data-tipo="{{ recompensa.tipo }}" 
                                     data-valor-porcentaje="{% if recompensa.valor_porcentaje %}{{ recompensa.valor_porcentaje }}{% else %}0{% endif %}"
-                                    data-valor-monto="{% if recompensa.valor_monto %}{{ recompensa.valor_monto }}{% else %}0{% endif %}">
+                                    data-valor-monto="{% if recompensa.valor_monto %}{{ recompensa.valor_monto }}{% else %}0{% endif %}"
+                                    data-servicio-id="{{ recompensa.servicio.id }}"
+                                    data-servicio-nombre="{{ recompensa.servicio.nombre }}">
                                 {{ recompensa.nombre }} ({{ recompensa.puntos_requeridos }} puntos)
                             </option>
                         {% endfor %}
@@ -1818,6 +1832,10 @@
                 <div class="alert alert-warning-enhanced alert-enhanced" id="alertaPuntos" style="display: none;">
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     No tienes suficientes puntos para esta recompensa.
+                </div>
+                <div class="alert alert-danger alert-enhanced" id="alertaRecompensaServicio" style="display: none;">
+                    <i class="fas fa-ban me-2"></i>
+                    Esta recompensa no aplica al servicio seleccionado.
                 </div>
             </div>
             <div class="modal-footer">
@@ -2590,9 +2608,132 @@
                     console.log('No hay lavador seleccionado');
                 }
                 
-                console.log('Cambiando del paso 5 al paso 6');
+                // Construir el resumen directamente y pasar al Paso 7
+                // Marcar automáticamente el checkbox de términos y condiciones
+                document.querySelector('#terminos').checked = true;
+                
+                // Actualizar resumen
+                const servicioNombre = document.querySelector('#servicio' + selectedService).closest('.service-card-enhanced').querySelector('.card-title').textContent;
+                document.querySelector('#resumen-servicio').textContent = servicioNombre;
+                document.querySelector('#resumen-fecha').textContent = formatDate(selectedDate);
+                document.querySelector('#resumen-hora').textContent = selectedTime;
+                
+                // Actualizar vehículo y placa para el resumen, soportando vehículo seleccionado o nuevo
+                const vehiculoSelectEl = document.querySelector('#vehiculo');
+                let resumenVehiculoText = '';
+                let resumenPlacaText = '';
+                
+                if (vehiculoSelectEl && vehiculoSelectEl.value) {
+                    const selectedOption = vehiculoSelectEl.options[vehiculoSelectEl.selectedIndex];
+                    const optionText = selectedOption ? selectedOption.textContent.trim() : '';
+                    // Extraer placa del texto de la opción (formato: "Marca Modelo (PLACA)")
+                    const placaMatch = optionText.match(/\(([^)]+)\)/);
+                    if (placaMatch) {
+                        resumenPlacaText = placaMatch[1].trim();
+                    }
+                    // Obtener Marca y Modelo y reemplazar cualquier separador '/' por '&'
+                    const brandModel = optionText.replace(/\(.*\)/, '').trim();
+                    const formattedBrandModel = brandModel.replace(/\s*\/\s*/g, ' & ');
+                    resumenVehiculoText = formattedBrandModel;
+                } else {
+                    const marca = document.querySelector('#marca').value;
+                    const modelo = document.querySelector('#modelo').value;
+                    const anio = document.querySelector('#anio').value;
+                    const placa = document.querySelector('#placa').value;
+                    // Unir marca y modelo con '&' y mostrar año entre paréntesis si existe
+                    const brandModel = [marca, modelo].filter(Boolean).join(' & ');
+                    resumenVehiculoText = anio ? `${brandModel} (${anio})` : brandModel;
+                    resumenPlacaText = placa || '';
+                }
+                
+                document.querySelector('#resumen-vehiculo').textContent = resumenVehiculoText || '-';
+                document.querySelector('#resumen-placa').textContent = resumenPlacaText || '-';
+                
+                // Mostrar precio con descuento si se aplica
+                const precioOriginal = servicePrices[selectedService];
+                const usarPuntosValue = document.getElementById('usarPuntos').value;
+                const descuentoAplicadoValue = parseFloat(document.getElementById('descuentoAplicado').value) || 0;
+                
+                if (usarPuntosValue === 'true' && descuentoAplicadoValue > 0) {
+                    document.querySelector('#resumen-precio').innerHTML = `
+                        <span class="text-decoration-line-through text-muted">$${precioOriginal.toLocaleString()}</span> 
+                        <span class="text-success">$${precioFinalConDescuento.toLocaleString()}</span> 
+                        <span class="badge bg-success">Descuento: $${descuentoAplicadoValue.toLocaleString()}</span>
+                    `;
+                } else {
+                    document.querySelector('#resumen-precio').textContent = '$' + precioOriginal.toLocaleString();
+                }
+                
+                const observaciones = document.querySelector('#observaciones').value;
+                document.querySelector('#resumen-observaciones').textContent = observaciones || '-';
+                
+                // Añadir información de la bahía seleccionada al resumen
+                const bahiaSeleccionada = availableBahias.find(b => b.id === selectedBahia);
+                if (bahiaSeleccionada) {
+                    document.querySelector('#resumen-bahia').innerHTML = bahiaSeleccionada.nombre + ' ' + (bahiaSeleccionada.tiene_camara ? "<span class=\"badge bg-info\"><i class=\"fas fa-video me-1\"></i> Con cámara</span>" : "");
+                } else {
+                    document.querySelector('#resumen-bahia').textContent = 'No seleccionada';
+                }
+                
+                // Añadir información del lavador seleccionado al resumen
+                const resumenLavadorNombre = document.querySelector('#resumen-lavador-nombre');
+                const resumenLavadorFoto = document.querySelector('#resumen-lavador-foto');
+                
+                if (lavadorId) {
+                    const lavadorCard = document.querySelector('.lavador-card[data-lavador-id="' + lavadorId + '"]');
+                    if (lavadorCard) {
+                        const nombreLavador = lavadorCard.querySelector('.card-title').textContent;
+                        const fotoLavador = lavadorCard.querySelector('img');
+                        
+                        // Actualizar nombre
+                        resumenLavadorNombre.textContent = nombreLavador;
+                        
+                        // Actualizar foto
+                        if (fotoLavador) {
+                            resumenLavadorFoto.src = fotoLavador.src;
+                            resumenLavadorFoto.alt = nombreLavador;
+                            resumenLavadorFoto.style.display = 'inline-block';
+                        } else {
+                            resumenLavadorFoto.src = "{% static 'img/lavador-avatar.svg' %}";
+                            resumenLavadorFoto.alt = nombreLavador;
+                            resumenLavadorFoto.style.display = 'inline-block';
+                        }
+                    } else {
+                        resumenLavadorNombre.textContent = 'Asignación automática';
+                        resumenLavadorFoto.src = "{% static 'img/lavador-avatar.svg' %}";
+                        resumenLavadorFoto.alt = 'Lavador';
+                        resumenLavadorFoto.style.display = 'inline-block';
+                    }
+                } else {
+                    resumenLavadorNombre.textContent = 'Asignación automática';
+                    resumenLavadorFoto.src = "{% static 'img/lavador-avatar.svg' %}";
+                    resumenLavadorFoto.alt = 'Lavador';
+                    resumenLavadorFoto.style.display = 'inline-block';
+                }
+                
+                // Añadir información del medio de pago al resumen (sin selección de pasarela)
+                const puntosARedimirValue = parseInt(document.getElementById('puntosARedimir').value) || 0;
+                const recompensaSeleccionadaValue = document.getElementById('recompensaSeleccionada').value;
+                let medioPagoDisplay = 'Pago en establecimiento';
+                
+                if (usarPuntosValue === 'true' && precioFinalConDescuento === 0) {
+                    medioPagoDisplay = 'Puntos (' + puntosARedimirValue + ' puntos)';
+                } else if (usarPuntosValue === 'true' && precioFinalConDescuento > 0) {
+                    const recompensaSelect = document.getElementById('recompensaSelect');
+                    let recompensaNombre = '';
+                    for (let i = 0; i < recompensaSelect.options.length; i++) {
+                        if (recompensaSelect.options[i].value === recompensaSeleccionadaValue) {
+                            recompensaNombre = recompensaSelect.options[i].textContent;
+                            break;
+                        }
+                    }
+                    medioPagoDisplay = 'Pago en establecimiento' + ' + ' + recompensaNombre + ' (' + puntosARedimirValue + ' puntos)';
+                }
+                document.querySelector('#resumen-medio-pago').textContent = medioPagoDisplay;
+                
+                // Ir directamente al Paso 7 (confirmación)
                 document.querySelector('#step5').style.display = 'none';
-                document.querySelector('#step6').style.display = 'block';
+                document.querySelector('#step7').style.display = 'block';
                 
                 return false; // Asegurar que no se propague el evento
             });
@@ -2606,12 +2747,12 @@
                 e.preventDefault();
                 e.stopPropagation();
                 
-                // Validar que se haya seleccionado un medio de pago
-                const medioPagoSeleccionado = document.querySelector('input[name="medio_pago"]:checked');
-                if (!medioPagoSeleccionado) {
-                    showAlert('Por favor selecciona un medio de pago', 'warning');
-                    return;
-                }
+                // Pago deshabilitado: no se requiere selección de medio de pago
+                // const medioPagoSeleccionado = document.querySelector('input[name="medio_pago"]:checked');
+                // if (!medioPagoSeleccionado) {
+                //     showAlert('Por favor selecciona un medio de pago', 'warning');
+                //     return;
+                // }
                 
                 // Marcar automáticamente el checkbox de términos y condiciones
                 document.querySelector('#terminos').checked = true;
@@ -2622,13 +2763,36 @@
                 document.querySelector('#resumen-fecha').textContent = formatDate(selectedDate);
                 document.querySelector('#resumen-hora').textContent = selectedTime;
                 
-                const marca = document.querySelector('#marca').value;
-                const modelo = document.querySelector('#modelo').value;
-                const anio = document.querySelector('#anio').value;
-                const placa = document.querySelector('#placa').value;
+                // Actualizar vehículo y placa para el resumen, soportando vehículo seleccionado o nuevo
+                const vehiculoSelectEl = document.querySelector('#vehiculo');
+                let resumenVehiculoText = '';
+                let resumenPlacaText = '';
                 
-                document.querySelector('#resumen-vehiculo').textContent = marca + ' ' + modelo + ' ' + anio;
-                document.querySelector('#resumen-placa').textContent = placa;
+                if (vehiculoSelectEl && vehiculoSelectEl.value) {
+                    const selectedOption = vehiculoSelectEl.options[vehiculoSelectEl.selectedIndex];
+                    const optionText = selectedOption ? selectedOption.textContent.trim() : '';
+                    // Extraer placa del texto de la opción (formato: "Marca Modelo (PLACA)")
+                    const placaMatch = optionText.match(/\(([^)]+)\)/);
+                    if (placaMatch) {
+                        resumenPlacaText = placaMatch[1].trim();
+                    }
+                    // Obtener Marca y Modelo y reemplazar cualquier separador '/' por '&'
+                    const brandModel = optionText.replace(/\(.*\)/, '').trim();
+                    const formattedBrandModel = brandModel.replace(/\s*\/\s*/g, ' & ');
+                    resumenVehiculoText = formattedBrandModel;
+                } else {
+                    const marca = document.querySelector('#marca').value;
+                    const modelo = document.querySelector('#modelo').value;
+                    const anio = document.querySelector('#anio').value;
+                    const placa = document.querySelector('#placa').value;
+                    // Unir marca y modelo con '&' y mostrar año entre paréntesis si existe
+                    const brandModel = [marca, modelo].filter(Boolean).join(' & ');
+                    resumenVehiculoText = anio ? `${brandModel} (${anio})` : brandModel;
+                    resumenPlacaText = placa || '';
+                }
+                
+                document.querySelector('#resumen-vehiculo').textContent = resumenVehiculoText || '-';
+                document.querySelector('#resumen-placa').textContent = resumenPlacaText || '-';
                 
                 // Mostrar precio con descuento si se aplica
                 const precioOriginal = servicePrices[selectedService];
@@ -2740,7 +2904,8 @@
         if (backToStep6) {
             backToStep6.addEventListener('click', function() {
                 document.querySelector('#step7').style.display = 'none';
-                document.querySelector('#step6').style.display = 'block';
+                // Pago deshabilitado: regresar al Paso 5 en lugar de mostrar el Paso 6
+                document.querySelector('#step5').style.display = 'block';
             });
         }
         
@@ -2794,6 +2959,19 @@
             const tipoRecompensa = selectedOption.dataset.tipo;
             const valorPorcentaje = parseFloat(selectedOption.dataset.valorPorcentaje) || 0;
             const valorMonto = parseFloat(selectedOption.dataset.valorMonto) || 0;
+            const servicioRecompensaId = parseInt(selectedOption.dataset.servicioId);
+            const servicioActualId = parseInt(selectedService);
+            const recompensaAplica = !servicioRecompensaId || !servicioActualId || servicioRecompensaId === servicioActualId;
+
+            // Validar que la recompensa aplica al servicio seleccionado
+            if (!recompensaAplica) {
+                console.log('Recompensa no aplica al servicio seleccionado');
+                return {
+                    descuento: 0,
+                    puntosUsados: 0,
+                    precioFinal: precioServicio
+                };
+            }
             
             // Verificar si el cliente tiene suficientes puntos
             console.log('Verificando puntos - Disponibles:', puntosCliente, 'Necesarios:', puntosNecesarios);
@@ -3164,16 +3342,28 @@
                             return null;
                         }
                     }
-                    
+                    // Manejo mejorado de errores: intentar leer el mensaje del servidor
+                    const contentType = response.headers.get('content-type') || '';
                     if (!response.ok) {
                         if (response.status === 401) {
                             throw new Error('SESSION_EXPIRED');
                         }
-                        throw new Error(`Error HTTP: ${response.status}`);
+                        if (contentType.includes('application/json')) {
+                            return response.json().then(data => {
+                                const serverMsg = data.error || data.message || data.detail || `Error HTTP: ${response.status}`;
+                                throw new Error(serverMsg);
+                            }).catch(() => {
+                                throw new Error(`Error HTTP: ${response.status}`);
+                            });
+                        }
+                        return response.text().then(text => {
+                            const cleanText = (text || '').trim();
+                            throw new Error(cleanText || `Error HTTP: ${response.status}`);
+                        });
                     }
-                    
+                    // OK: parsear cuerpo seguro
                     return response.text().then(text => {
-                        if (!text.trim()) {
+                        if (!text || !text.trim()) {
                             return {};
                         }
                         try {
@@ -3310,6 +3500,7 @@
             const puntosRedimir = document.getElementById('puntosRedimir');
             const puntosDisponibles = document.getElementById('puntosDisponibles');
             const alertaPuntos = document.getElementById('alertaPuntos');
+            const alertaRecompensaServicio = document.getElementById('alertaRecompensaServicio');
             const btnConfirmarRecompensa = document.getElementById('btnConfirmarRecompensa');
             
             // Cargar los puntos disponibles del cliente cuando se abre el modal
@@ -3325,7 +3516,46 @@
                     recompensaSelect.selectedIndex = 0;
                     puntosRedimir.value = '';
                     alertaPuntos.style.display = 'none';
+                    if (alertaRecompensaServicio) {
+                        alertaRecompensaServicio.style.display = 'none';
+                        alertaRecompensaServicio.textContent = 'Esta recompensa no aplica al servicio seleccionado.';
+                    }
                     btnConfirmarRecompensa.disabled = true;
+
+                    // Filtrar/inhabilitar recompensas que no aplican al servicio actual
+                    const servicioActualId = parseInt(selectedService);
+                    let primeraValidaIndex = 0; // por defecto el placeholder
+                    for (let i = 0; i < recompensaSelect.options.length; i++) {
+                        const opt = recompensaSelect.options[i];
+                        if (!opt.value) { continue; } // placeholder
+                        const servicioRecompensaId = parseInt(opt.dataset.servicioId);
+                        if (servicioActualId && servicioRecompensaId && servicioRecompensaId !== servicioActualId) {
+                            opt.disabled = true;
+                            opt.textContent = `${opt.textContent} — no aplica al servicio actual`;
+                        } else {
+                            opt.disabled = false;
+                            // limpiar posible sufijo si quedó de una apertura previa
+                            const baseText = opt.textContent.replace(/\s—\sno aplica al servicio actual$/,'');
+                            opt.textContent = baseText;
+                            if (!primeraValidaIndex) { primeraValidaIndex = i; }
+                        }
+                    }
+                    // Si hay alguna opción válida, sugerirla visualmente pero mantener deshabilitado el botón
+                    if (primeraValidaIndex) {
+                        recompensaSelect.selectedIndex = primeraValidaIndex;
+                        const selectedOption = recompensaSelect.options[primeraValidaIndex];
+                        puntosRedimir.value = selectedOption.dataset.puntos || '';
+                        // Disparar el evento de cambio para ejecutar validaciones y habilitar el botón si aplica
+                        try {
+                            const evt = new Event('change', { bubbles: true });
+                            recompensaSelect.dispatchEvent(evt);
+                        } catch (e) {
+                            // Fallback para navegadores antiguos
+                            if (typeof recompensaSelect.onchange === 'function') {
+                                recompensaSelect.onchange();
+                            }
+                        }
+                    }
                 });
             }
             
@@ -3341,6 +3571,29 @@
                 console.log('Puntos disponibles:', puntosDisponibles.value);
                 
                 // Verificar si tiene suficientes puntos
+                // Primero, validar que la recompensa aplica al servicio seleccionado
+                const servicioRecompensaId = parseInt(selectedOption.dataset.servicioId);
+                const servicioActualId = parseInt(selectedService);
+                if (alertaRecompensaServicio) {
+                    if (servicioRecompensaId && servicioActualId && servicioRecompensaId !== servicioActualId) {
+                        const servicioRecompensaNombre = selectedOption.dataset.servicioNombre || 'este servicio';
+                        // Obtener nombre del servicio actual desde la tarjeta seleccionada, si es posible
+                        let servicioActualNombre = '';
+                        try {
+                            const servicioCard = document.querySelector('#servicio' + servicioActualId).closest('.service-card-enhanced');
+                            servicioActualNombre = servicioCard ? servicioCard.querySelector('.card-title').textContent.trim() : '';
+                        } catch (e) {}
+                        alertaRecompensaServicio.style.display = 'block';
+                        alertaRecompensaServicio.innerHTML = `<i class="fas fa-ban me-2"></i> Esta recompensa aplica a <strong>${servicioRecompensaNombre}</strong>, pero seleccionaste <strong>${servicioActualNombre || 'otro servicio'}</strong>.`;
+                        alertaPuntos.style.display = 'none';
+                        btnConfirmarRecompensa.disabled = true;
+                        return;
+                    } else {
+                        alertaRecompensaServicio.style.display = 'none';
+                    }
+                }
+
+                // Luego, validar puntos suficientes
                 if (parseInt(puntos) > parseInt(puntosDisponibles.value)) {
                     console.log('No tiene suficientes puntos');
                     alertaPuntos.style.display = 'block';
@@ -3360,6 +3613,24 @@
                 const puntos = parseInt(selectedOption.dataset.puntos);
                 const recompensaValor = selectedOption.value;
                 const recompensaNombre = selectedOption.textContent;
+
+                // Validar que la recompensa aplica al servicio seleccionado antes de confirmar
+                const servicioRecompensaId = parseInt(selectedOption.dataset.servicioId);
+                const servicioActualId = parseInt(selectedService);
+                if (servicioRecompensaId && servicioActualId && servicioRecompensaId !== servicioActualId) {
+                    if (alertaRecompensaServicio) {
+                        const servicioRecompensaNombre = selectedOption.dataset.servicioNombre || 'este servicio';
+                        let servicioActualNombre = '';
+                        try {
+                            const servicioCard = document.querySelector('#servicio' + servicioActualId).closest('.service-card-enhanced');
+                            servicioActualNombre = servicioCard ? servicioCard.querySelector('.card-title').textContent.trim() : '';
+                        } catch (e) {}
+                        alertaRecompensaServicio.style.display = 'block';
+                        alertaRecompensaServicio.innerHTML = `<i class="fas fa-ban me-2"></i> Esta recompensa aplica a <strong>${servicioRecompensaNombre}</strong>, pero seleccionaste <strong>${servicioActualNombre || 'otro servicio'}</strong>. Selecciona una recompensa válida.`;
+                    }
+                    // No aplicar recompensa ni cerrar modal
+                    return;
+                }
                 
                 // Actualizar campos ocultos
                 document.getElementById('usarPuntos').value = 'true';
@@ -3392,12 +3663,38 @@
                             resumenPrecio.textContent = '$' + precioServicio.toLocaleString();
                         }
                     }
+
+                    // Actualizar el medio de pago en el resumen (Paso 7)
+                    const resumenMedioPagoEl = document.querySelector('#resumen-medio-pago');
+                    if (resumenMedioPagoEl) {
+                        let medioPagoDisplay = 'Pago en establecimiento';
+                        const usarPuntosValue = document.getElementById('usarPuntos').value;
+                        if (usarPuntosValue === 'true' && precioFinalConDescuento === 0) {
+                            medioPagoDisplay = `Puntos (${puntosUsados} puntos)`;
+                        } else if (usarPuntosValue === 'true' && descuento > 0) {
+                            medioPagoDisplay = `Pago en establecimiento + ${recompensaNombre} (${puntosUsados} puntos)`;
+                        }
+                        resumenMedioPagoEl.textContent = medioPagoDisplay;
+                    }
                     
                     // Mostrar mensaje con el descuento aplicado
                     const medioPagoSeleccionadoDiv = document.querySelector('#medioPagoSeleccionado');
                     if (medioPagoSeleccionadoDiv) {
                         medioPagoSeleccionadoDiv.style.display = 'block';
                         medioPagoSeleccionadoDiv.innerHTML = `
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2"></i> 
+                                <strong>¡Recompensa seleccionada!</strong> ${recompensaNombre} por ${puntosUsados} puntos.
+                                ${precioFinalConDescuento === 0 ? '<br><strong>¡Tu servicio será completamente gratis!</strong>' : '<br>Descuento: $' + descuento.toLocaleString() + '<br>Precio final: $' + precioFinalConDescuento.toLocaleString()}
+                            </div>
+                        `;
+                    }
+
+                    // Mostrar mensaje equivalente en el Paso 7
+                    const medioPagoSeleccionadoStep7 = document.querySelector('#medioPagoSeleccionadoStep7');
+                    if (medioPagoSeleccionadoStep7) {
+                        medioPagoSeleccionadoStep7.style.display = 'block';
+                        medioPagoSeleccionadoStep7.innerHTML = `
                             <div class="alert alert-success">
                                 <i class="fas fa-check-circle me-2"></i> 
                                 <strong>¡Recompensa seleccionada!</strong> ${recompensaNombre} por ${puntosUsados} puntos.

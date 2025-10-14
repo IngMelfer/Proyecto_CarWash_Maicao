@@ -15,14 +15,15 @@ from django.db.models import Q, Avg
 from django.db import IntegrityError
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from .models import Servicio, Bahia, Vehiculo, MedioPago, Reserva
+from .models import Servicio, Bahia, Vehiculo, MedioPago, Reserva, Recompensa
 from empleados.models import Empleado
+from notificaciones.models import Notificacion
 
 class HorariosDisponiblesView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         try:
-            fecha_str = request.GET.get('fecha')
-            servicio_id = request.GET.get('servicio_id')
+            fecha_str = (request.GET.get('fecha') or request.POST.get('fecha'))
+            servicio_id = (request.GET.get('servicio_id') or request.POST.get('servicio_id'))
             
             if not fecha_str or not servicio_id:
                 return JsonResponse({'success': False, 'error': 'Fecha y servicio son requeridos'}, status=400)
@@ -68,7 +69,8 @@ class HorariosDisponiblesView(LoginRequiredMixin, View):
                     
                     if bahias_disponibles > 0:
                         horarios_disponibles.append({
-                            'id': hora_actual.strftime('%H:%M'),  # Usamos la hora como ID
+                            'id': hora_actual.strftime('%H:%M'),
+                            'hora': hora_actual.strftime('%H:%M'),
                             'hora_inicio': hora_actual.strftime('%H:%M'),
                             'hora_fin': hora_fin_servicio.strftime('%H:%M'),
                             'hora_formateada': f"{hora_actual.strftime('%I:%M %p')} - {hora_fin_servicio.strftime('%I:%M %p')}",
@@ -116,9 +118,9 @@ class HorariosDisponiblesView(LoginRequiredMixin, View):
 class BahiasDisponiblesView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         try:
-            fecha_str = request.GET.get('fecha')
-            hora_str = request.GET.get('hora_id')
-            servicio_id = request.GET.get('servicio_id')
+            fecha_str = (request.GET.get('fecha') or request.POST.get('fecha'))
+            hora_str = (request.GET.get('hora_id') or request.GET.get('hora') or request.POST.get('hora_id') or request.POST.get('hora'))
+            servicio_id = (request.GET.get('servicio_id') or request.POST.get('servicio_id'))
             
             if not fecha_str or not hora_str or not servicio_id:
                 return JsonResponse({'success': False, 'error': 'Fecha, hora y servicio son requeridos'}, status=400)
@@ -181,9 +183,9 @@ class BahiasDisponiblesView(LoginRequiredMixin, View):
 class LavadoresDisponiblesView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         try:
-            fecha_str = request.GET.get('fecha')
-            hora_str = request.GET.get('hora_id')
-            bahia_id = request.GET.get('bahia_id')
+            fecha_str = (request.GET.get('fecha') or request.POST.get('fecha'))
+            hora_str = (request.GET.get('hora_id') or request.GET.get('hora') or request.POST.get('hora_id') or request.POST.get('hora'))
+            bahia_id = (request.GET.get('bahia_id') or request.POST.get('bahia_id'))
             
             if not fecha_str or not hora_str or not bahia_id:
                 return JsonResponse({'success': False, 'error': 'Fecha, hora y bahía son requeridos'}, status=400)
@@ -362,9 +364,8 @@ class CrearReservaView(LoginRequiredMixin, View):
             bahia_id = data.get('bahia_id')
             lavador_id = data.get('lavador_id')
             vehiculo_id = data.get('vehiculo_id')
-            medio_pago_id = data.get('medio_pago_id')
             
-            if not all([servicio_id, fecha_str, hora_str, bahia_id, lavador_id, vehiculo_id, medio_pago_id]):
+            if not all([servicio_id, fecha_str, hora_str, bahia_id, lavador_id, vehiculo_id]):
                 return JsonResponse({
                     'success': False, 
                     'error': 'Todos los campos son requeridos'
@@ -374,6 +375,9 @@ class CrearReservaView(LoginRequiredMixin, View):
             try:
                 fecha = datetime.datetime.strptime(fecha_str, '%Y-%m-%d').date()
                 hora_inicio = datetime.datetime.strptime(hora_str, '%H:%M').time()
+                # ... existing code...
+                # Componer fecha y hora en un solo DateTime, acorde al modelo Reserva
+                fecha_hora_dt = datetime.datetime.combine(fecha, hora_inicio)
             except ValueError:
                 return JsonResponse({'success': False, 'error': 'Formato de fecha u hora inválido'}, status=400)
             
@@ -382,11 +386,10 @@ class CrearReservaView(LoginRequiredMixin, View):
                 servicio = Servicio.objects.get(id=servicio_id)
                 bahia = Bahia.objects.get(id=bahia_id)
                 lavador = Empleado.objects.get(id=lavador_id)
-                vehiculo = Vehiculo.objects.get(id=vehiculo_id, propietario=request.user)
-                medio_pago = MedioPago.objects.get(id=medio_pago_id)
+                vehiculo = Vehiculo.objects.get(id=vehiculo_id, cliente=request.user.cliente)
+                medio_pago = None
             except (Servicio.DoesNotExist, Bahia.DoesNotExist, 
-                    Empleado.DoesNotExist, Vehiculo.DoesNotExist, 
-                    MedioPago.DoesNotExist) as e:
+                    Empleado.DoesNotExist, Vehiculo.DoesNotExist) as e:
                 return JsonResponse({'success': False, 'error': str(e)}, status=404)
             
             # Calcular hora de fin
@@ -397,60 +400,86 @@ class CrearReservaView(LoginRequiredMixin, View):
             # Verificar disponibilidad nuevamente
             # (Bahía disponible)
             bahia_ocupada = Reserva.objects.filter(
-                Q(bahia=bahia) & 
-                Q(fecha=fecha) & 
-                (
-                    (Q(hora_inicio__gte=hora_inicio) & Q(hora_inicio__lt=hora_fin)) |
-                    (Q(hora_fin__gt=hora_inicio) & Q(hora_fin__lte=hora_fin)) |
-                    (Q(hora_inicio__lte=hora_inicio) & Q(hora_fin__gte=hora_fin))
-                )
+                bahia=bahia,
+                fecha_hora=fecha_hora_dt
             ).exists()
-            
             if bahia_ocupada:
                 return JsonResponse({'success': False, 'error': 'La bahía ya no está disponible'}, status=400)
-            
             # (Lavador disponible)
             lavador_ocupado = Reserva.objects.filter(
-                Q(lavador=lavador) & 
-                Q(fecha=fecha) & 
-                (
-                    (Q(hora_inicio__gte=hora_inicio) & Q(hora_inicio__lt=hora_fin)) |
-                    (Q(hora_fin__gt=hora_inicio) & Q(hora_fin__lte=hora_fin)) |
-                    (Q(hora_inicio__lte=hora_inicio) & Q(hora_fin__gte=hora_fin))
-                )
+                lavador=lavador,
+                fecha_hora=fecha_hora_dt
             ).exists()
-            
             if lavador_ocupado:
                 return JsonResponse({'success': False, 'error': 'El lavador ya no está disponible'}, status=400)
-            
             # Crear la reserva
             try:
                 reserva = Reserva.objects.create(
-                    cliente=request.user,
+                    cliente=request.user.cliente,
                     servicio=servicio,
                     bahia=bahia,
                     lavador=lavador,
                     vehiculo=vehiculo,
-                    fecha=fecha,
-                    hora_inicio=hora_inicio,
-                    hora_fin=hora_fin,
-                    precio=servicio.precio,
+                    fecha_hora=fecha_hora_dt,
+                    precio_final=servicio.precio,
                     medio_pago=medio_pago,
-                    estado='pendiente',
-                    codigo_acceso=str(uuid.uuid4())[:8]
+                    estado=Reserva.PENDIENTE
                 )
             except IntegrityError:
                 return JsonResponse({'success': False, 'error': 'Esta bahía ya está reservada para la fecha y hora seleccionada. Por favor, selecciona otra bahía u horario.'}, status=400)
+            
+            # Aplicar redención de puntos mediante una Recompensa (si se solicitó)
+            usar_puntos = bool(data.get('usar_puntos', False))
+            recompensa_id = data.get('recompensa_id') or data.get('recompensa_seleccionada')
+            if usar_puntos and recompensa_id:
+                try:
+                    recompensa = Recompensa.objects.get(id=recompensa_id, activo=True)
+                except Recompensa.DoesNotExist:
+                    return JsonResponse({'success': False, 'error': 'La recompensa seleccionada no existe o está inactiva'}, status=400)
+                # Validar que la recompensa aplica al servicio elegido
+                if recompensa.servicio_id != servicio.id:
+                    return JsonResponse({'success': False, 'error': 'La recompensa no aplica para el servicio seleccionado'}, status=400)
+                puntos_req = recompensa.puntos_requeridos
+                # Validar saldo de puntos
+                if request.user.cliente.saldo_puntos < puntos_req:
+                    return JsonResponse({'success': False, 'error': 'No tienes puntos suficientes para esta recompensa'}, status=400)
+                # Calcular descuento según el tipo de recompensa y el precio del servicio
+                descuento = recompensa.calcular_descuento(servicio.precio) or 0
+                # Redimir puntos
+                if not request.user.cliente.redimir_puntos(puntos_req):
+                    return JsonResponse({'success': False, 'error': 'No fue posible redimir los puntos'}, status=400)
+                # Aplicar cambios a la reserva
+                reserva.descuento_aplicado = descuento
+                reserva.puntos_redimidos = puntos_req
+                reserva.recompensa_aplicada = recompensa.nombre
+                final = servicio.precio - descuento
+                reserva.precio_final = final if final > 0 else 0
+                reserva.save(update_fields=['descuento_aplicado', 'puntos_redimidos', 'recompensa_aplicada', 'precio_final'])
+            
+            # Auto-confirmar la reserva y crear notificación de confirmación
+            try:
+                if reserva.confirmar():
+                    Notificacion.objects.create(
+                        cliente=request.user.cliente,
+                        reserva=reserva,
+                        tipo=Notificacion.RESERVA_CONFIRMADA,
+                        titulo='Reserva Confirmada',
+                        mensaje=f"Tu reserva para {reserva.servicio.nombre} el {reserva.fecha_hora.strftime('%d/%m/%Y')} a las {reserva.fecha_hora.strftime('%H:%M')} ha sido confirmada."
+                    )
+            except Exception:
+                pass
             
             return JsonResponse({
                 'success': True, 
                 'reserva': {
                     'id': reserva.id,
-                    'codigo': reserva.codigo_acceso,
-                    'fecha': reserva.fecha.strftime('%d/%m/%Y'),
-                    'hora': f"{reserva.hora_inicio.strftime('%I:%M %p')} - {reserva.hora_fin.strftime('%I:%M %p')}",
+                    'fecha': reserva.fecha_hora.strftime('%d/%m/%Y'),
+                    'hora': reserva.fecha_hora.strftime('%I:%M %p'),
                     'servicio': reserva.servicio.nombre,
-                    'precio': float(reserva.precio)
+                    'precio_final': float(reserva.precio_final if reserva.precio_final is not None else servicio.precio),
+                    'descuento_aplicado': float(reserva.descuento_aplicado),
+                    'puntos_redimidos': reserva.puntos_redimidos,
+                    'recompensa_aplicada': reserva.recompensa_aplicada,
                 }
             })
             
@@ -462,7 +491,7 @@ class GenerarQRView(LoginRequiredMixin, View):
     def get(self, request, reserva_id, *args, **kwargs):
         try:
             # Obtener la reserva
-            reserva = Reserva.objects.get(id=reserva_id, cliente=request.user)
+            reserva = Reserva.objects.get(id=reserva_id, cliente=request.user.cliente)
             
             # Generar datos para el QR
             qr_data = {
@@ -482,7 +511,7 @@ class GenerarQRView(LoginRequiredMixin, View):
                     'color': reserva.vehiculo.color
                 },
                 'precio': float(reserva.precio),
-                'medio_pago': reserva.medio_pago.nombre
+                'medio_pago': (reserva.medio_pago.nombre if reserva.medio_pago else 'No especificado')
             }
             
             # Generar QR
@@ -520,7 +549,7 @@ class GenerarQRView(LoginRequiredMixin, View):
                     'color': reserva.vehiculo.color
                 },
                 'precio': float(reserva.precio),
-                'medio_pago': reserva.medio_pago.nombre
+                'medio_pago': (reserva.medio_pago.nombre if reserva.medio_pago else 'No especificado')
             }
             
             return JsonResponse({'success': True, 'comprobante': comprobante})

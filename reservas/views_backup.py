@@ -142,7 +142,7 @@ class ProcesarPagoView(LoginRequiredMixin, View):
                 del request.session['descuento_aplicado']
             
             messages.success(request, f'¡Reserva confirmada! Se han redimido {puntos_a_redimir} puntos.')
-            return redirect('reservas:detalle_reserva', reserva_id=reserva.id)
+            return redirect('reservas:reserva_detail', pk=reserva.id)
         else:
             messages.error(request, 'Error al redimir los puntos. Por favor, intenta nuevamente.')
             return redirect('reservas:mis_turnos')
@@ -296,7 +296,7 @@ class ConfirmarPagoView(LoginRequiredMixin, View):
         # Si la reserva ya está confirmada y tiene puntos redimidos, mostrar mensaje de éxito
         if reserva.estado == Reserva.CONFIRMADA and reserva.puntos_redimidos > 0:
             messages.success(request, f'Reserva confirmada exitosamente con {reserva.puntos_redimidos} puntos redimidos.')
-            return redirect('reservas:detalle_reserva', reserva_id=reserva.id)
+            return redirect('reservas:reserva_detail', pk=reserva.id)
         
         if medio_pago.es_puntos():
             # Si el medio de pago es puntos, confirmar directamente
@@ -346,7 +346,7 @@ class ConfirmarPagoView(LoginRequiredMixin, View):
                 )
                 
             messages.success(request, f'Reserva confirmada exitosamente con {reserva.puntos_redimidos} puntos redimidos.')
-            return redirect('reservas:detalle_reserva', reserva_id=reserva.id)
+            return redirect('reservas:reserva_detail', pk=reserva.id)
             
         # Si no está confirmada, mostrar error
         messages.error(request, 'La reserva no ha sido confirmada correctamente con puntos.')
