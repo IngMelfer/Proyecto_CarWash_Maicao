@@ -5,6 +5,36 @@
 
 {% block content %}
 <style>
+    /* Estilos para el dashboard público */
+    .table {
+        font-size: 0.9rem;
+        margin-bottom: 0;
+    }
+    
+    .table th {
+        font-weight: bold;
+        text-align: center;
+        vertical-align: middle;
+        border-bottom: 2px solid #dee2e6;
+        background-color: #343a40 !important;
+        color: white !important;
+    }
+    
+    .table td {
+        vertical-align: middle;
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .badge {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.6rem;
+    }
+    
+    .tiempo-restante {
+        font-weight: bold;
+        font-family: 'Courier New', monospace;
+    }
+
     .parpadea {
         animation-name: parpadeo;
         animation-duration: 1s;
@@ -33,6 +63,17 @@
         50% { opacity: 0.0; }
         100% { opacity: 1.0; }
     }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .table {
+            font-size: 0.8rem;
+        }
+        
+        .table th, .table td {
+            padding: 0.5rem 0.25rem;
+        }
+    }
 </style>
 
 <div class="container-fluid mt-4">
@@ -45,12 +86,15 @@
                 <table class="table table-striped table-hover mb-0">
                     <thead class="thead-dark">
                         <tr>
-                            <th scope="col">Hora</th>
-                            <th scope="col">Servicio</th>
-                            <th scope="col">Vehículo</th>
-                            <th scope="col">Bahía</th>
-                            <th scope="col">Lavador</th>
-                            <th scope="col">Estado</th>
+                            <th scope="col" style="width: 10%;">HORA</th>
+                            <th scope="col" style="width: 15%;">SERVICIO</th>
+                            <th scope="col" style="width: 12%;">VEHICULO</th>
+                            <th scope="col" style="width: 10%;">PLACA</th>
+                            <th scope="col" style="width: 10%;">DURACIÓN</th>
+                            <th scope="col" style="width: 15%;">LAVADOR</th>
+                            <th scope="col" style="width: 8%;">BAHIA</th>
+                            <th scope="col" style="width: 10%;">ESTADO</th>
+                            <th scope="col" style="width: 10%;">TIEMPO_RESTANTE</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -61,10 +105,11 @@
                                 {% elif reserva.estado == 'Completada' %}table-success
                                 {% endif %}
                             ">
-                                <td>{{ reserva.fecha_hora|time:"H:i" }}</td>
+                                <td style="text-align: center;">{{ reserva.fecha_hora|time:"H:i" }}</td>
                                 <td>{{ reserva.servicio.nombre }}</td>
-                                <td>{{ reserva.vehiculo.placa }}</td>
-                                <td>{{ reserva.bahia.nombre }}</td>
+                                <td>{{ reserva.vehiculo.tipo_vehiculo|default:"N/A" }}</td>
+                                <td style="text-align: center; font-weight: bold;">{{ reserva.vehiculo.placa }}</td>
+                                <td style="text-align: center;">{{ reserva.servicio.duracion_estimada }} min</td>
                                 <td>
                                     {% if reserva.lavador %}
                                         {{ reserva.lavador.nombre_completo }}
@@ -72,11 +117,28 @@
                                         Sin asignar
                                     {% endif %}
                                 </td>
-                                <td>{{ reserva.get_estado_display }}</td>
+                                <td style="text-align: center;">{{ reserva.bahia.nombre }}</td>
+                                <td style="text-align: center;">
+                                    <span class="badge 
+                                        {% if reserva.estado == 'Confirmada' %}badge-info
+                                        {% elif reserva.estado == 'En proceso' %}badge-warning
+                                        {% elif reserva.estado == 'Completada' %}badge-success
+                                        {% elif reserva.estado == 'Cancelada' %}badge-danger
+                                        {% else %}badge-secondary
+                                        {% endif %}
+                                    ">
+                                        {{ reserva.get_estado_display }}
+                                    </span>
+                                </td>
+                                <td style="text-align: center;" id="tiempo-restante-{{ reserva.id }}">
+                                    <span class="tiempo-restante" data-reserva-id="{{ reserva.id }}" data-fecha-hora="{{ reserva.fecha_hora.isoformat }}" data-duracion="{{ reserva.servicio.duracion_estimada }}">
+                                        --:--
+                                    </span>
+                                </td>
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="6" class="text-center">No hay reservas para hoy.</td>
+                                <td colspan="9" class="text-center">No hay reservas para hoy.</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -88,6 +150,30 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
+        function actualizarTiempoRestante() {
+            const ahora = new Date();
+            
+            document.querySelectorAll('.tiempo-restante').forEach(function(elemento) {
+                const reservaId = elemento.getAttribute('data-reserva-id');
+                const fechaHora = new Date(elemento.getAttribute('data-fecha-hora'));
+                const duracion = parseInt(elemento.getAttribute('data-duracion'));
+                
+                // Calcular tiempo transcurrido desde el inicio de la reserva
+                const tiempoTranscurrido = (ahora - fechaHora) / 1000 / 60; // en minutos
+                const tiempoRestante = duracion - tiempoTranscurrido;
+                
+                if (tiempoRestante > 0) {
+                    const horas = Math.floor(tiempoRestante / 60);
+                    const minutos = Math.floor(tiempoRestante % 60);
+                    elemento.textContent = `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
+                    elemento.style.color = tiempoRestante <= 5 ? '#dc3545' : '#28a745';
+                } else {
+                    elemento.textContent = '00:00';
+                    elemento.style.color = '#dc3545';
+                }
+            });
+        }
+
         function checkReservas() {
             const ahora = new Date();
             {% for reserva in reservas %}
@@ -102,7 +188,12 @@
             {% endfor %}
         }
 
-        setInterval(checkReservas, 1000 * 30); // Verificar cada 30 segundos
+        // Actualizar tiempo restante cada 30 segundos
+        setInterval(actualizarTiempoRestante, 30000);
+        actualizarTiempoRestante(); // Ejecutar inmediatamente
+
+        // Verificar reservas cada 30 segundos
+        setInterval(checkReservas, 30000);
         checkReservas(); // Verificar al cargar la página
     });
 </script>
