@@ -1,5 +1,6 @@
 {% extends 'empleados/dashboard/base_dashboard.html' %}
 {% load static %}
+{% load reservas_filters %}
 
 {% block title %}Dashboard - {{ empleado.nombre_completo }}{% endblock %}
 
@@ -42,7 +43,7 @@
         </div>
         <div class="col-lg-3 col-md-6 mb-3">
             <div class="stat-card bg-info">
-                <div class="stat-number">${{ estadisticas.bonificaciones_mes|floatformat:0 }}</div>
+                <div class="stat-number">${{ estadisticas.bonificaciones_mes|format_price }}</div>
                 <div class="stat-label">Bonificaciones del Mes</div>
                 <i class="fas fa-dollar-sign position-absolute" style="top: 15px; right: 15px; font-size: 2rem; opacity: 0.3;"></i>
             </div>
