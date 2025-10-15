@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 import json
 import uuid
-from .models import Empleado, Calificacion, Incentivo
+from .models import Empleado, Calificacion, Incentivo, Bonificacion, BonificacionObtenida, ConfiguracionBonificacion
 from .forms import EmpleadoPerfilForm
 from reservas.models import Reserva, Servicio
 
@@ -95,9 +95,37 @@ def dashboard_lavador(request):
     promedio_calificacion = empleado.promedio_calificacion()
     total_calificaciones = empleado.calificaciones.count()
     
-    # Bonificaciones del mes
+    # Bonificaciones del mes (sistema antiguo)
     bonificaciones_mes = empleado.incentivos.filter(
         fecha_otorgado__gte=inicio_mes
+    ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
+    
+    # ===== BONIFICACIONES V2 =====
+    # Bonificaciones ganadas (pendientes de redimir)
+    bonificaciones_ganadas = empleado.bonificaciones_obtenidas.filter(
+        estado=BonificacionObtenida.ESTADO_PENDIENTE
+    ).select_related('bonificacion')[:3]  # Mostrar solo las 3 más recientes
+    
+    # Bonificaciones cobradas (redimidas)
+    bonificaciones_cobradas = empleado.bonificaciones_obtenidas.filter(
+        estado=BonificacionObtenida.ESTADO_REDIMIDA
+    ).select_related('bonificacion')[:3]  # Mostrar solo las 3 más recientes
+    
+    # Programas de bonificaciones disponibles
+    programas_bonificaciones = Bonificacion.objects.filter(activo=True)[:2]  # Mostrar solo 2 programas
+    
+    # Totales de bonificaciones V2
+    total_bonificaciones_ganadas = empleado.bonificaciones_obtenidas.filter(
+        estado=BonificacionObtenida.ESTADO_PENDIENTE
+    ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
+    
+    total_bonificaciones_cobradas = empleado.bonificaciones_obtenidas.filter(
+        estado=BonificacionObtenida.ESTADO_REDIMIDA
+    ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
+    
+    # Bonificaciones V2 del mes
+    bonificaciones_v2_mes = empleado.bonificaciones_obtenidas.filter(
+        fecha_obtencion__gte=inicio_mes
     ).aggregate(total=Sum('monto'))['total'] or Decimal('0')
     
     # Próximos servicios (próximos 5 servicios programados)
@@ -176,8 +204,8 @@ def dashboard_lavador(request):
         'promedio_calificacion': promedio_calificacion,
         'total_calificaciones': total_calificaciones,
         'servicio_siguiente': servicio_siguiente,
-'proximas_reservas': servicios_proximos,
-'otros_servicios_proximos': otros_servicios_proximos,
+        'proximas_reservas': servicios_proximos,
+        'otros_servicios_proximos': otros_servicios_proximos,
         'servicios_recientes': servicios_recientes,
         'calificaciones_recientes': calificaciones_recientes,
         'incentivos_recientes': incentivos_recientes,
@@ -188,13 +216,20 @@ def dashboard_lavador(request):
         'grafico_data': json.dumps(grafico_data),
         'servicios_en_proceso': servicios_en_proceso,
         'servicios_confirmados': servicios_confirmados,
+        # ===== BONIFICACIONES V2 =====
+        'bonificaciones_ganadas': bonificaciones_ganadas,
+        'bonificaciones_cobradas': bonificaciones_cobradas,
+        'programas_bonificaciones': programas_bonificaciones,
+        'total_bonificaciones_ganadas': total_bonificaciones_ganadas,
+        'total_bonificaciones_cobradas': total_bonificaciones_cobradas,
+        'bonificaciones_v2_mes': bonificaciones_v2_mes,
         'estadisticas': {
             'servicios_pendientes': servicios_pendientes,
             'servicios_completados': servicios_completados,
             'servicios_hoy': servicios_hoy,
             'servicios_semana': servicios_semana,
             'calificacion_promedio': promedio_calificacion,
-            'bonificaciones_mes': bonificaciones_mes,
+            'bonificaciones_mes': bonificaciones_mes + bonificaciones_v2_mes,  # Combinar ambos sistemas
         }
     }
     
@@ -690,13 +725,44 @@ def calificaciones_empleado(request):
 
 @login_required
 def bonificaciones_empleado(request):
-    """Vista para mostrar las bonificaciones del empleado"""
+    """Vista para mostrar las bonificaciones del empleado con las tres secciones del dashboard"""
     empleado = get_object_or_404(Empleado, usuario=request.user)
     
     # Importar el servicio de bonificaciones
     from .services import BonificacionService
     
-    # Obtener bonificaciones del empleado
+    # === BONIFICACIONES V2 (Sistema nuevo) ===
+    # Bonificaciones ganadas (pendientes de redimir)
+    bonificaciones_ganadas = BonificacionObtenida.objects.filter(
+        empleado=empleado,
+        estado=BonificacionObtenida.ESTADO_PENDIENTE
+    ).select_related('bonificacion').order_by('-fecha_obtencion')[:5]
+    
+    # Bonificaciones cobradas (redimidas)
+    bonificaciones_cobradas = BonificacionObtenida.objects.filter(
+        empleado=empleado,
+        estado=BonificacionObtenida.ESTADO_REDIMIDA
+    ).select_related('bonificacion').order_by('-fecha_redencion')[:5]
+    
+    # Programas de bonificaciones activos
+    from .models import Bonificacion
+    programas_bonificaciones = Bonificacion.objects.filter(
+        activo=True
+    ).order_by('nombre')
+    
+    # Totales para las tarjetas
+    total_bonificaciones_ganadas = BonificacionObtenida.objects.filter(
+        empleado=empleado,
+        estado=BonificacionObtenida.ESTADO_PENDIENTE
+    ).aggregate(total=Sum('monto'))['total'] or 0
+    
+    total_bonificaciones_cobradas = BonificacionObtenida.objects.filter(
+        empleado=empleado,
+        estado=BonificacionObtenida.ESTADO_REDIMIDA
+    ).aggregate(total=Sum('monto'))['total'] or 0
+    
+    # === BONIFICACIONES V1 (Sistema antiguo) ===
+    # Obtener bonificaciones del empleado (sistema antiguo)
     bonificaciones = Incentivo.objects.filter(empleado=empleado).select_related(
         'empleado', 'configuracion_bonificacion'
     ).order_by('-fecha_otorgado')
@@ -751,7 +817,6 @@ def bonificaciones_empleado(request):
     progreso_bonificaciones = BonificacionService.obtener_progreso_bonificaciones(empleado)
     
     # Tipos de bonificación basados en configuraciones activas
-    from .models import ConfiguracionBonificacion
     configuraciones_activas = ConfiguracionBonificacion.objects.filter(activo=True)
     tipos_bonificacion = []
     
@@ -801,6 +866,13 @@ def bonificaciones_empleado(request):
     
     context = {
         'empleado': empleado,
+        # Datos para las tres secciones del dashboard
+        'bonificaciones_ganadas': bonificaciones_ganadas,
+        'bonificaciones_cobradas': bonificaciones_cobradas,
+        'programas_bonificaciones': programas_bonificaciones,
+        'total_bonificaciones_ganadas': total_bonificaciones_ganadas,
+        'total_bonificaciones_cobradas': total_bonificaciones_cobradas,
+        # Datos del sistema antiguo para gráficos y filtros
         'bonificaciones': bonificaciones_paginadas,
         'resumen': resumen,
         'tipos_bonificacion': tipos_bonificacion,

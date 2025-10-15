@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Eliminar Bonificación{% endblock %}
+
+{% block extra_css %}
+<style>
+    .delete-container {
+        background: white;
+        border-radius: 10px;
+        padding: 30px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .warning-icon {
+        font-size: 4rem;
+        color: #dc3545;
+        margin-bottom: 20px;
+    }
+    
+    .bonificacion-info {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    
+    .criterio-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+        padding: 8px;
+        background: white;
+        border-radius: 4px;
+        border-left: 3px solid #dc3545;
+    }
+    
+    .criterio-icon {
+        margin-right: 10px;
+        color: #dc3545;
+        width: 20px;
+    }
+    
+    .monto-highlight {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        text-align: center;
+        margin: 10px 0;
+    }
+    
+    .btn-danger-custom {
+        background: linear-gradient(45deg, #dc3545, #c82333);
+        border: none;
+        color: white;
+        padding: 10px 25px;
+        border-radius: 5px;
+        font-weight: bold;
+    }
+    
+    .btn-danger-custom:hover {
+        background: linear-gradient(45deg, #c82333, #bd2130);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="delete-container">
+        <div class="text-center">
+            <i class="fas fa-exclamation-triangle warning-icon"></i>
+            <h2 class="text-danger">¿Eliminar Bonificación?</h2>
+            <p class="lead">Esta acción no se puede deshacer</p>
+        </div>
+
+        <div class="bonificacion-info">
+            <h4>{{ object.nombre }}</h4>
+            {% if object.descripcion %}
+                <p class="text-muted">{{ object.descripcion }}</p>
+            {% endif %}
+            
+            <div class="criterios mb-3">
+                <strong>Criterios configurados:</strong>
+                <div class="mt-2">
+                    {% if object.dias_consecutivos_requeridos and object.dias_consecutivos_requeridos > 0 %}
+                    <div class="criterio-item">
+                        <i class="fas fa-calendar-day criterio-icon"></i>
+                        <span>{{ object.dias_consecutivos_requeridos }} días consecutivos trabajados</span>
+                    </div>
+                    {% endif %}
+                    {% if object.servicios_requeridos and object.servicios_requeridos > 0 %}
+                    <div class="criterio-item">
+                        <i class="fas fa-tasks criterio-icon"></i>
+                        <span>{{ object.servicios_requeridos }} servicios completados</span>
+                    </div>
+                    {% endif %}
+                    {% if object.calificacion_minima and object.calificacion_minima > 0 %}
+                    <div class="criterio-item">
+                        <i class="fas fa-star criterio-icon"></i>
+                        <span>Calificación promedio ≥ {{ object.calificacion_minima }}</span>
+                    </div>
+                    {% endif %}
+                    {% if not object.dias_consecutivos_requeridos and not object.servicios_requeridos and not object.calificacion_minima %}
+                    <div class="criterio-item">
+                        <i class="fas fa-info-circle criterio-icon"></i>
+                        <span>Sin criterios específicos</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="monto-highlight">
+                <strong>Monto: ${{ object.monto_bonificacion|floatformat:0 }}</strong>
+            </div>
+            
+            <div class="estado">
+                <strong>Estado:</strong>
+                {% if object.activo %}
+                    <span class="badge badge-success">Activa</span>
+                {% else %}
+                    <span class="badge badge-danger">Inactiva</span>
+                {% endif %}
+            </div>
+            
+            <small class="text-muted d-block mt-2">
+                Creada el {{ object.fecha_creacion|date:"d/m/Y H:i" }} por {{ object.creado_por.get_full_name|default:object.creado_por.username }}
+            </small>
+        </div>
+
+        <div class="alert alert-warning">
+            <h5><i class="fas fa-exclamation-circle"></i> Advertencia Importante</h5>
+            <ul class="mb-0">
+                <li>Se eliminará permanentemente esta configuración de bonificación</li>
+                <li>Los empleados ya no podrán obtener esta bonificación</li>
+                <li>Las bonificaciones ya otorgadas NO se verán afectadas</li>
+                <li>Esta acción no se puede deshacer</li>
+            </ul>
+        </div>
+
+        <form method="post" class="text-center">
+            {% csrf_token %}
+            <div class="d-flex justify-content-center gap-3">
+                <a href="{% url 'empleados:bonificacion_v2_list' %}" class="btn btn-secondary btn-lg">
+                    <i class="fas fa-arrow-left"></i> Cancelar
+                </a>
+                <button type="submit" class="btn btn-danger-custom btn-lg" onclick="return confirmarEliminacion()">
+                    <i class="fas fa-trash"></i> Sí, Eliminar Bonificación
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function confirmarEliminacion() {
+        return confirm(
+            '¿Está completamente seguro de eliminar esta bonificación?\n\n' +
+            'Esta acción:\n' +
+            '• Eliminará permanentemente la configuración\n' +
+            '• No afectará bonificaciones ya otorgadas\n' +
+            '• No se puede deshacer\n\n' +
+            'Escriba "ELIMINAR" para confirmar:'
+        );
+    }
+    
+    // Confirmación adicional con texto
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const confirmText = prompt(
+            'Para confirmar la eliminación, escriba exactamente: ELIMINAR'
+        );
+        
+        if (confirmText !== 'ELIMINAR') {
+            e.preventDefault();
+            alert('Eliminación cancelada. El texto no coincide.');
+        }
+    });
+</script>
+{% endblock %}

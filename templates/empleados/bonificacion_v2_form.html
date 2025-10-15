@@ -1,0 +1,667 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if object %}Editar Bonificación{% else %}Nueva Bonificación{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+    }
+    
+    .form-container {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        margin: 20px 0;
+    }
+    
+    .page-header {
+        text-align: center;
+        margin-bottom: 40px;
+        position: relative;
+    }
+    
+    .page-header h2 {
+        color: #2c3e50;
+        font-weight: 700;
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .page-header .subtitle {
+        color: #6c757d;
+        font-size: 1.1rem;
+        font-weight: 400;
+    }
+    
+    .form-section {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
+        border: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+    
+    .form-section:hover {
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+    
+    .section-title {
+        color: #495057;
+        font-weight: 600;
+        font-size: 1.2rem;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .section-title i {
+        margin-right: 10px;
+        color: #667eea;
+        font-size: 1.3rem;
+    }
+    
+    .form-group {
+        margin-bottom: 25px;
+    }
+    
+    .form-group label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .form-group label i {
+        margin-right: 8px;
+        color: #667eea;
+        width: 20px;
+    }
+    
+    .form-control {
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        padding: 12px 15px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background: white;
+    }
+    
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        transform: translateY(-1px);
+    }
+    
+    .form-control:hover {
+        border-color: #667eea;
+    }
+    
+    .form-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    
+    .alert-info {
+        background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+        border: none;
+        border-radius: 15px;
+        padding: 20px;
+        border-left: 5px solid #2196f3;
+    }
+    
+    .criterios-preview {
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        border: none;
+        border-radius: 15px;
+        padding: 25px;
+        margin-top: 25px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    .preview-title {
+        color: #495057;
+        font-weight: 700;
+        font-size: 1.3rem;
+        margin-bottom: 20px;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .preview-title i {
+        margin-right: 10px;
+        color: #667eea;
+    }
+    
+    .criterio-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        padding: 15px;
+        background: white;
+        border-radius: 12px;
+        border-left: 5px solid #667eea;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+    }
+    
+    .criterio-item:hover {
+        transform: translateX(5px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .criterio-icon {
+        margin-right: 15px;
+        color: #667eea;
+        width: 25px;
+        font-size: 1.2rem;
+    }
+    
+    .criterio-text {
+        font-weight: 500;
+        color: #495057;
+    }
+    
+    .criterio-value {
+        font-weight: 700;
+        color: #667eea;
+    }
+    
+    .monto-preview {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        padding: 20px;
+        border-radius: 15px;
+        text-align: center;
+        margin-top: 20px;
+        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+    }
+    
+    .monto-preview h4 {
+        margin: 0;
+        font-weight: 700;
+        font-size: 1.5rem;
+    }
+    
+    .btn-group-custom {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 30px;
+    }
+    
+    .btn-custom {
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 1rem;
+        border: none;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .btn-success-custom {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: white;
+        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+    }
+    
+    .btn-success-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 35px rgba(40, 167, 69, 0.4);
+        color: white;
+    }
+    
+    .btn-secondary-custom {
+        background: linear-gradient(135deg, #6c757d, #495057);
+        color: white;
+        box-shadow: 0 8px 25px rgba(108, 117, 125, 0.3);
+    }
+    
+    .btn-secondary-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 35px rgba(108, 117, 125, 0.4);
+        color: white;
+    }
+    
+    .btn-preview {
+        background: linear-gradient(135deg, #17a2b8, #138496);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-preview:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(23, 162, 184, 0.3);
+        color: white;
+    }
+    
+    .input-group {
+        position: relative;
+    }
+    
+    .input-group-prepend .input-group-text {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        border: none;
+        border-radius: 10px 0 0 10px;
+        font-weight: 600;
+    }
+    
+    .input-group .form-control {
+        border-left: none;
+        border-radius: 0 10px 10px 0;
+    }
+    
+    .checkbox-custom {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 15px;
+    }
+    
+    .checkbox-custom input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        accent-color: #667eea;
+    }
+    
+    .checkbox-custom label {
+        margin: 0;
+        font-weight: 500;
+        color: #495057;
+    }
+    
+    .info-card {
+        background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+        border: none;
+        border-radius: 15px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        max-width: 250px;
+        margin: 0 auto;
+    }
+    
+    .info-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+    
+    .info-icon {
+        font-size: 2.5rem;
+        color: #667eea;
+        margin-bottom: 10px;
+        display: block;
+    }
+    
+    .info-text {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #495057;
+        font-weight: 500;
+        line-height: 1.4;
+    }
+    
+    .text-danger {
+        font-weight: 500;
+    }
+    
+    .form-text {
+        font-style: italic;
+    }
+    
+    /* Estilo personalizado para el campo descripción */
+    #id_descripcion {
+        height: 80px !important;
+        min-height: 80px !important;
+        max-height: 120px !important;
+        resize: vertical;
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+
+    /* Asegurar que el contenedor de descripción use todo el ancho */
+    .form-group:has(#id_descripcion) {
+        width: 100%;
+    }
+
+    /* Estilo personalizado para el campo nombre - más ancho */
+    #id_nombre {
+        width: 100% !important;
+        padding: 12px 16px !important;
+        font-size: 16px !important;
+        border: 2px solid #e9ecef !important;
+        border-radius: 8px !important;
+        box-sizing: border-box;
+        transition: all 0.3s ease;
+    }
+
+    #id_nombre:focus {
+        border-color: #6f42c1 !important;
+        box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.25) !important;
+        outline: none !important;
+    }
+
+    @media (max-width: 768px) {
+         .form-container {
+             padding: 25px;
+             margin: 10px;
+         }
+         
+         .page-header h2 {
+             font-size: 2rem;
+         }
+         
+         .btn-group-custom {
+             flex-direction: column;
+         }
+         
+         .info-card {
+             margin-top: 15px;
+             max-width: 100%;
+         }
+     }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-8">
+            <div class="form-container">
+                <div class="page-header">
+                    <h2>
+                        <i class="fas fa-gift"></i>
+                        {% if object %}Editar Bonificación{% else %}Nueva Bonificación{% endif %}
+                    </h2>
+                    <p class="subtitle">Configura las condiciones y monto de la bonificación</p>
+                </div>
+
+                <form method="post" id="bonificacionForm">
+                    {% csrf_token %}
+                    
+                    <!-- Información Básica -->
+                    <div class="form-section">
+                        <div class="section-title">
+                            <i class="fas fa-info-circle"></i>
+                            Información Básica
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label for="{{ form.nombre.id_for_label }}">
+                                        <i class="fas fa-tag"></i> Nombre de la Bonificación *
+                                    </label>
+                                    {{ form.nombre }}
+                                    {% if form.nombre.errors %}
+                                        <div class="text-danger mt-2">
+                                            <i class="fas fa-exclamation-circle me-1"></i>{{ form.nombre.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label for="{{ form.descripcion.id_for_label }}">
+                                        <i class="fas fa-align-left"></i> Descripción
+                                    </label>
+                                    {{ form.descripcion }}
+                                    {% if form.descripcion.errors %}
+                                        <div class="text-danger mt-2">
+                                            <i class="fas fa-exclamation-circle me-1"></i>{{ form.descripcion.errors }}
+                                        </div>
+                                    {% endif %}
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Criterios de Bonificación -->
+                    <div class="form-section">
+                        <div class="section-title">
+                            <i class="fas fa-tasks"></i>
+                            Criterios de Bonificación
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            <strong>Criterios Flexibles:</strong> Puedes definir uno o más criterios. Deja en 0 o vacío los criterios que no desees aplicar.
+                            <br><small><i class="fas fa-example-circle me-1"></i>Ejemplo: Para una bonificación solo por días consecutivos, define solo ese campo y deja los otros en 0.</small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ form.dias_consecutivos_requeridos.id_for_label }}">
+                                        <i class="fas fa-calendar-day"></i> Días Consecutivos
+                                    </label>
+                                    {{ form.dias_consecutivos_requeridos }}
+                                    {% if form.dias_consecutivos_requeridos.errors %}
+                                        <div class="text-danger">{{ form.dias_consecutivos_requeridos.errors }}</div>
+                                    {% endif %}
+                                    <small class="form-text">Días seguidos trabajados (0 = no aplicar este criterio)</small>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ form.servicios_requeridos.id_for_label }}">
+                                        <i class="fas fa-car-wash"></i> Servicios Requeridos
+                                    </label>
+                                    {{ form.servicios_requeridos }}
+                                    {% if form.servicios_requeridos.errors %}
+                                        <div class="text-danger">{{ form.servicios_requeridos.errors }}</div>
+                                    {% endif %}
+                                    <small class="form-text">Cantidad de servicios (0 = no aplicar este criterio)</small>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ form.calificacion_minima.id_for_label }}">
+                                        <i class="fas fa-star"></i> Calificación Mínima
+                                    </label>
+                                    {{ form.calificacion_minima }}
+                                    {% if form.calificacion_minima.errors %}
+                                        <div class="text-danger">{{ form.calificacion_minima.errors }}</div>
+                                    {% endif %}
+                                    <small class="form-text">De 1.0 a 5.0 (0 = no aplicar este criterio)</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Configuración de Monto -->
+                    <div class="form-section">
+                        <div class="section-title">
+                            <i class="fas fa-dollar-sign"></i>
+                            Configuración de Monto
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.monto_bonificacion.id_for_label }}">
+                                        <i class="fas fa-money-bill-wave"></i> Monto de la Bonificación *
+                                    </label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text">$</span>
+                                        </div>
+                                        {{ form.monto_bonificacion }}
+                                    </div>
+                                    {% if form.monto_bonificacion.errors %}
+                                        <div class="text-danger">{{ form.monto_bonificacion.errors }}</div>
+                                    {% endif %}
+                                    <small class="form-text">Monto en pesos colombianos</small>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.activo.id_for_label }}">
+                                        <i class="fas fa-toggle-on"></i> Estado
+                                    </label>
+                                    <div class="checkbox-custom">
+                                        {{ form.activo }}
+                                        <label for="{{ form.activo.id_for_label }}">Bonificación activa</label>
+                                    </div>
+                                    {% if form.activo.errors %}
+                                        <div class="text-danger">{{ form.activo.errors }}</div>
+                                    {% endif %}
+                                    <small class="form-text">Solo las bonificaciones activas pueden ser aplicadas</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vista previa de criterios -->
+                    <div class="criterios-preview">
+                        <div class="preview-title">
+                            <i class="fas fa-eye"></i>
+                            Vista Previa de Criterios
+                        </div>
+                        <div id="criteriosPreview">
+                            <div class="criterio-item">
+                                <i class="fas fa-calendar-day criterio-icon"></i>
+                                <span class="criterio-text">Trabajar <span class="criterio-value" id="diasPreview">0</span> días consecutivos</span>
+                            </div>
+                            <div class="criterio-item">
+                                <i class="fas fa-car-wash criterio-icon"></i>
+                                <span class="criterio-text">Completar <span class="criterio-value" id="serviciosPreview">0</span> servicios</span>
+                            </div>
+                            <div class="criterio-item">
+                                <i class="fas fa-star criterio-icon"></i>
+                                <span class="criterio-text">Mantener calificación promedio ≥ <span class="criterio-value" id="calificacionPreview">0.0</span></span>
+                            </div>
+                        </div>
+                        
+                        <div class="monto-preview">
+                            <h4><i class="fas fa-gift me-2"></i>Bonificación: $<span id="montoPreview">0</span></h4>
+                            <small><i class="fas fa-credit-card me-1"></i>Se otorgará automáticamente como tarjeta de regalo</small>
+                        </div>
+                    </div>
+
+                    <div class="btn-group-custom">
+                        <button type="button" class="btn-custom btn-preview" onclick="actualizarPreview()">
+                            <i class="fas fa-sync"></i> Actualizar Vista Previa
+                        </button>
+                        
+                        <a href="{% url 'empleados:bonificacion_v2_list' %}" class="btn-custom btn-secondary-custom">
+                            <i class="fas fa-arrow-left"></i> Volver
+                        </a>
+                        
+                        <button type="submit" class="btn-custom btn-success-custom">
+                            <i class="fas fa-save"></i>
+                            {% if object %}Actualizar{% else %}Crear{% endif %} Bonificación
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function actualizarPreview() {
+        const dias = document.getElementById('{{ form.dias_consecutivos_requeridos.id_for_label }}').value || 0;
+        const servicios = document.getElementById('{{ form.servicios_requeridos.id_for_label }}').value || 0;
+        const calificacion = document.getElementById('{{ form.calificacion_minima.id_for_label }}').value || 0.0;
+        const monto = document.getElementById('{{ form.monto_bonificacion.id_for_label }}').value || 0;
+        
+        document.getElementById('diasPreview').textContent = dias;
+        document.getElementById('serviciosPreview').textContent = servicios;
+        document.getElementById('calificacionPreview').textContent = parseFloat(calificacion).toFixed(1);
+        document.getElementById('montoPreview').textContent = parseInt(monto).toLocaleString();
+    }
+    
+    // Actualizar vista previa automáticamente cuando cambien los valores
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputs = [
+            '{{ form.dias_consecutivos_requeridos.id_for_label }}',
+            '{{ form.servicios_requeridos.id_for_label }}',
+            '{{ form.calificacion_minima.id_for_label }}',
+            '{{ form.monto_bonificacion.id_for_label }}'
+        ];
+        
+        inputs.forEach(inputId => {
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.addEventListener('input', actualizarPreview);
+                input.addEventListener('change', actualizarPreview);
+            }
+        });
+        
+        // Actualizar vista previa inicial
+        actualizarPreview();
+    });
+    
+    // Validación del formulario
+    document.getElementById('bonificacionForm').addEventListener('submit', function(e) {
+        const dias = parseInt(document.getElementById('{{ form.dias_consecutivos_requeridos.id_for_label }}').value) || 0;
+        const servicios = parseInt(document.getElementById('{{ form.servicios_requeridos.id_for_label }}').value) || 0;
+        const calificacion = parseFloat(document.getElementById('{{ form.calificacion_minima.id_for_label }}').value) || 0;
+        const monto = parseFloat(document.getElementById('{{ form.monto_bonificacion.id_for_label }}').value) || 0;
+        
+        // Validar que al menos haya un criterio definido O que el monto sea válido
+        const tieneCriterios = dias > 0 || servicios > 0 || calificacion > 0;
+        const montoValido = monto > 0;
+        
+        // Validar calificación si está definida
+        const calificacionValida = calificacion === 0 || (calificacion >= 1.0 && calificacion <= 5.0);
+        
+        if (!montoValido) {
+            e.preventDefault();
+            alert('Por favor, ingrese un monto válido para la bonificación (mayor que 0).');
+            return;
+        }
+        
+        if (!calificacionValida) {
+            e.preventDefault();
+            alert('Si define una calificación mínima, debe estar entre 1.0 y 5.0.');
+            return;
+        }
+        
+        // Opcional: advertir si no hay criterios (bonificación libre)
+        if (!tieneCriterios) {
+            const confirmar = confirm('Esta bonificación no tiene criterios específicos, lo que significa que será elegible automáticamente. ¿Desea continuar?');
+            if (!confirmar) {
+                e.preventDefault();
+            }
+        }
+    });
+</script>
+{% endblock %}

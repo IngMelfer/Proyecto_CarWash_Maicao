@@ -158,9 +158,21 @@
                     <div class="mb-3">
                         <label class="form-label text-muted">Estado</label>
                         <p class="fw-bold">
-                            <span class="badge bg-{{ empleado.activo|yesno:'success,danger' }}">
-                                {{ empleado.activo|yesno:'Activo,Inactivo' }}
-                            </span>
+                            {% if empleado.activo %}
+                                <span class="badge bg-success text-white">Activo</span>
+                            {% else %}
+                                <span class="badge bg-danger text-white">Inactivo</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Disponibilidad</label>
+                        <p class="fw-bold">
+                            {% if empleado.disponible %}
+                                <span class="badge bg-success text-white">Disponible</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">No Disponible</span>
+                            {% endif %}
                         </p>
                     </div>
                 </div>

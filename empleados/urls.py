@@ -49,6 +49,24 @@ urlpatterns = [
     path('admin-bonificaciones/evaluar-automaticas/', views.EjecutarEvaluacionAutomaticaView.as_view(), name='evaluar_automaticas'),
     path('admin-bonificaciones/api/empleados/', views.api_empleados_bonificaciones, name='api_empleados_bonificaciones'),
     
+    # ===== NUEVAS RUTAS PARA SISTEMA DE BONIFICACIONES V2 =====
+    
+    # Gestión de configuraciones de bonificaciones (Administradores)
+    path('bonificaciones-v2/', views.BonificacionV2ListView.as_view(), name='bonificacion_v2_list'),
+    path('bonificaciones-v2/crear/', views.BonificacionV2CreateView.as_view(), name='bonificacion_v2_create'),
+    path('bonificaciones-v2/<int:pk>/editar/', views.BonificacionV2UpdateView.as_view(), name='bonificacion_v2_update'),
+    path('bonificaciones-v2/<int:pk>/eliminar/', views.BonificacionV2DeleteView.as_view(), name='bonificacion_v2_delete'),
+    
+    # Gestión de bonificaciones obtenidas (Administradores)
+    path('bonificaciones-obtenidas/', views.BonificacionObtenidaListView.as_view(), name='bonificacion_obtenida_list'),
+    path('bonificaciones-obtenidas/<int:pk>/redimir/', views.RedimirBonificacionV2View.as_view(), name='redimir_bonificacion_v2'),
+    
+    # Vista para empleados - sus bonificaciones
+    path('mis-bonificaciones-v2/', views.EmpleadoBonificacionesV2View.as_view(), name='empleado_bonificaciones_v2'),
+    
+    # API para evaluación de bonificaciones
+    path('api/evaluar-empleado/<int:empleado_id>/bonificacion/<int:bonificacion_id>/', views.api_evaluar_empleado_bonificacion, name='api_evaluar_empleado_bonificacion'),
+    
     # Dashboard de empleados - ruta directa y sistema específico
     path('dashboard-empleado/', views.dashboard_empleado_view, name='dashboard'),
     path('dashboard/', include('empleados.urls_dashboard')),

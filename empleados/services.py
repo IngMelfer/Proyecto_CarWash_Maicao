@@ -1,8 +1,8 @@
-from django.db.models import Avg, Count, Q
+from django.db.models import Avg, Count, Q, Sum
 from django.utils import timezone
 from datetime import datetime, timedelta
 from decimal import Decimal
-from .models import Empleado, Incentivo, ConfiguracionBonificacion, Calificacion
+from .models import Empleado, Incentivo, ConfiguracionBonificacion, Calificacion, Bonificacion, BonificacionObtenida, RegistroTiempo
 from reservas.models import Reserva
 
 
@@ -209,3 +209,229 @@ class BonificacionService:
                 progreso.append(progreso_item)
         
         return progreso
+
+
+class BonificacionServiceV2:
+    """
+    Servicio mejorado para gestionar el cálculo y otorgamiento automático de bonificaciones
+    basado en los nuevos modelos Bonificacion y BonificacionObtenida.
+    """
+    
+    @staticmethod
+    def calcular_dias_consecutivos_trabajados(empleado, fecha_fin, dias_evaluar=30):
+        """
+        Calcula los días consecutivos trabajados por un empleado hasta una fecha específica.
+        """
+        fecha_inicio = fecha_fin - timedelta(days=dias_evaluar)
+        
+        # Obtener todos los días trabajados en el período
+        registros = RegistroTiempo.objects.filter(
+            empleado=empleado,
+            fecha__range=[fecha_inicio, fecha_fin],
+            hora_salida__isnull=False  # Solo días completos
+        ).values_list('fecha', flat=True).distinct().order_by('-fecha')
+        
+        if not registros:
+            return 0
+        
+        # Calcular días consecutivos desde la fecha más reciente
+        dias_consecutivos = 0
+        fecha_actual = fecha_fin
+        
+        for fecha_registro in registros:
+            if fecha_registro == fecha_actual:
+                dias_consecutivos += 1
+                fecha_actual -= timedelta(days=1)
+            else:
+                break
+        
+        return dias_consecutivos
+    
+    @staticmethod
+    def calcular_servicios_realizados(empleado, fecha_inicio, fecha_fin):
+        """
+        Calcula la cantidad de servicios realizados por un empleado en un período.
+        """
+        return Reserva.objects.filter(
+            empleado_asignado=empleado,
+            fecha_reserva__range=[fecha_inicio, fecha_fin],
+            estado='completada'
+        ).count()
+    
+    @staticmethod
+    def calcular_calificacion_promedio(empleado, fecha_inicio, fecha_fin):
+        """
+        Calcula la calificación promedio de un empleado en un período.
+        """
+        # Obtener reservas completadas con calificación
+        reservas_calificadas = Reserva.objects.filter(
+            empleado_asignado=empleado,
+            fecha_reserva__range=[fecha_inicio, fecha_fin],
+            estado='completada',
+            calificaciones__isnull=False
+        )
+        
+        if not reservas_calificadas.exists():
+            return 0.0
+        
+        # Calcular promedio de calificaciones
+        promedio = Calificacion.objects.filter(
+            reserva__in=reservas_calificadas
+        ).aggregate(promedio=Avg('puntuacion'))['promedio']
+        
+        return float(promedio) if promedio else 0.0
+    
+    @staticmethod
+    def evaluar_empleado_para_bonificacion(empleado, bonificacion, fecha_evaluacion=None):
+        """
+        Evalúa si un empleado cumple los criterios para una bonificación específica.
+        Ahora soporta criterios flexibles - solo evalúa criterios que están definidos (> 0).
+        """
+        if fecha_evaluacion is None:
+            fecha_evaluacion = timezone.now().date()
+        
+        # Definir período de evaluación (últimos 30 días por defecto)
+        fecha_fin = fecha_evaluacion
+        fecha_inicio = fecha_fin - timedelta(days=30)
+        
+        # Calcular métricas
+        dias_consecutivos = BonificacionServiceV2.calcular_dias_consecutivos_trabajados(
+            empleado, fecha_fin, dias_evaluar=bonificacion.dias_consecutivos_requeridos + 10 if bonificacion.dias_consecutivos_requeridos else 30
+        )
+        servicios_realizados = BonificacionServiceV2.calcular_servicios_realizados(
+            empleado, fecha_inicio, fecha_fin
+        )
+        calificacion_promedio = BonificacionServiceV2.calcular_calificacion_promedio(
+            empleado, fecha_inicio, fecha_fin
+        )
+        
+        # Evaluar criterios de forma flexible - solo los que están definidos
+        criterios_evaluados = []
+        criterios_cumplidos = []
+        
+        # Evaluar días consecutivos solo si está definido
+        if bonificacion.dias_consecutivos_requeridos and bonificacion.dias_consecutivos_requeridos > 0:
+            cumple_dias = dias_consecutivos >= bonificacion.dias_consecutivos_requeridos
+            criterios_evaluados.append('dias')
+            if cumple_dias:
+                criterios_cumplidos.append('dias')
+        
+        # Evaluar servicios solo si está definido
+        if bonificacion.servicios_requeridos and bonificacion.servicios_requeridos > 0:
+            cumple_servicios = servicios_realizados >= bonificacion.servicios_requeridos
+            criterios_evaluados.append('servicios')
+            if cumple_servicios:
+                criterios_cumplidos.append('servicios')
+        
+        # Evaluar calificación solo si está definida
+        if bonificacion.calificacion_minima and bonificacion.calificacion_minima > 0:
+            cumple_calificacion = calificacion_promedio >= float(bonificacion.calificacion_minima)
+            criterios_evaluados.append('calificacion')
+            if cumple_calificacion:
+                criterios_cumplidos.append('calificacion')
+        
+        # El empleado cumple si cumple TODOS los criterios que están definidos
+        cumple_criterios = len(criterios_evaluados) > 0 and len(criterios_cumplidos) == len(criterios_evaluados)
+        
+        return {
+            'cumple_criterios': cumple_criterios,
+            'dias_consecutivos': dias_consecutivos,
+            'servicios_realizados': servicios_realizados,
+            'calificacion_promedio': calificacion_promedio,
+            'fecha_inicio_periodo': fecha_inicio,
+            'fecha_fin_periodo': fecha_fin,
+            'criterios_detalle': {
+                'criterios_evaluados': criterios_evaluados,
+                'criterios_cumplidos': criterios_cumplidos,
+                'cumple_dias': dias_consecutivos >= (bonificacion.dias_consecutivos_requeridos or 0),
+                'cumple_servicios': servicios_realizados >= (bonificacion.servicios_requeridos or 0),
+                'cumple_calificacion': calificacion_promedio >= float(bonificacion.calificacion_minima or 0)
+            }
+        }
+    
+    @staticmethod
+    def otorgar_bonificacion(empleado, bonificacion, metricas):
+        """
+        Otorga una bonificación a un empleado si cumple los criterios.
+        """
+        # Verificar que no haya una bonificación duplicada para el mismo período
+        bonificacion_existente = BonificacionObtenida.objects.filter(
+            empleado=empleado,
+            bonificacion=bonificacion,
+            fecha_inicio_periodo=metricas['fecha_inicio_periodo'],
+            fecha_fin_periodo=metricas['fecha_fin_periodo']
+        ).exists()
+        
+        if bonificacion_existente:
+            return None, "Ya existe una bonificación para este período"
+        
+        # Crear la bonificación obtenida
+        bonificacion_obtenida = BonificacionObtenida.objects.create(
+            empleado=empleado,
+            bonificacion=bonificacion,
+            fecha_inicio_periodo=metricas['fecha_inicio_periodo'],
+            fecha_fin_periodo=metricas['fecha_fin_periodo'],
+            dias_consecutivos_trabajados=metricas['dias_consecutivos'],
+            servicios_realizados=metricas['servicios_realizados'],
+            calificacion_promedio=metricas['calificacion_promedio'],
+            monto=bonificacion.monto_bonificacion
+        )
+        
+        return bonificacion_obtenida, "Bonificación otorgada exitosamente"
+    
+    @staticmethod
+    def obtener_bonificaciones_pendientes_empleado(empleado):
+        """
+        Obtiene todas las bonificaciones pendientes de un empleado.
+        """
+        return BonificacionObtenida.objects.filter(
+            empleado=empleado,
+            estado=BonificacionObtenida.ESTADO_PENDIENTE
+        ).select_related('bonificacion')
+    
+    @staticmethod
+    def obtener_historial_bonificaciones_empleado(empleado):
+        """
+        Obtiene el historial completo de bonificaciones de un empleado.
+        """
+        return BonificacionObtenida.objects.filter(
+            empleado=empleado
+        ).select_related('bonificacion', 'redimida_por').order_by('-fecha_obtencion')
+    
+    @staticmethod
+    def redimir_bonificacion(bonificacion_obtenida, usuario_admin, notas=""):
+        """
+        Redime una bonificación específica.
+        """
+        if bonificacion_obtenida.puede_ser_redimida():
+            return bonificacion_obtenida.redimir(usuario_admin, notas)
+        return False
+    
+    @staticmethod
+    def obtener_estadisticas_bonificaciones():
+        """
+        Obtiene estadísticas generales del sistema de bonificaciones.
+        """
+        total_bonificaciones = BonificacionObtenida.objects.count()
+        bonificaciones_pendientes = BonificacionObtenida.objects.filter(
+            estado=BonificacionObtenida.ESTADO_PENDIENTE
+        ).count()
+        bonificaciones_redimidas = BonificacionObtenida.objects.filter(
+            estado=BonificacionObtenida.ESTADO_REDIMIDA
+        ).count()
+        
+        monto_total_pendiente = BonificacionObtenida.objects.filter(
+            estado=BonificacionObtenida.ESTADO_PENDIENTE
+        ).aggregate(total=Sum('monto'))['total'] or 0
+        
+        monto_total_redimido = BonificacionObtenida.objects.filter(
+            estado=BonificacionObtenida.ESTADO_REDIMIDA
+        ).aggregate(total=Sum('monto'))['total'] or 0
+        
+        return {
+            'total_bonificaciones': total_bonificaciones,
+            'bonificaciones_pendientes': bonificaciones_pendientes,
+            'bonificaciones_redimidas': bonificaciones_redimidas,
+            'monto_total_pendiente': float(monto_total_pendiente),
+            'monto_total_redimido': float(monto_total_redimido)
+        }

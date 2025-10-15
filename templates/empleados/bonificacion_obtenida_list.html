@@ -1,0 +1,396 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Bonificaciones Obtenidas{% endblock %}
+
+{% block extra_css %}
+<style>
+    .bonificacion-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 15px;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .bonificacion-card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .bonificacion-pendiente {
+        border-left: 4px solid #ffc107;
+        background: linear-gradient(to right, #fff9e6, white);
+    }
+    
+    .bonificacion-redimida {
+        border-left: 4px solid #28a745;
+        background: linear-gradient(to right, #f0f9f0, white);
+    }
+    
+    .bonificacion-expirada {
+        border-left: 4px solid #dc3545;
+        background: linear-gradient(to right, #fdf2f2, white);
+        opacity: 0.8;
+    }
+    
+    .empleado-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .empleado-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        margin-right: 10px;
+    }
+    
+    .monto-badge {
+        font-size: 1.2em;
+        font-weight: bold;
+        padding: 8px 15px;
+        border-radius: 20px;
+    }
+    
+    .monto-pendiente {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+    
+    .monto-redimido {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    
+    .filter-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .btn-redimir {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        border: none;
+        color: white;
+        padding: 8px 15px;
+        border-radius: 5px;
+        font-weight: bold;
+    }
+    
+    .btn-redimir:hover {
+        background: linear-gradient(45deg, #218838, #1ea080);
+        color: white;
+    }
+    
+    .criterios-cumplidos {
+        background: #f8f9fa;
+        border-radius: 5px;
+        padding: 10px;
+        margin-top: 10px;
+    }
+    
+    .criterio-cumplido {
+        display: inline-block;
+        background: #e9ecef;
+        border-radius: 3px;
+        padding: 3px 8px;
+        margin: 2px;
+        font-size: 0.8em;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-award"></i> Bonificaciones Obtenidas</h2>
+                <div>
+                    <a href="{% url 'empleados:bonificacion_v2_list' %}" class="btn btn-primary">
+                        <i class="fas fa-cog"></i> Configurar Bonificaciones
+                    </a>
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            {% if estadisticas %}
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <h3>{{ estadisticas.bonificaciones_pendientes }}</h3>
+                        <p>Pendientes de Redimir</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <h3>{{ estadisticas.bonificaciones_redimidas }}</h3>
+                        <p>Ya Redimidas</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <h3>${{ estadisticas.monto_total_pendiente|floatformat:0 }}</h3>
+                        <p>Monto Pendiente</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <h3>${{ estadisticas.monto_total_redimido|floatformat:0 }}</h3>
+                        <p>Monto Redimido</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Filtros -->
+            <div class="filter-card">
+                <form method="get" class="row">
+                    <div class="col-md-4">
+                        <label for="estado">Estado:</label>
+                        <select name="estado" id="estado" class="form-control">
+                            <option value="">Todos los estados</option>
+                            {% for value, label in estados %}
+                                <option value="{{ value }}" {% if filtros.estado == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="empleado">Empleado:</label>
+                        <select name="empleado" id="empleado" class="form-control">
+                            <option value="">Todos los empleados</option>
+                            {% for empleado in empleados %}
+                                <option value="{{ empleado.id }}" {% if filtros.empleado == empleado.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ empleado.nombre_completo }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-info mr-2">
+                            <i class="fas fa-filter"></i> Filtrar
+                        </button>
+                        <a href="{% url 'empleados:bonificacion_obtenida_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Limpiar
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Lista de bonificaciones obtenidas -->
+            <div class="row">
+                <div class="col-12">
+                    {% if bonificaciones_obtenidas %}
+                        {% for bonificacion_obtenida in bonificaciones_obtenidas %}
+                        <div class="bonificacion-card 
+                            {% if bonificacion_obtenida.estado == 'pendiente' %}bonificacion-pendiente
+                            {% elif bonificacion_obtenida.estado == 'redimida' %}bonificacion-redimida
+                            {% else %}bonificacion-expirada{% endif %}">
+                            
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="empleado-info">
+                                        <div class="empleado-avatar">
+                                            {{ bonificacion_obtenida.empleado.nombre.0 }}{{ bonificacion_obtenida.empleado.apellido.0 }}
+                                        </div>
+                                        <div>
+                                            <h5 class="mb-0">{{ bonificacion_obtenida.empleado.nombre_completo }}</h5>
+                                            <small class="text-muted">{{ bonificacion_obtenida.empleado.cargo.nombre }}</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <h6>{{ bonificacion_obtenida.bonificacion.nombre }}</h6>
+                                    {% if bonificacion_obtenida.bonificacion.descripcion %}
+                                        <p class="text-muted small">{{ bonificacion_obtenida.bonificacion.descripcion }}</p>
+                                    {% endif %}
+                                    
+                                    <div class="criterios-cumplidos">
+                                        <strong>Criterios cumplidos:</strong><br>
+                                        <span class="criterio-cumplido">
+                                            <i class="fas fa-calendar-day"></i> {{ bonificacion_obtenida.dias_trabajados_consecutivos }} días consecutivos
+                                        </span>
+                                        <span class="criterio-cumplido">
+                                            <i class="fas fa-tasks"></i> {{ bonificacion_obtenida.servicios_completados }} servicios
+                                        </span>
+                                        <span class="criterio-cumplido">
+                                            <i class="fas fa-star"></i> {{ bonificacion_obtenida.calificacion_promedio|floatformat:1 }} promedio
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="mt-2">
+                                        <small class="text-muted">
+                                            <i class="fas fa-clock"></i> Obtenida el {{ bonificacion_obtenida.fecha_obtencion|date:"d/m/Y H:i" }}
+                                        </small>
+                                        {% if bonificacion_obtenida.estado == 'redimida' %}
+                                            <br><small class="text-success">
+                                                <i class="fas fa-check"></i> Redimida el {{ bonificacion_obtenida.fecha_redencion|date:"d/m/Y H:i" }}
+                                                {% if bonificacion_obtenida.redimida_por %}
+                                                    por {{ bonificacion_obtenida.redimida_por.get_full_name|default:bonificacion_obtenida.redimida_por.username }}
+                                                {% endif %}
+                                            </small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-4 text-right">
+                                    <div class="monto-badge 
+                                        {% if bonificacion_obtenida.estado == 'pendiente' %}monto-pendiente
+                                        {% else %}monto-redimido{% endif %}">
+                                        ${{ bonificacion_obtenida.monto|floatformat:0 }}
+                                    </div>
+                                    
+                                    <div class="mt-2">
+                                        {% if bonificacion_obtenida.estado == 'pendiente' %}
+                                            <span class="badge badge-warning">Pendiente</span>
+                                        {% elif bonificacion_obtenida.estado == 'redimida' %}
+                                            <span class="badge badge-success">Redimida</span>
+                                        {% else %}
+                                            <span class="badge badge-danger">{{ bonificacion_obtenida.get_estado_display }}</span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    {% if bonificacion_obtenida.puede_ser_redimida %}
+                                    <div class="mt-3">
+                                        <button type="button" class="btn btn-redimir" 
+                                                onclick="mostrarModalRedencion({{ bonificacion_obtenida.id }}, '{{ bonificacion_obtenida.empleado.nombre_completo }}', {{ bonificacion_obtenida.monto }})">
+                                            <i class="fas fa-hand-holding-usd"></i> Redimir
+                                        </button>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        <!-- Paginación -->
+                        {% if is_paginated %}
+                        <nav aria-label="Paginación de bonificaciones obtenidas">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1{% if filtros.estado %}&estado={{ filtros.estado }}{% endif %}{% if filtros.empleado %}&empleado={{ filtros.empleado }}{% endif %}">Primera</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if filtros.estado %}&estado={{ filtros.estado }}{% endif %}{% if filtros.empleado %}&empleado={{ filtros.empleado }}{% endif %}">Anterior</a>
+                                    </li>
+                                {% endif %}
+
+                                <li class="page-item active">
+                                    <span class="page-link">
+                                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                    </span>
+                                </li>
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if filtros.estado %}&estado={{ filtros.estado }}{% endif %}{% if filtros.empleado %}&empleado={{ filtros.empleado }}{% endif %}">Siguiente</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if filtros.estado %}&estado={{ filtros.estado }}{% endif %}{% if filtros.empleado %}&empleado={{ filtros.empleado }}{% endif %}">Última</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+
+                    {% else %}
+                        <div class="alert alert-info text-center">
+                            <h4><i class="fas fa-info-circle"></i> No hay bonificaciones obtenidas</h4>
+                            <p>Los empleados aún no han obtenido bonificaciones con los criterios actuales.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para redención -->
+<div class="modal fade" id="modalRedencion" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-hand-holding-usd"></i> Redimir Bonificación
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form id="formRedencion" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <strong>¿Confirmar redención?</strong><br>
+                        Esta acción otorgará la bonificación al empleado y no se puede deshacer.
+                    </div>
+                    
+                    <div class="info-redencion">
+                        <p><strong>Empleado:</strong> <span id="empleadoNombre"></span></p>
+                        <p><strong>Monto:</strong> $<span id="montoRedencion"></span></p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="notas">Notas (opcional):</label>
+                        <textarea name="notas" id="notas" class="form-control" rows="3" 
+                                  placeholder="Observaciones sobre la redención..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check"></i> Confirmar Redención
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function mostrarModalRedencion(bonificacionId, empleadoNombre, monto) {
+        document.getElementById('empleadoNombre').textContent = empleadoNombre;
+        document.getElementById('montoRedencion').textContent = monto.toLocaleString();
+        
+        const form = document.getElementById('formRedencion');
+        form.action = `/empleados/bonificaciones-obtenidas/${bonificacionId}/redimir/`;
+        
+        $('#modalRedencion').modal('show');
+    }
+    
+    // Confirmación adicional al enviar el formulario
+    document.getElementById('formRedencion').addEventListener('submit', function(e) {
+        if (!confirm('¿Está seguro de redimir esta bonificación? Esta acción no se puede deshacer.')) {
+            e.preventDefault();
+        }
+    });
+</script>
+{% endblock %}

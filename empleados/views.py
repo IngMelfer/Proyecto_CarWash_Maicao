@@ -14,11 +14,12 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from autenticacion.mixins import RolRequiredMixin, AdminAutolavadoRequiredMixin, GerenteRequiredMixin
 from autenticacion.models import Usuario
 from reservas.models import Reserva
-from .models import Empleado, RegistroTiempo, Calificacion, Incentivo, Cargo, TipoDocumento, ConfiguracionBonificacion
+from .models import Empleado, RegistroTiempo, Calificacion, Incentivo, Cargo, TipoDocumento, ConfiguracionBonificacion, Bonificacion, BonificacionObtenida
 from .forms import (
     EmpleadoPerfilForm, RegistroTiempoForm, EmpleadoRegistroForm, CambiarPasswordForm, EmpleadoEditForm,
     ConfiguracionBonificacionForm, IncentivoForm, RedimirBonificacionForm, FiltrosBonificacionesForm
 )
+from .services import BonificacionServiceV2
 
 # Create your views here.
 
@@ -785,3 +786,204 @@ class EjecutarEvaluacionAutomaticaView(LoginRequiredMixin, GerenteRequiredMixin,
             messages.error(request, f'Error durante la evaluación automática: {str(e)}')
         
         return redirect('empleados:admin_bonificaciones')
+
+
+# ===== NUEVAS VISTAS PARA SISTEMA DE BONIFICACIONES V2 =====
+
+class BonificacionV2ListView(LoginRequiredMixin, GerenteRequiredMixin, ListView):
+    """Vista para listar todas las configuraciones de bonificaciones"""
+    model = Bonificacion
+    template_name = 'empleados/bonificacion_v2_list.html'
+    context_object_name = 'bonificaciones'
+    paginate_by = 20
+
+    def get_queryset(self):
+        return Bonificacion.objects.all().order_by('-fecha_creacion')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['estadisticas'] = BonificacionServiceV2.obtener_estadisticas_bonificaciones()
+        return context
+
+
+class BonificacionV2CreateView(LoginRequiredMixin, GerenteRequiredMixin, CreateView):
+    """Vista para crear una nueva configuración de bonificación"""
+    model = Bonificacion
+    template_name = 'empleados/bonificacion_v2_form.html'
+    fields = [
+        'nombre', 'descripcion', 'dias_consecutivos_requeridos', 
+        'servicios_requeridos', 'calificacion_minima', 'monto_bonificacion', 'activo'
+    ]
+    success_url = reverse_lazy('empleados:bonificacion_v2_list')
+
+    def form_valid(self, form):
+        form.instance.creado_por = self.request.user
+        messages.success(self.request, 'Bonificación creada exitosamente.')
+        return super().form_valid(form)
+
+
+class BonificacionV2UpdateView(LoginRequiredMixin, GerenteRequiredMixin, UpdateView):
+    """Vista para actualizar una configuración de bonificación"""
+    model = Bonificacion
+    template_name = 'empleados/bonificacion_v2_form.html'
+    fields = [
+        'nombre', 'descripcion', 'dias_consecutivos_requeridos', 
+        'servicios_requeridos', 'calificacion_minima', 'monto_bonificacion', 'activo'
+    ]
+    success_url = reverse_lazy('empleados:bonificacion_v2_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Bonificación actualizada exitosamente.')
+        return super().form_valid(form)
+
+
+class BonificacionV2DeleteView(LoginRequiredMixin, GerenteRequiredMixin, DeleteView):
+    """Vista para eliminar una configuración de bonificación"""
+    model = Bonificacion
+    template_name = 'empleados/bonificacion_v2_confirm_delete.html'
+    success_url = reverse_lazy('empleados:bonificacion_v2_list')
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, 'Bonificación eliminada exitosamente.')
+        return super().delete(request, *args, **kwargs)
+
+
+class BonificacionObtenidaListView(LoginRequiredMixin, GerenteRequiredMixin, ListView):
+    """Vista para listar todas las bonificaciones obtenidas por empleados"""
+    model = BonificacionObtenida
+    template_name = 'empleados/bonificacion_obtenida_list.html'
+    context_object_name = 'bonificaciones_obtenidas'
+    paginate_by = 20
+
+    def get_queryset(self):
+        queryset = BonificacionObtenida.objects.select_related(
+            'empleado', 'bonificacion', 'redimida_por'
+        ).order_by('-fecha_obtencion')
+        
+        # Filtros
+        estado = self.request.GET.get('estado')
+        empleado_id = self.request.GET.get('empleado')
+        
+        if estado:
+            queryset = queryset.filter(estado=estado)
+        if empleado_id:
+            queryset = queryset.filter(empleado_id=empleado_id)
+            
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['empleados'] = Empleado.objects.filter(activo=True).order_by('nombre', 'apellido')
+        context['estados'] = BonificacionObtenida.ESTADOS_CHOICES
+        context['filtros'] = {
+            'estado': self.request.GET.get('estado', ''),
+            'empleado': self.request.GET.get('empleado', ''),
+        }
+        context['estadisticas'] = BonificacionServiceV2.obtener_estadisticas_bonificaciones()
+        return context
+
+
+class RedimirBonificacionV2View(LoginRequiredMixin, GerenteRequiredMixin, View):
+    """Vista para redimir una bonificación obtenida"""
+    
+    def post(self, request, pk):
+        bonificacion_obtenida = get_object_or_404(BonificacionObtenida, pk=pk)
+        notas = request.POST.get('notas', '')
+        
+        if bonificacion_obtenida.puede_ser_redimida():
+            exito = BonificacionServiceV2.redimir_bonificacion(
+                bonificacion_obtenida, request.user, notas
+            )
+            
+            if exito:
+                messages.success(
+                    request, 
+                    f'Bonificación de ${bonificacion_obtenida.monto} redimida exitosamente para {bonificacion_obtenida.empleado.nombre_completo()}.'
+                )
+            else:
+                messages.error(request, 'Error al redimir la bonificación.')
+        else:
+            messages.error(request, 'Esta bonificación no puede ser redimida.')
+        
+        return redirect('empleados:bonificacion_obtenida_list')
+
+
+
+class EmpleadoBonificacionesV2View(LoginRequiredMixin, TemplateView):
+    """Vista para que los empleados vean sus bonificaciones"""
+    template_name = 'empleados/empleado_bonificaciones_v2.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        # Verificar que el usuario tenga rol de lavador
+        if request.user.rol != Usuario.ROL_LAVADOR:
+            messages.error(request, 'No tienes permisos para acceder a esta sección. Solo empleados con rol de Lavador pueden ver las bonificaciones.')
+            return redirect('home')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Obtener el empleado actual
+        try:
+            empleado = Empleado.objects.get(usuario=self.request.user)
+        except Empleado.DoesNotExist:
+            empleado = None
+        
+        if empleado:
+            # Verificar que el empleado tenga rol de lavador
+            if empleado.cargo.codigo != 'LAV':
+                messages.error(self.request, 'Solo empleados con rol de Lavador pueden ver las bonificaciones.')
+                return context
+                
+            context['empleado'] = empleado
+            
+            # Obtener programas de bonificaciones disponibles (activos)
+            context['programas_bonificaciones'] = Bonificacion.objects.filter(activo=True).order_by('-fecha_creacion')
+            
+            # Obtener bonificaciones del empleado
+            bonificaciones_pendientes = BonificacionServiceV2.obtener_bonificaciones_pendientes_empleado(empleado)
+            historial_bonificaciones = BonificacionServiceV2.obtener_historial_bonificaciones_empleado(empleado)
+            
+            # Separar bonificaciones ganadas (pendientes) y reclamadas (redimidas)
+            context['bonificaciones_ganadas'] = bonificaciones_pendientes
+            context['bonificaciones_reclamadas'] = historial_bonificaciones.filter(
+                estado=BonificacionObtenida.ESTADO_REDIMIDA
+            )
+            
+            # Mantener compatibilidad con template actual
+            context['bonificaciones_pendientes'] = bonificaciones_pendientes
+            context['historial_bonificaciones'] = historial_bonificaciones
+            
+            # Calcular totales
+            total_pendiente = sum(b.monto for b in bonificaciones_pendientes)
+            total_redimido = sum(
+                b.monto for b in context['bonificaciones_reclamadas']
+            )
+            
+            context['total_pendiente'] = total_pendiente
+            context['total_redimido'] = total_redimido
+        
+        return context
+
+
+@login_required
+def api_evaluar_empleado_bonificacion(request, empleado_id, bonificacion_id):
+    """API para evaluar si un empleado cumple criterios para una bonificación específica"""
+    if not request.user.is_staff:
+        return JsonResponse({'error': 'No autorizado'}, status=403)
+    
+    try:
+        empleado = get_object_or_404(Empleado, pk=empleado_id)
+        bonificacion = get_object_or_404(Bonificacion, pk=bonificacion_id)
+        
+        metricas = BonificacionServiceV2.evaluar_empleado_para_bonificacion(empleado, bonificacion)
+        
+        return JsonResponse({
+            'success': True,
+            'empleado': empleado.nombre_completo(),
+            'bonificacion': bonificacion.nombre,
+            'metricas': metricas
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

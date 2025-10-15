@@ -1,0 +1,536 @@
+{% extends 'empleados/dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Mis Bonificaciones{% endblock %}
+
+{% block extra_css %}
+<style>
+    .bonificacion-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 20px;
+        background: white;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .bonificacion-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+    
+    .bonificacion-pendiente {
+        border-left: 5px solid #ffc107;
+        background: linear-gradient(135deg, #fff9e6, white);
+    }
+    
+    .bonificacion-redimida {
+        border-left: 5px solid #28a745;
+        background: linear-gradient(135deg, #f0f9f0, white);
+    }
+    
+    .bonificacion-expirada {
+        border-left: 5px solid #dc3545;
+        background: linear-gradient(135deg, #fdf2f2, white);
+        opacity: 0.8;
+    }
+    
+    .programa-bonificacion {
+        border-left: 5px solid #007bff;
+        background: linear-gradient(135deg, #e3f2fd, white);
+    }
+    
+    .monto-badge {
+        font-size: 1.5em;
+        font-weight: bold;
+        padding: 12px 20px;
+        border-radius: 25px;
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    
+    .monto-pendiente {
+        background: linear-gradient(135deg, #ffc107, #ffca2c);
+        color: white;
+        box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);
+    }
+    
+    .monto-redimido {
+        background: linear-gradient(135deg, #28a745, #34ce57);
+        color: white;
+        box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+    }
+    
+    .monto-programa {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+    }
+    
+    .criterios-cumplidos {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 15px;
+    }
+    
+    .criterio-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+        padding: 8px 12px;
+        background: white;
+        border-radius: 6px;
+        border-left: 3px solid #007bff;
+    }
+    
+    .criterio-icon {
+        margin-right: 10px;
+        color: #007bff;
+        width: 20px;
+    }
+    
+    .resumen-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 30px;
+        text-align: center;
+    }
+    
+    .resumen-item {
+        margin-bottom: 15px;
+    }
+    
+    .resumen-valor {
+        font-size: 2em;
+        font-weight: bold;
+        display: block;
+    }
+    
+    .resumen-label {
+        font-size: 0.9em;
+        opacity: 0.9;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .empty-icon {
+        font-size: 4rem;
+        color: #6c757d;
+        margin-bottom: 20px;
+    }
+    
+    .tarjeta-regalo {
+        background: linear-gradient(45deg, #ff6b6b, #feca57);
+        color: white;
+        padding: 15px;
+        border-radius: 10px;
+        text-align: center;
+        margin-top: 10px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    .tarjeta-regalo i {
+        font-size: 1.5em;
+        margin-bottom: 5px;
+    }
+
+    /* Estilos para campos de descripción y nombre */
+    #id_descripcion {
+        width: 100% !important;
+        padding: 12px !important;
+        font-size: 14px !important;
+        border: 2px solid #e0e0e0 !important;
+        border-radius: 8px !important;
+        box-sizing: border-box !important;
+        transition: all 0.3s ease !important;
+    }
+
+    #id_descripcion:focus {
+        border-color: #007bff !important;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+        outline: none !important;
+    }
+
+    .form-group:has(#id_descripcion) {
+        width: 100%;
+    }
+
+    #id_nombre {
+        width: 100% !important;
+        padding: 12px !important;
+        font-size: 16px !important;
+        border: 2px solid #e0e0e0 !important;
+        border-radius: 8px !important;
+        box-sizing: border-box !important;
+        transition: all 0.3s ease !important;
+    }
+
+    #id_nombre:focus {
+        border-color: #007bff !important;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+        outline: none !important;
+    }
+
+    .nav-tabs {
+        border-bottom: 2px solid #dee2e6;
+        margin-bottom: 30px;
+    }
+
+    .nav-tabs .nav-link {
+        border: none;
+        border-bottom: 3px solid transparent;
+        color: #6c757d;
+        font-weight: 500;
+        padding: 15px 20px;
+        transition: all 0.3s ease;
+    }
+
+    .nav-tabs .nav-link:hover {
+        border-color: transparent;
+        color: #007bff;
+        background-color: #f8f9fa;
+    }
+
+    .nav-tabs .nav-link.active {
+        color: #007bff;
+        background-color: transparent;
+        border-color: #007bff;
+        font-weight: 600;
+    }
+
+    .tab-content {
+        min-height: 400px;
+    }
+</style>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2><i class="fas fa-gift"></i> Mis Bonificaciones</h2>
+            <p class="text-muted">Aquí puedes ver todas las bonificaciones que has obtenido por tu excelente trabajo.</p>
+        </div>
+    </div>
+
+    {% if empleado %}
+        <!-- Resumen de bonificaciones -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="resumen-card">
+                    <div class="resumen-item">
+                        <span class="resumen-valor">${{ total_pendiente|floatformat:0 }}</span>
+                        <span class="resumen-label">Bonificaciones Ganadas</span>
+                    </div>
+                    <div class="resumen-item">
+                        <span class="resumen-valor">{{ bonificaciones_ganadas|length }}</span>
+                        <span class="resumen-label">Tarjetas de Regalo Disponibles</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="resumen-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                    <div class="resumen-item">
+                        <span class="resumen-valor">${{ total_redimido|floatformat:0 }}</span>
+                        <span class="resumen-label">Total Reclamado</span>
+                    </div>
+                    <div class="resumen-item">
+                        <span class="resumen-valor">{{ bonificaciones_reclamadas|length }}</span>
+                        <span class="resumen-label">Bonificaciones Reclamadas</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pestañas de navegación -->
+        <ul class="nav nav-tabs" id="bonificacionesTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="programas-tab" data-bs-toggle="tab" data-bs-target="#programas" type="button" role="tab" aria-controls="programas" aria-selected="true">
+                    <i class="fas fa-trophy"></i> Programas de Bonificaciones
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="ganadas-tab" data-bs-toggle="tab" data-bs-target="#ganadas" type="button" role="tab" aria-controls="ganadas" aria-selected="false">
+                    <i class="fas fa-gift"></i> Bonificaciones Ganadas
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="reclamadas-tab" data-bs-toggle="tab" data-bs-target="#reclamadas" type="button" role="tab" aria-controls="reclamadas" aria-selected="false">
+                    <i class="fas fa-check-circle"></i> Bonificaciones Reclamadas
+                </button>
+            </li>
+        </ul>
+
+        <!-- Contenido de las pestañas -->
+        <div class="tab-content" id="bonificacionesTabContent">
+            <!-- Programas de Bonificaciones -->
+            <div class="tab-pane fade show active" id="programas" role="tabpanel" aria-labelledby="programas-tab">
+                {% if programas_bonificaciones %}
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h4><i class="fas fa-trophy text-primary"></i> Programas de Bonificaciones Disponibles</h4>
+                        <p class="text-muted">Estos son los programas de bonificaciones que el administrador ha creado. ¡Cumple los criterios para obtener tus recompensas!</p>
+                    </div>
+                </div>
+
+                <div class="row">
+                    {% for programa in programas_bonificaciones %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="bonificacion-card programa-bonificacion">
+                            <div class="monto-badge monto-programa">
+                                ${{ programa.monto_bonificacion|floatformat:0 }}
+                            </div>
+                            
+                            <h5>{{ programa.nombre }}</h5>
+                            {% if programa.descripcion %}
+                                <p class="text-muted small">{{ programa.descripcion }}</p>
+                            {% endif %}
+                            
+                            <div class="criterios-cumplidos">
+                                <strong><i class="fas fa-target text-primary"></i> Criterios para Obtener:</strong>
+                                {% if programa.dias_consecutivos_requeridos and programa.dias_consecutivos_requeridos > 0 %}
+                                <div class="criterio-item">
+                                    <i class="fas fa-calendar-day criterio-icon"></i>
+                                    <span>{{ programa.dias_consecutivos_requeridos }} días consecutivos trabajados</span>
+                                </div>
+                                {% endif %}
+                                {% if programa.servicios_requeridos and programa.servicios_requeridos > 0 %}
+                                <div class="criterio-item">
+                                    <i class="fas fa-tasks criterio-icon"></i>
+                                    <span>{{ programa.servicios_requeridos }} servicios completados</span>
+                                </div>
+                                {% endif %}
+                                {% if programa.calificacion_minima and programa.calificacion_minima > 0 %}
+                                <div class="criterio-item">
+                                    <i class="fas fa-star criterio-icon"></i>
+                                    <span>Calificación promedio ≥ {{ programa.calificacion_minima }}</span>
+                                </div>
+                                {% endif %}
+                                {% if not programa.dias_consecutivos_requeridos and not programa.servicios_requeridos and not programa.calificacion_minima %}
+                                <div class="criterio-item">
+                                    <i class="fas fa-info-circle criterio-icon"></i>
+                                    <span>Sin criterios específicos definidos</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mt-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-clock"></i> Creado el {{ programa.fecha_creacion|date:"d/m/Y" }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-trophy empty-icon"></i>
+                    <h4>No hay programas de bonificaciones disponibles</h4>
+                    <p class="text-muted">
+                        El administrador aún no ha creado programas de bonificaciones.<br>
+                        ¡Mantente atento para futuras oportunidades!
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Bonificaciones Ganadas -->
+            <div class="tab-pane fade" id="ganadas" role="tabpanel" aria-labelledby="ganadas-tab">
+                {% if bonificaciones_ganadas %}
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h4><i class="fas fa-gift text-warning"></i> Bonificaciones Ganadas</h4>
+                        <p class="text-muted">Estas bonificaciones están listas para ser reclamadas por el administrador.</p>
+                    </div>
+                </div>
+
+                <div class="row">
+                    {% for bonificacion in bonificaciones_ganadas %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="bonificacion-card bonificacion-pendiente">
+                            <div class="monto-badge monto-pendiente">
+                                ${{ bonificacion.monto|floatformat:0 }}
+                            </div>
+                            
+                            <h5>{{ bonificacion.bonificacion.nombre }}</h5>
+                            {% if bonificacion.bonificacion.descripcion %}
+                                <p class="text-muted small">{{ bonificacion.bonificacion.descripcion }}</p>
+                            {% endif %}
+                            
+                            <div class="criterios-cumplidos">
+                                <strong><i class="fas fa-check-circle text-success"></i> Criterios Cumplidos:</strong>
+                                <div class="criterio-item">
+                                    <i class="fas fa-calendar-day criterio-icon"></i>
+                                    <span>{{ bonificacion.dias_consecutivos_trabajados }} días consecutivos</span>
+                                </div>
+                                <div class="criterio-item">
+                                    <i class="fas fa-tasks criterio-icon"></i>
+                                    <span>{{ bonificacion.servicios_realizados }} servicios completados</span>
+                                </div>
+                                <div class="criterio-item">
+                                    <i class="fas fa-star criterio-icon"></i>
+                                    <span>{{ bonificacion.calificacion_promedio|floatformat:1 }} promedio de calificación</span>
+                                </div>
+                            </div>
+                            
+                            <div class="tarjeta-regalo">
+                                <i class="fas fa-gift"></i>
+                                <div><strong>Tarjeta de Regalo Obtenida</strong></div>
+                                <small>Solicita al administrador su redención</small>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-clock"></i> Obtenida el {{ bonificacion.fecha_obtencion|date:"d/m/Y H:i" }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-gift empty-icon"></i>
+                    <h4>¡Aún no tienes bonificaciones ganadas!</h4>
+                    <p class="text-muted">
+                        Sigue trabajando con excelencia para obtener bonificaciones.<br>
+                        Las bonificaciones se otorgan automáticamente cuando cumples los criterios establecidos.
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Bonificaciones Reclamadas -->
+            <div class="tab-pane fade" id="reclamadas" role="tabpanel" aria-labelledby="reclamadas-tab">
+                {% if bonificaciones_reclamadas %}
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h4><i class="fas fa-check-circle text-success"></i> Bonificaciones Reclamadas</h4>
+                        <p class="text-muted">Historial de todas las bonificaciones que ya has reclamado.</p>
+                    </div>
+                </div>
+
+                <div class="row">
+                    {% for bonificacion in bonificaciones_reclamadas %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="bonificacion-card bonificacion-redimida">
+                            <div class="monto-badge monto-redimido">
+                                ${{ bonificacion.monto|floatformat:0 }}
+                            </div>
+                            
+                            <h5>{{ bonificacion.bonificacion.nombre }}</h5>
+                            
+                            <div class="mb-2">
+                                <span class="badge badge-success">
+                                    <i class="fas fa-check"></i> Reclamada
+                                </span>
+                            </div>
+                            
+                            <div class="criterios-cumplidos">
+                                <strong>Criterios que cumpliste:</strong>
+                                <div class="criterio-item">
+                                    <i class="fas fa-calendar-day criterio-icon"></i>
+                                    <span>{{ bonificacion.dias_consecutivos_trabajados }} días consecutivos</span>
+                                </div>
+                                <div class="criterio-item">
+                                    <i class="fas fa-tasks criterio-icon"></i>
+                                    <span>{{ bonificacion.servicios_realizados }} servicios</span>
+                                </div>
+                                <div class="criterio-item">
+                                    <i class="fas fa-star criterio-icon"></i>
+                                    <span>{{ bonificacion.calificacion_promedio|floatformat:1 }} promedio</span>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-clock"></i> Obtenida: {{ bonificacion.fecha_obtencion|date:"d/m/Y" }}
+                                </small>
+                                {% if bonificacion.fecha_redencion %}
+                                    <br><small class="text-success">
+                                        <i class="fas fa-check"></i> Reclamada: {{ bonificacion.fecha_redencion|date:"d/m/Y" }}
+                                    </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-history empty-icon"></i>
+                    <h4>No tienes bonificaciones reclamadas</h4>
+                    <p class="text-muted">
+                        Cuando reclames tus bonificaciones ganadas, aparecerán aquí.<br>
+                        ¡Sigue trabajando para obtener más bonificaciones!
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    {% else %}
+        <div class="row">
+            <div class="col-12">
+                <div class="alert alert-warning text-center">
+                    <h4><i class="fas fa-exclamation-triangle"></i> Perfil de Empleado No Encontrado</h4>
+                    <p>No se pudo encontrar tu perfil de empleado. Contacta al administrador.</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Animaciones y efectos
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animar las tarjetas al cargar
+        const cards = document.querySelectorAll('.bonificacion-card');
+        cards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                card.style.transition = 'all 0.5s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
+        
+        // Efecto de pulso en las bonificaciones pendientes
+        const pendientes = document.querySelectorAll('.bonificacion-pendiente .monto-badge');
+        pendientes.forEach(badge => {
+            setInterval(() => {
+                badge.style.transform = 'scale(1.05)';
+                setTimeout(() => {
+                    badge.style.transform = 'scale(1)';
+                }, 200);
+            }, 3000);
+        });
+
+        // Inicializar Bootstrap tabs
+        var triggerTabList = [].slice.call(document.querySelectorAll('#bonificacionesTabs button'))
+        triggerTabList.forEach(function (triggerEl) {
+            var tabTrigger = new bootstrap.Tab(triggerEl)
+            
+            triggerEl.addEventListener('click', function (event) {
+                event.preventDefault()
+                tabTrigger.show()
+            })
+        })
+    });
+</script>
+{% endblock %}

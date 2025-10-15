@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Bonificaciones{% endblock %}
+
+{% block extra_css %}
+<style>
+    .bonificacion-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .bonificacion-activa {
+        border-left: 4px solid #28a745;
+    }
+    
+    .bonificacion-inactiva {
+        border-left: 4px solid #dc3545;
+        opacity: 0.7;
+    }
+    
+    .criterios-badge {
+        display: inline-block;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 4px 8px;
+        margin: 2px;
+        font-size: 0.85em;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .btn-procesar {
+        background: linear-gradient(45deg, #28a745, #20c997);
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-weight: bold;
+    }
+    
+    .btn-procesar:hover {
+        background: linear-gradient(45deg, #218838, #1ea080);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-gift"></i> Sistema de Bonificaciones</h2>
+                <div>
+                    <a href="{% url 'empleados:bonificacion_v2_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Nueva Bonificación
+                    </a>
+                    <a href="{% url 'empleados:bonificacion_obtenida_list' %}" class="btn btn-info">
+                        <i class="fas fa-list"></i> Ver Bonificaciones Obtenidas
+                    </a>
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            {% if estadisticas %}
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="stats-card text-center">
+                        <h3>{{ estadisticas.total_configuraciones }}</h3>
+                        <p>Configuraciones Activas</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card text-center">
+                        <h3>{{ estadisticas.bonificaciones_pendientes }}</h3>
+                        <p>Bonificaciones Pendientes</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card text-center">
+                        <h3>{{ estadisticas.bonificaciones_redimidas }}</h3>
+                        <p>Bonificaciones Redimidas</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card text-center">
+                        <h3>${{ estadisticas.monto_total_pendiente|floatformat:0 }}</h3>
+                        <p>Monto Total Pendiente</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+
+
+            <!-- Lista de bonificaciones -->
+            <div class="row">
+                <div class="col-12">
+                    {% if bonificaciones %}
+                        {% for bonificacion in bonificaciones %}
+                        <div class="bonificacion-card {% if bonificacion.activo %}bonificacion-activa{% else %}bonificacion-inactiva{% endif %}">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <h4>
+                                        {{ bonificacion.nombre }}
+                                        {% if bonificacion.activo %}
+                                            <span class="badge badge-success">Activa</span>
+                                        {% else %}
+                                            <span class="badge badge-danger">Inactiva</span>
+                                        {% endif %}
+                                    </h4>
+                                    <p class="text-muted">{{ bonificacion.descripcion }}</p>
+                                    
+                                    <div class="criterios mb-3">
+                                        <strong>Criterios:</strong><br>
+                                        {% if bonificacion.dias_consecutivos_requeridos and bonificacion.dias_consecutivos_requeridos > 0 %}
+                                            <span class="criterios-badge">
+                                                <i class="fas fa-calendar-day"></i> {{ bonificacion.dias_consecutivos_requeridos }} días consecutivos
+                                            </span>
+                                        {% endif %}
+                                        {% if bonificacion.servicios_requeridos and bonificacion.servicios_requeridos > 0 %}
+                                            <span class="criterios-badge">
+                                                <i class="fas fa-tasks"></i> {{ bonificacion.servicios_requeridos }} servicios
+                                            </span>
+                                        {% endif %}
+                                        {% if bonificacion.calificacion_minima and bonificacion.calificacion_minima > 0 %}
+                                            <span class="criterios-badge">
+                                                <i class="fas fa-star"></i> Calificación ≥ {{ bonificacion.calificacion_minima }}
+                                            </span>
+                                        {% endif %}
+                                        {% if not bonificacion.dias_consecutivos_requeridos and not bonificacion.servicios_requeridos and not bonificacion.calificacion_minima %}
+                                            <span class="criterios-badge text-info">
+                                                <i class="fas fa-info-circle"></i> Sin criterios específicos
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="monto">
+                                        <strong>Monto:</strong> 
+                                        <span class="text-success font-weight-bold">${{ bonificacion.monto_bonificacion|floatformat:0 }}</span>
+                                    </div>
+                                    
+                                    <small class="text-muted">
+                                        Creada el {{ bonificacion.fecha_creacion|date:"d/m/Y H:i" }} por {{ bonificacion.creado_por.get_full_name|default:bonificacion.creado_por.username }}
+                                    </small>
+                                </div>
+                                
+                                <div class="col-md-4 text-right">
+                                    <div class="btn-group-vertical">
+                                        <a href="{% url 'empleados:bonificacion_v2_update' bonificacion.pk %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-edit"></i> Editar
+                                        </a>
+                                        <a href="{% url 'empleados:bonificacion_v2_delete' bonificacion.pk %}" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i> Eliminar
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        <!-- Paginación -->
+                        {% if is_paginated %}
+                        <nav aria-label="Paginación de bonificaciones">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1">Primera</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                                    </li>
+                                {% endif %}
+
+                                <li class="page-item active">
+                                    <span class="page-link">
+                                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                    </span>
+                                </li>
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+
+                    {% else %}
+                        <div class="alert alert-info text-center">
+                            <h4><i class="fas fa-info-circle"></i> No hay bonificaciones configuradas</h4>
+                            <p>Comience creando su primera configuración de bonificación.</p>
+                            <a href="{% url 'empleados:bonificacion_v2_create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Crear Primera Bonificación
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Confirmación para procesar bonificaciones automáticas
+    document.addEventListener('DOMContentLoaded', function() {
+        const procesarBtn = document.querySelector('.btn-procesar');
+        if (procesarBtn) {
+            procesarBtn.addEventListener('click', function(e) {
+                if (!confirm('¿Está seguro de procesar las bonificaciones automáticas? Esta acción evaluará a todos los empleados y otorgará bonificaciones automáticamente.')) {
+                    e.preventDefault();
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

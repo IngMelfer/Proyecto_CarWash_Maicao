@@ -1252,9 +1252,12 @@
                     <div class="dashboard-icon icon-bonificaciones">
                         <i class="fas fa-gift"></i>
                     </div>
-                    <h5 class="card-title">Gestión de Bonificaciones</h5>
-                    <p class="card-text">Administra bonificaciones y redenciones de empleados</p>
-                    <a href="{% url 'empleados:admin_bonificaciones' %}" class="btn btn-primary">Ir a Bonificaciones</a>
+                    <h5 class="card-title">Gestión de Bonificaciones V2</h5>
+                    <p class="card-text">Sistema completo de bonificaciones para empleados</p>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'empleados:bonificacion_v2_list' %}" class="btn btn-primary">Configurar Bonificaciones</a>
+                        <a href="{% url 'empleados:bonificacion_obtenida_list' %}" class="btn btn-warning">Redimir Bonificaciones</a>
+                    </div>
                 </div>
             </div>
         </div>

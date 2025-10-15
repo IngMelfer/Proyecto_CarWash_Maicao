@@ -440,35 +440,18 @@ if (typeof $ !== 'undefined' && typeof $.fn !== 'undefined') {
     });
 
     $('#nextToStep5').click(function() {
-        // Validar que se haya seleccionado un medio de pago
-        if (!reservaData.medio_pago) {
-            mostrarError('Por favor, seleccione un medio de pago antes de continuar.');
-            return;
-        }
-        
+        // Flujo sin selección de medio de pago: avanzar directamente al paso 5
         cambiarPaso(4, 5);
     });
 
-    // Paso 4: Selección de medio de pago
-    $(document).on('click', '.seleccionar-medio-pago', function() {
-        const medioPagoCard = $(this).closest('.medio-pago-card');
-        const medioPagoId = medioPagoCard.data('id');
-        const medioPagoNombre = medioPagoCard.find('.card-title').text();
-        
-        // Guardar medio de pago seleccionado
-        reservaData.medio_pago = medioPagoId;
-        reservaData.medio_pago_nombre = medioPagoNombre;
-        
-        // Actualizar resumen
-        $('#resumen-medio-pago').text(medioPagoNombre);
-    });
+    // Paso 4: Selección de medio de pago desactivada
+    // Lógica de selección de medio de pago removida para desactivar pagos en el frontend
 
     // Paso 5: Confirmación de reserva
     $('#confirmarReserva').click(function() {
-        // Validar que todos los datos necesarios estén completos
+        // Validar que todos los datos necesarios estén completos (sin medio de pago)
         if (!reservaData.servicio || !reservaData.fecha || !reservaData.hora || 
-            !reservaData.bahia || !reservaData.lavador || !reservaData.vehiculo || 
-            !reservaData.medio_pago) {
+            !reservaData.bahia || !reservaData.lavador || !reservaData.vehiculo) {
             mostrarError('Por favor, complete todos los campos requeridos antes de confirmar la reserva.');
             return;
         }

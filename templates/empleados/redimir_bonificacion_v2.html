@@ -1,0 +1,438 @@
+{% extends 'empleados/dashboard/base_dashboard.html' %}
+{% load static %}
+
+{% block title %}Redimir Bonificación{% endblock %}
+
+{% block extra_css %}
+<style>
+    .redimir-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .bonificacion-info {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 30px;
+        margin-bottom: 30px;
+        text-align: center;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+    
+    .empleado-info {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-left: 5px solid #007bff;
+    }
+    
+    .criterios-card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .criterio-item {
+        display: flex;
+        align-items: center;
+        padding: 12px 15px;
+        margin-bottom: 10px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border-left: 3px solid #28a745;
+    }
+    
+    .criterio-icon {
+        margin-right: 15px;
+        color: #28a745;
+        width: 25px;
+        font-size: 1.2em;
+    }
+    
+    .monto-display {
+        font-size: 3em;
+        font-weight: bold;
+        margin-bottom: 10px;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    .redimir-form {
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .btn-redimir {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        border: none;
+        padding: 15px 40px;
+        font-size: 1.2em;
+        font-weight: bold;
+        border-radius: 25px;
+        color: white;
+        box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-redimir:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(40, 167, 69, 0.4);
+        color: white;
+    }
+    
+    .btn-cancelar {
+        background: #6c757d;
+        border: none;
+        padding: 15px 40px;
+        font-size: 1.2em;
+        border-radius: 25px;
+        color: white;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-cancelar:hover {
+        background: #5a6268;
+        transform: translateY(-2px);
+        color: white;
+    }
+    
+    .alert-warning-custom {
+        background: linear-gradient(135deg, #ffc107, #ffca2c);
+        color: #856404;
+        border: none;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 25px;
+    }
+    
+    .fecha-info {
+        background: #e9ecef;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 15px;
+    }
+    
+    .empleado-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2em;
+        font-weight: bold;
+        margin-right: 20px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    .proceso-steps {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px;
+    }
+    
+    .step-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        padding: 10px;
+    }
+    
+    .step-number {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #007bff;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-right: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+    <div class="redimir-container">
+        <div class="row">
+            <div class="col-12">
+                <h2><i class="fas fa-hand-holding-usd"></i> Redimir Bonificación</h2>
+                <p class="text-muted">Procesa la redención de la bonificación obtenida por el empleado.</p>
+            </div>
+        </div>
+
+        {% if bonificacion_obtenida %}
+            <!-- Información de la bonificación -->
+            <div class="bonificacion-info">
+                <div class="monto-display">${{ bonificacion_obtenida.monto|floatformat:0 }}</div>
+                <h3>{{ bonificacion_obtenida.bonificacion.nombre }}</h3>
+                {% if bonificacion_obtenida.bonificacion.descripcion %}
+                    <p class="mb-0">{{ bonificacion_obtenida.bonificacion.descripcion }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Información del empleado -->
+            <div class="empleado-info">
+                <div class="d-flex align-items-center">
+                    <div class="empleado-avatar">
+                        {{ bonificacion_obtenida.empleado.nombres.0|upper }}{{ bonificacion_obtenida.empleado.apellidos.0|upper }}
+                    </div>
+                    <div>
+                        <h4 class="mb-1">{{ bonificacion_obtenida.empleado.nombres }} {{ bonificacion_obtenida.empleado.apellidos }}</h4>
+                        <p class="text-muted mb-1">
+                            <i class="fas fa-id-card"></i> {{ bonificacion_obtenida.empleado.numero_documento }}
+                        </p>
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-briefcase"></i> {{ bonificacion_obtenida.empleado.cargo.nombre }}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="fecha-info">
+                    <strong><i class="fas fa-calendar-check"></i> Bonificación obtenida:</strong>
+                    {{ bonificacion_obtenida.fecha_obtencion|date:"d/m/Y H:i" }}
+                </div>
+            </div>
+
+            <!-- Criterios cumplidos -->
+            <div class="criterios-card">
+                <h5><i class="fas fa-check-circle text-success"></i> Criterios Cumplidos por el Empleado</h5>
+                <p class="text-muted">El empleado cumplió exitosamente todos los criterios requeridos:</p>
+                
+                {% if bonificacion_obtenida.bonificacion.dias_consecutivos_requeridos and bonificacion_obtenida.bonificacion.dias_consecutivos_requeridos > 0 %}
+                <div class="criterio-item">
+                    <i class="fas fa-calendar-day criterio-icon"></i>
+                    <div>
+                        <strong>Días Consecutivos Trabajados</strong>
+                        <div class="text-muted">
+                            {{ bonificacion_obtenida.dias_trabajados_consecutivos }} días 
+                            (requeridos: {{ bonificacion_obtenida.bonificacion.dias_consecutivos_requeridos }})
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if bonificacion_obtenida.bonificacion.servicios_requeridos and bonificacion_obtenida.bonificacion.servicios_requeridos > 0 %}
+                <div class="criterio-item">
+                    <i class="fas fa-tasks criterio-icon"></i>
+                    <div>
+                        <strong>Servicios Completados</strong>
+                        <div class="text-muted">
+                            {{ bonificacion_obtenida.servicios_completados }} servicios 
+                            (requeridos: {{ bonificacion_obtenida.bonificacion.servicios_requeridos }})
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if bonificacion_obtenida.bonificacion.calificacion_minima and bonificacion_obtenida.bonificacion.calificacion_minima > 0 %}
+                <div class="criterio-item">
+                    <i class="fas fa-star criterio-icon"></i>
+                    <div>
+                        <strong>Calificación Promedio</strong>
+                        <div class="text-muted">
+                            {{ bonificacion_obtenida.calificacion_promedio|floatformat:2 }} 
+                            (mínima requerida: {{ bonificacion_obtenida.bonificacion.calificacion_minima }})
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if not bonificacion_obtenida.bonificacion.dias_consecutivos_requeridos and not bonificacion_obtenida.bonificacion.servicios_requeridos and not bonificacion_obtenida.bonificacion.calificacion_minima %}
+                <div class="criterio-item">
+                    <i class="fas fa-info-circle criterio-icon"></i>
+                    <div>
+                        <strong>Bonificación sin criterios específicos</strong>
+                        <div class="text-muted">
+                            Esta bonificación no requiere criterios específicos para ser otorgada
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Proceso de redención -->
+            <div class="proceso-steps">
+                <h5><i class="fas fa-list-ol"></i> Proceso de Redención</h5>
+                <div class="step-item">
+                    <div class="step-number">1</div>
+                    <div>
+                        <strong>Verificar información:</strong> Confirma que los datos del empleado y la bonificación son correctos.
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">2</div>
+                    <div>
+                        <strong>Procesar pago:</strong> Realiza el pago de ${{ bonificacion_obtenida.monto|floatformat:0 }} al empleado.
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">3</div>
+                    <div>
+                        <strong>Confirmar redención:</strong> Haz clic en "Redimir Bonificación" para completar el proceso.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advertencia -->
+            <div class="alert alert-warning-custom">
+                <h5><i class="fas fa-exclamation-triangle"></i> Importante</h5>
+                <p class="mb-0">
+                    Una vez que redimas esta bonificación, <strong>no podrás deshacer esta acción</strong>. 
+                    Asegúrate de haber realizado el pago correspondiente al empleado antes de confirmar.
+                </p>
+            </div>
+
+            <!-- Formulario de redención -->
+            <div class="redimir-form">
+                <form method="post" id="redimirForm">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label for="observaciones"><i class="fas fa-comment"></i> Observaciones (Opcional)</label>
+                        <textarea class="form-control" id="observaciones" name="observaciones" rows="3" 
+                                placeholder="Agrega cualquier observación sobre esta redención..."></textarea>
+                    </div>
+                    
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" id="confirmarPago" required>
+                        <label class="form-check-label" for="confirmarPago">
+                            <strong>Confirmo que he realizado el pago de ${{ bonificacion_obtenida.monto|floatformat:0 }} al empleado</strong>
+                        </label>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button type="button" class="btn btn-cancelar me-3" onclick="window.history.back()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-redimir" id="btnRedimir" disabled>
+                            <i class="fas fa-hand-holding-usd"></i> Redimir Bonificación
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+        {% else %}
+            <div class="alert alert-danger text-center">
+                <h4><i class="fas fa-exclamation-triangle"></i> Bonificación No Encontrada</h4>
+                <p>La bonificación que intentas redimir no existe o ya ha sido procesada.</p>
+                <a href="{% url 'empleados:bonificacion_obtenida_list' %}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left"></i> Volver a la Lista
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const confirmarPago = document.getElementById('confirmarPago');
+        const btnRedimir = document.getElementById('btnRedimir');
+        const form = document.getElementById('redimirForm');
+        
+        // Habilitar/deshabilitar botón según checkbox
+        confirmarPago.addEventListener('change', function() {
+            btnRedimir.disabled = !this.checked;
+            if (this.checked) {
+                btnRedimir.classList.add('pulse-animation');
+            } else {
+                btnRedimir.classList.remove('pulse-animation');
+            }
+        });
+        
+        // Confirmación antes de enviar
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            Swal.fire({
+                title: '¿Confirmar Redención?',
+                html: `
+                    <div class="text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-hand-holding-usd" style="font-size: 3em; color: #28a745;"></i>
+                        </div>
+                        <p>Estás a punto de redimir una bonificación de:</p>
+                        <h3 style="color: #28a745; font-weight: bold;">
+                            ${{ bonificacion_obtenida.monto|floatformat:0 }}
+                        </h3>
+                        <p class="text-muted">
+                            Para: <strong>{{ bonificacion_obtenida.empleado.nombres }} {{ bonificacion_obtenida.empleado.apellidos }}</strong>
+                        </p>
+                        <div class="alert alert-warning mt-3">
+                            <small><strong>Esta acción no se puede deshacer</strong></small>
+                        </div>
+                    </div>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-check"></i> Sí, Redimir',
+                cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
+                customClass: {
+                    popup: 'swal-wide'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Mostrar loading
+                    Swal.fire({
+                        title: 'Procesando Redención...',
+                        html: 'Por favor espera mientras procesamos la bonificación.',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                    
+                    // Enviar formulario
+                    form.submit();
+                }
+            });
+        });
+        
+        // Animación de entrada
+        const cards = document.querySelectorAll('.bonificacion-info, .empleado-info, .criterios-card, .redimir-form');
+        cards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                card.style.transition = 'all 0.5s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 150);
+        });
+    });
+</script>
+
+<style>
+    .pulse-animation {
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .swal-wide {
+        width: 600px !important;
+    }
+</style>
+{% endblock %}
