@@ -1,3 +1,4 @@
+# Core Django y dependencias principales
 Django==4.2.11
 asgiref==3.10.0
 channels==4.3.1
@@ -15,7 +16,7 @@ python-dotenv==1.0.0
 typing_extensions==4.13.2
 tzdata==2023.3
 
-# Almacenamiento S3 (si usas django-storages + boto3)
+# Almacenamiento S3
 django-storages==1.14.6
 boto3==1.40.26
 botocore==1.40.44
@@ -25,8 +26,18 @@ urllib3==2.4.0
 idna==3.10
 python-dateutil==2.9.0.post0
 
-# Utilidades de generación de archivos (si las usas)
+# Utilidades de generación de archivos
 openpyxl==3.1.5
 xlsxwriter==3.2.9
 reportlab==4.4.3
 qrcode==8.2
+
+# Dependencias adicionales para funcionalidad completa
+beautifulsoup4==4.13.5
+certifi==2025.6.15
+charset-normalizer==3.4.3
+colorama==0.4.6
+lxml==6.0.2
+PyMySQL==1.1.0
+pytz==2025.2
+six==1.17.0
