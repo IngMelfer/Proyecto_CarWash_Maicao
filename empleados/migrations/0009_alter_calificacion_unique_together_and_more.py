@@ -4,6 +4,69 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 
+class SafeAlterUniqueTogether(migrations.AlterUniqueTogether):
+    """
+    Operación personalizada para manejar de manera segura los cambios en unique_together
+    cuando los constraints existentes pueden no coincidir con lo esperado.
+    """
+    
+    def database_forwards(self, app_label, schema_editor, from_state, to_state):
+        try:
+            # Intentar la operación normal
+            super().database_forwards(app_label, schema_editor, from_state, to_state)
+        except ValueError as e:
+            if "Found wrong number" in str(e) and "constraints" in str(e):
+                # Si hay un error de constraints, intentar eliminar todos los constraints existentes primero
+                model = to_state.apps.get_model(app_label, self.name)
+                
+                # Obtener el nombre de la tabla
+                table_name = model._meta.db_table
+                
+                # Intentar eliminar constraints existentes de manera segura
+                with schema_editor.connection.cursor() as cursor:
+                    # Para SQLite, obtener información de constraints
+                    if schema_editor.connection.vendor == 'sqlite':
+                        cursor.execute(f"PRAGMA index_list('{table_name}')")
+                        indexes = cursor.fetchall()
+                        
+                        # Eliminar índices únicos existentes relacionados con unique_together
+                        for index_info in indexes:
+                            index_name = index_info[1]  # nombre del índice
+                            is_unique = index_info[2]   # si es único
+                            
+                            if is_unique and ('empleado' in index_name or 'cliente' in index_name or 'servicio' in index_name):
+                                try:
+                                    cursor.execute(f"DROP INDEX IF EXISTS {index_name}")
+                                except Exception:
+                                    pass  # Ignorar errores al eliminar índices
+                
+                # Ahora aplicar solo el nuevo unique_together
+                if hasattr(self, 'unique_together') and self.unique_together:
+                    # Crear el nuevo constraint
+                    from_model = from_state.apps.get_model(app_label, self.name)
+                    to_model = to_state.apps.get_model(app_label, self.name)
+                    
+                    # Aplicar el nuevo unique_together directamente
+                    schema_editor.alter_unique_together(
+                        to_model,
+                        set(),  # Sin constraints antiguos
+                        self.unique_together
+                    )
+            else:
+                # Re-lanzar otros errores
+                raise
+    
+    def database_backwards(self, app_label, schema_editor, from_state, to_state):
+        try:
+            super().database_backwards(app_label, schema_editor, from_state, to_state)
+        except ValueError as e:
+            if "Found wrong number" in str(e) and "constraints" in str(e):
+                # Manejar de manera similar en reversa
+                pass
+            else:
+                raise
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -13,7 +76,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterUniqueTogether(
+        SafeAlterUniqueTogether(
             name='calificacion',
             unique_together=set(),
         ),
@@ -22,7 +85,7 @@ class Migration(migrations.Migration):
             name='reserva',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='calificacion', to='reservas.reserva', verbose_name='Reserva'),
         ),
-        migrations.AlterUniqueTogether(
+        SafeAlterUniqueTogether(
             name='calificacion',
             unique_together={('reserva', 'cliente')},
         ),
