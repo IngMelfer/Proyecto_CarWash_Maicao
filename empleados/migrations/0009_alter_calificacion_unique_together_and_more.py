@@ -67,6 +67,37 @@ class SafeAlterUniqueTogether(migrations.AlterUniqueTogether):
                 raise
 
 
+class SafeAddField(migrations.AddField):
+    """
+    Operación personalizada para agregar campos de manera segura,
+    verificando si la columna ya existe antes de intentar crearla.
+    """
+    
+    def database_forwards(self, app_label, schema_editor, from_state, to_state):
+        try:
+            # Intentar la operación normal
+            super().database_forwards(app_label, schema_editor, from_state, to_state)
+        except Exception as e:
+            if "duplicate column name" in str(e).lower():
+                # Si la columna ya existe, no hacer nada
+                print(f"La columna {self.name} ya existe en la tabla {self.model_name}, omitiendo...")
+                return
+            else:
+                # Re-lanzar otros errores
+                raise
+    
+    def database_backwards(self, app_label, schema_editor, from_state, to_state):
+        try:
+            super().database_backwards(app_label, schema_editor, from_state, to_state)
+        except Exception as e:
+            if "no such column" in str(e).lower():
+                # Si la columna no existe, no hacer nada
+                print(f"La columna {self.name} no existe en la tabla {self.model_name}, omitiendo eliminación...")
+                return
+            else:
+                raise
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -80,7 +111,7 @@ class Migration(migrations.Migration):
             name='calificacion',
             unique_together=set(),
         ),
-        migrations.AddField(
+        SafeAddField(
             model_name='calificacion',
             name='reserva',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='calificacion', to='reservas.reserva', verbose_name='Reserva'),
