@@ -5,6 +5,56 @@ from django.db import migrations, models
 import django.db.models.deletion
 
 
+def check_and_create_configuracionbonificacion_model(apps, schema_editor):
+    """
+    Verifica si la tabla empleados_configuracionbonificacion existe antes de crearla.
+    Si existe, omite la creación para evitar errores de tabla duplicada.
+    """
+    db_alias = schema_editor.connection.alias
+    connection = schema_editor.connection
+    
+    # Verificar si la tabla ya existe
+    table_name = 'empleados_configuracionbonificacion'
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT name FROM sqlite_master 
+            WHERE type='table' AND name=?
+        """, [table_name])
+        
+        if cursor.fetchone():
+            # La tabla ya existe, no hacer nada
+            return
+    
+    # Si la tabla no existe, crearla usando el modelo
+    ConfiguracionBonificacion = apps.get_model('empleados', 'ConfiguracionBonificacion')
+    schema_editor.create_model(ConfiguracionBonificacion)
+
+
+class ConfiguracionBonificacionCreateModel(migrations.CreateModel):
+    """
+    Operación personalizada para crear ConfiguracionBonificacion que verifica
+    si la tabla ya existe antes de intentar crearla.
+    """
+    
+    def database_forwards(self, app_label, schema_editor, from_state, to_state):
+        # Verificar si la tabla ya existe
+        table_name = 'empleados_configuracionbonificacion'
+        connection = schema_editor.connection
+        
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT name FROM sqlite_master 
+                WHERE type='table' AND name=?
+            """, [table_name])
+            
+            if cursor.fetchone():
+                # La tabla ya existe, no hacer nada
+                return
+        
+        # Si la tabla no existe, usar el comportamiento normal
+        super().database_forwards(app_label, schema_editor, from_state, to_state)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -56,7 +106,7 @@ class Migration(migrations.Migration):
                 'ordering': ['-fecha_redencion'],
             },
         ),
-        migrations.CreateModel(
+        ConfiguracionBonificacionCreateModel(
             name='ConfiguracionBonificacion',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
