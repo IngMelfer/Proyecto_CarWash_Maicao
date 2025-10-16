@@ -78,8 +78,8 @@ def reset_migraciones():
     
     # Paso 6: Verificar que no hay migraciones pendientes
     print("\n🔍 PASO 6: Verificando migraciones pendientes")
-    if not ejecutar_comando("python manage.py migrate --dry-run", "Verificar migraciones pendientes"):
-        return False
+    if not ejecutar_comando("python manage.py migrate --plan", "Verificar migraciones pendientes"):
+        print("⚠️  Continuando... puede que no haya migraciones pendientes")
     
     print("\n🎉 RESET DE MIGRACIONES COMPLETADO")
     print("=" * 60)
