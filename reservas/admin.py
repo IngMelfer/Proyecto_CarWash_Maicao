@@ -1,7 +1,9 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from django.utils.html import format_html
+from django import forms
 from .models import Servicio, Reserva, DisponibilidadHoraria, Bahia, Vehiculo, HorarioDisponible, MedioPago
+from clientes.models import Cliente
 
 # Register your models here.
 
@@ -55,10 +57,25 @@ class ServicioAdmin(admin.ModelAdmin):
     
     descripcion_corta.short_description = _('Descripción')
 
+class ReservaAdminForm(forms.ModelForm):
+    """
+    Formulario personalizado para el admin de reservas que filtra solo clientes válidos.
+    """
+    class Meta:
+        model = Reserva
+        fields = '__all__'
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filtrar solo clientes que tienen un usuario asociado
+        self.fields['cliente'].queryset = Cliente.objects.select_related('usuario').filter(usuario__isnull=False)
+
+
 class ReservaAdmin(admin.ModelAdmin):
     """
     Personalización del panel de administración para el modelo Reserva.
     """
+    form = ReservaAdminForm
     list_display = ('cliente', 'servicio', 'fecha_hora', 'bahia', 'estado', 'fecha_creacion')
     list_filter = ('estado', 'fecha_hora', 'fecha_creacion', 'bahia')
     search_fields = ('cliente__nombre', 'cliente__apellido', 'cliente__numero_documento', 'servicio__nombre', 'bahia__nombre')
